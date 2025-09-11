@@ -73,11 +73,15 @@ module.exports = {
         authorName = vpsGame.table?.authors?.join(', ') ?? '';
         versionNumber = vpsGame?.table?.version ?? '';
         tableUrl = vpsGame.table?.urls[0]?.url ?? '';
-        romUrl = vpsGame?.romFiles?.length > 0 ? (vpsGame?.romFiles[0]?.urls.length > 0 ? vpsGame?.romFiles[0].urls[0]?.url ?? '' : '') : '';
-        romUrl === '' ? errors.push('romUrl not found on VPS.  Please update VPS with at least 1 romUrl.') : '';
-        romName = vpsGame?.romFiles?.length > 0 ? (vpsGame?.romFiles[0]?.version ?? '') : '';
-        romName === '' ? errors.push('romName not found on VPS.  Please update VPS with at least 1 romName.') : '';
         b2sUrl = b2sidoverride ? vpsGame?.b2sFiles.find(b => b.id === b2sidoverride)?.urls[0]?.url : (vpsGame.b2sFiles && vpsGame.b2sFiles.length > 0 && vpsGame.b2sFiles[0].urls.length > 0 && vpsGame?.b2sFiles[0]?.urls[0]?.url != '' ? vpsGame?.b2sFiles[0]?.urls[0]?.url : '');
+        if (romrequired && !vpsGame?.romFiles?.[0]?.urls?.[0]?.url) {
+          errors.push("Missing romUrl. Please provide at least one romUrl, or remove romFiles, or set romrequired to false.");
+        } else if (romrequired && !vpsGame?.romFiles?.[0]?.version) {
+          errors.push("Missing romName. Please provide a romName, or remove romFiles, or set romrequired to false.");
+        } else {
+          romUrl = vpsGame?.romFiles?.[0]?.urls?.[0]?.url ?? "";
+          romName = vpsGame?.romFiles?.[0]?.version ?? "";
+        }
 
         if(errors.length === 0 || !romrequired) {
           var newWeek = {
