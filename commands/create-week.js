@@ -49,15 +49,15 @@ module.exports = {
       const notes = argHelper.getArg(interaction.options.data, 'string', 'notes');
       let errors = [];
       let weekNumber;
+      let currentSeasonWeekNumber;
       let periodStart;
       let periodEnd;
       let table;
       let authorName;
       let versionNumber;
       let tableUrl;
-      let romUrl;
-      let romName;
-      let currentSeasonWeekNumber;
+      let romUrl = '';
+      let romName = '';
 
       const vpsGame = await vpsDataService.getVpsGame(vpsid);
 
@@ -74,13 +74,21 @@ module.exports = {
         versionNumber = vpsGame?.table?.version ?? '';
         tableUrl = vpsGame.table?.urls[0]?.url ?? '';
         b2sUrl = b2sidoverride ? vpsGame?.b2sFiles.find(b => b.id === b2sidoverride)?.urls[0]?.url : (vpsGame.b2sFiles && vpsGame.b2sFiles.length > 0 && vpsGame.b2sFiles[0].urls.length > 0 && vpsGame?.b2sFiles[0]?.urls[0]?.url != '' ? vpsGame?.b2sFiles[0]?.urls[0]?.url : '');
-        if (romrequired && !vpsGame?.romFiles?.[0]?.urls?.[0]?.url) {
-          errors.push("Missing romUrl. Please provide at least one romUrl, or remove romFiles, or set romrequired to false.");
-        } else if (romrequired && !vpsGame?.romFiles?.[0]?.version) {
-          errors.push("Missing romName. Please provide a romName, or remove romFiles, or set romrequired to false.");
+
+        if (romrequired) {
+          const romFile = vpsGame?.romFiles?.[0];
+
+          if (!romFile?.urls?.[0]?.url) {
+            errors.push("Missing romUrl. Please provide at least one rom url, or remove rom files, or set romrequired to false.");
+          } else if (!romFile?.version) {
+            errors.push("Missing rom version. Please provide a rom version, or remove rom files, or set romrequired to false.");
+          } else {
+            romUrl = romFile.urls[0].url;
+            romName = romFile.version;
+          }
         } else {
-          romUrl = vpsGame?.romFiles?.[0]?.urls?.[0]?.url ?? "";
-          romName = vpsGame?.romFiles?.[0]?.version ?? "";
+          romUrl = 'N/A';
+          romName = 'N/A';
         }
 
         if(errors.length === 0 || !romrequired) {
@@ -95,8 +103,8 @@ module.exports = {
             'vpsId': vpsid,
             'mode': mode,
             'tableUrl': tableUrl,
-            'romUrl': romUrl === '' ? 'N/A' : romUrl ?? '',
-            'romName': romName === '' ? 'N/A' : romName ?? '',
+            'romUrl': romUrl,
+            'romName': romName,
             'b2sUrl': b2sUrl,
             'season': currentSeason?.seasonNumber ? parseInt(currentSeason?.seasonNumber) : null,
             'currentSeasonWeekNumber': currentSeasonWeekNumber,
