@@ -1,8 +1,9 @@
 import "dotenv/config";
-import { SapphireClient } from "@sapphire/framework";
+import { SapphireClient, LogLevel } from "@sapphire/framework";
 import { GatewayIntentBits, Partials } from "discord.js";
 import { initDatabase, closeDatabase } from "./services/database.js";
 import logger from "./utils/logging.js";
+import { SapphirePinoLogger } from "./utils/sapphire-logger.js";
 
 // Register preconditions
 import "./preconditions/CompetitionChannel.js";
@@ -20,6 +21,7 @@ const client = new SapphireClient({
   loadMessageCommandListeners: true,
   defaultPrefix: "!",
   baseUserDirectory: import.meta.dirname,
+  logger: { instance: new SapphirePinoLogger(LogLevel.Info) },
 });
 
 async function main() {
