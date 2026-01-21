@@ -1,4 +1,15 @@
+# Ignore node_modules
 node_modules
-data
-Dockerfile
-.dockerignore
+
+# Ignore git files
+.git
+.gitignore
+
+# Ignore github files
+.github/
+
+# Ignore log files
+*.log
+
+# Ignore macOS specific files
+.DS_Store

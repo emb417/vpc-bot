@@ -6,8 +6,8 @@ name: Build and Publish Docker Image
 on:
   # Triggers the workflow on push or pull request events but only for the main branch
   push:
-    branches: [ main ]
- 
+    branches: [main]
+
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -27,7 +27,7 @@ jobs:
       - name: Install NPM Dependencies
         run: npm install
 
-      # - name: Run Unit Tests 
+      # - name: Run Unit Tests
       #  run: npm test
 
       - name: Set up Docker Buildx
@@ -52,32 +52,4 @@ jobs:
           push: true
           tags: ericfaris/vpc-bot:latest
           build-args: |
-            APPLICATION_ID=${{ secrets.APPLICATION_ID }}
-            BOT_TOKEN=${{ secrets.BOT_TOKEN }}
-            BOT_USER=${{ secrets.BOT_USER }}
-            BOT_CONTEST_ADMIN_ROLE_NAME=${{ secrets.BOT_CONTEST_ADMIN_ROLE_NAME }}
-            BOT_HIGH_SCORE_ADMIN_ROLE_NAME=${{ secrets.BOT_HIGH_SCORE_ADMIN_ROLE_NAME }}
-            COMMANDS_DIR=${{ secrets.COMMANDS_DIR }}
-            FEATURES_DIR=${{ secrets.FEATURES_DIR }}
-            COMPETITION_CHANNEL_ID=${{ secrets.COMPETITION_CHANNEL_ID }}
-            COMPETITION_CHANNEL_NAME=${{ secrets.COMPETITION_CHANNEL_NAME }}
-            COMPETITION_WEEKLY_POST_ID=${{ secrets.COMPETITION_WEEKLY_POST_ID }}
-            COMPETITION_SEASON_POST_ID=${{ secrets.COMPETITION_SEASON_POST_ID }}
-            DATA_BACKUPS_CHANNEL_ID=${{ secrets.DATA_BACKUPS_CHANNEL_ID }}
-            DISCORD_BASE_API=${{ secrets.DISCORD_BASE_API }}
-            GUILD_ID=${{ secrets.GUILD_ID }}
-            SECONDS_TO_DELETE_MESSAGE=${{ secrets.SECONDS_TO_DELETE_MESSAGE }}
-            DB_NAME=${{ secrets.DB_NAME }}
-            DB_USER=${{ secrets.DB_USER }}
-            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            BOT_OWNER=${{ secrets.BOT_OWNER }}
-            HIGH_SCORES_CHANNEL_NAME=${{ secrets.HIGH_SCORES_CHANNEL_NAME }}
-            HIGH_SCORES_CHANNEL_ID=${{ secrets.HIGH_SCORES_CHANNEL_ID }}
-            RANDOMORG_API_KEY=${{ secrets.RANDOMORG_API_KEY }}
-            VPC_DATA_SERVICE_API_URI=${{ secrets.VPC_DATA_SERVICE_API_URI }}
-            VPS_DATA_SERVICE_API_URI=${{ secrets.VPS_DATA_SERVICE_API_URI }}
-            BRAGGING_RIGHTS_CHANNEL_NAME=${{ secrets.BRAGGING_RIGHTS_CHANNEL_NAME }}
-            BRAGGING_RIGHTS_CHANNEL_ID=${{ secrets.BRAGGING_RIGHTS_CHANNEL_ID }}
-            CHANNELS_WITH_SCORES=${{ secrets.CHANNELS_WITH_SCORES }}
-            CONTEST_CHANNELS=${{ secrets.CONTEST_CHANNELS }}
             VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
