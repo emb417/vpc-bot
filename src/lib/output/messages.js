@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { EmbedBuilder } from "discord.js";
 import { printCombinedLeaderboard, printSeasonLeaderboard } from "./leaderboard.js";
 
 /**
@@ -39,9 +40,12 @@ export const generateWeeklyBoilerPlateText = (
   bp += `**Rom Name:** ${romName ?? "N/A"}\n`;
   bp += `**B2S Url:** ${b2sUrl ?? "N/A"}\n`;
   bp += `**Notes:** ${notes ?? "N/A"}\n\n`;
-  bp += printCombinedLeaderboard(scores, 20, teams, false, false)[0];
-  bp += "\n";
-  bp += "\n";
+
+  const leaderboardEmbed = printCombinedLeaderboard(scores, 20, teams, false, false)[0];
+  if (leaderboardEmbed instanceof EmbedBuilder) {
+    bp += leaderboardEmbed.toJSON().description + "\n";
+  }
+
   bp +=
     '** * Only the Top 20 scores will displayed due to Discord character limitations.  Please use the "/show-leaderboard" command for full results.**\n';
   bp += "\n";
@@ -62,9 +66,12 @@ export const generateSeasonBoilerPlateText = (season, weeks) => {
   bp += "**Name:** " + season.seasonName + "\n";
   bp += "**Dates:** " + season.seasonStart + " - " + season.seasonEnd + "\n";
   bp += "\n";
-  bp += printSeasonLeaderboard(weeks, 40, false)[0];
-  bp += "\n";
-  bp += "\n";
+
+  const leaderboardEmbed = printSeasonLeaderboard(weeks, 40, false)[0];
+  if (leaderboardEmbed instanceof EmbedBuilder) {
+    bp += leaderboardEmbed.toJSON().description + "\n";
+  }
+
   bp +=
     '** * Only the Top 40 positions will displayed due to Discord character limitations.  Please use the "/show-season-leaderboard" command for full results.**\n';
 
@@ -87,26 +94,60 @@ export const editWeeklyCompetitionCornerMessage = async (
     process.env.COMPETITION_WEEKLY_POST_ID
   );
 
-  await message.edit(
-    generateWeeklyBoilerPlateText(
-      scores,
-      teams,
-      week.weekNumber,
-      week.periodStart,
-      week.periodEnd,
-      week.vpsId,
-      week.table,
-      week.authorName,
-      week.versionNumber,
-      week.tableUrl,
-      week.romUrl,
-      week.romName,
-      week.notes,
-      week.currentSeasonWeekNumber,
-      week.b2sUrl,
-      week.mode
-    )
+  const leaderboardEmbeds = printCombinedLeaderboard(
+    scores,
+    20,
+    teams,
+    false,
+    false
   );
+
+  if (leaderboardEmbeds.length > 0) {
+    const embed = leaderboardEmbeds[0];
+    await message.edit({
+      content: generateWeeklyBoilerPlateText(
+        scores,
+        teams,
+        week.weekNumber,
+        week.periodStart,
+        week.periodEnd,
+        week.vpsId,
+        week.table,
+        week.authorName,
+        week.versionNumber,
+        week.tableUrl,
+        week.romUrl,
+        week.romName,
+        week.notes,
+        week.currentSeasonWeekNumber,
+        week.b2sUrl,
+        week.mode
+      ),
+      embeds: [embed],
+    });
+  } else {
+    await message.edit({
+      content: generateWeeklyBoilerPlateText(
+        scores,
+        teams,
+        week.weekNumber,
+        week.periodStart,
+        week.periodEnd,
+        week.vpsId,
+        week.table,
+        week.authorName,
+        week.versionNumber,
+        week.tableUrl,
+        week.romUrl,
+        week.romName,
+        week.notes,
+        week.currentSeasonWeekNumber,
+        week.b2sUrl,
+        week.mode
+      ),
+    });
+  }
+
   await message.suppressEmbeds(true);
 };
 
@@ -121,7 +162,20 @@ export const editSeasonCompetitionCornerMessage = async (season, weeks, client) 
     process.env.COMPETITION_SEASON_POST_ID
   );
 
-  await message.edit(generateSeasonBoilerPlateText(season, weeks));
+  const leaderboardEmbeds = printSeasonLeaderboard(season, weeks, false);
+
+  if (leaderboardEmbeds.length > 0) {
+    const embed = leaderboardEmbeds[0];
+    await message.edit({
+      content: generateSeasonBoilerPlateText(season, weeks),
+      embeds: [embed],
+    });
+  } else {
+    await message.edit({
+      content: generateSeasonBoilerPlateText(season, weeks),
+    });
+  }
+
   await message.suppressEmbeds(true);
 };
 

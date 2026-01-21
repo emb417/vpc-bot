@@ -1,53 +1,35 @@
-import Table from "easy-table";
+import { EmbedBuilder } from "discord.js";
 import { truncate, formatNumber, transformDate } from "../../utils/formatting.js";
 
 /**
  * Create a table row for high score.
  */
 export const createTableRowHighScore = (rank, table, score, expandedLayout) => {
-  table.cell("Rank", rank, Table.leftPadder(" "));
-  table.cell(
-    "User",
-    truncate(score?.user?.username, 11),
-    Table.rightPadder(" ")
-  );
-  table.cell("Score", score?.score, (val, width) => {
-    const str = formatNumber(val);
-    return width ? Table.padLeft(str, width) : str;
-  });
-  table.cell("v", score?.versionNumber, Table.rightPadder(" "));
+  let value = `**Rank:** ${rank}\n`;
+  value += `**User:** ${truncate(score?.user?.username, 11)}\n`;
+  value += `**Score:** ${formatNumber(score?.score)}\n`;
+  value += `**v:** ${score?.versionNumber}\n`;
 
   if (expandedLayout) {
-    table.cell(
-      "Posted",
-      transformDate(score?.createdAt, "MM/DD/YYYY...", "MM/DD/YYYY"),
-      Table.rightPadder(" ")
-    );
+    value += `**Posted:** ${transformDate(score?.createdAt, "MM/DD/YYYY...", "MM/DD/YYYY")}\n`;
   }
 
-  table.newRow();
+  return value;
 };
 
 /**
  * Create a table row for playoff matchup.
  */
 export const createTableRowPlayoffMatchup = (table, game) => {
-  table.cell("Seed", game.away?.seed, Table.leftPadder(" "));
-  table.cell("User", game.away?.username, Table.rightPadder(" "));
-  table.cell("Score", game.away?.score, (val, width) => {
-    const str = formatNumber(val);
-    return width ? Table.padLeft(str, width) : str;
-  });
-  table.newRow();
+  let awayValue = `**Seed:** ${game.away?.seed}\n`;
+  awayValue += `**User:** ${game.away?.username}\n`;
+  awayValue += `**Score:** ${formatNumber(game.away?.score)}\n`;
 
-  table.cell("Seed", game.home?.seed, Table.leftPadder(" "));
-  table.cell("User", game.home?.username, Table.rightPadder(" "));
-  table.cell("Score", game.home?.score, (val, width) => {
-    const str = formatNumber(val);
-    return width ? Table.padLeft(str, width) : str;
-  });
-  table.newRow();
-  table.newRow();
+  let homeValue = `**Seed:** ${game.home?.seed}\n`;
+  homeValue += `**User:** ${game.home?.username}\n`;
+  homeValue += `**Score:** ${formatNumber(game.home?.score)}\n`;
+
+  return { awayValue, homeValue };
 };
 
 /**
@@ -87,14 +69,19 @@ export const printHighScoreTables = (
 
     if (!showAll) {
       if (table.scores && table.scores.length > 0) {
-        const t = new Table();
+        const embed = new EmbedBuilder()
+          .setTitle(table.tableName)
+          .setColor("#0099ff");
+
         table.scores
           .sort((a, b) => b.score - a.score)
           .slice(0, scoresToShow)
           .forEach((score, i) => {
-            createTableRowHighScore(i + 1, t, score, false);
+            const rowValue = createTableRowHighScore(i + 1, table, score, false);
+            embed.addFields({ name: `#${i + 1}`, value: rowValue });
           });
-        strText += "`" + t.toString() + "`" + "\n \n ";
+
+        strText += embed.toJSON().description + "\n \n ";
       } else {
         strText += "**NO HIGH SCORES POSTED**\n\n";
       }
@@ -116,18 +103,18 @@ export const printHighScoreTables = (
  * Print playoff round matchups.
  */
 export const printPlayoffRoundMatchups = (games) => {
-  const tableArray = [];
-  let strText = "**Current Playoff Round Results:**\n";
+  const embed = new EmbedBuilder()
+    .setTitle("Current Playoff Round Results")
+    .setColor("#0099ff");
 
-  const t = new Table();
   games.forEach((game) => {
-    createTableRowPlayoffMatchup(t, game);
+    const { awayValue, homeValue } = createTableRowPlayoffMatchup(embed, game);
+    embed.addFields({ name: "Away", value: awayValue });
+    embed.addFields({ name: "Home", value: homeValue });
+    embed.addFields({ name: "\u200B", value: "\u200B" }); // Empty field for spacing
   });
 
-  strText += "`" + t.toString() + "`\n\n";
-  tableArray.push(strText);
-
-  return tableArray;
+  return [embed];
 };
 
 export default {

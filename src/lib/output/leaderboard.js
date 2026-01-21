@@ -1,5 +1,4 @@
-import { markdownTable } from "markdown-table";
-import { codeBlock } from "@discordjs/formatters";
+import { EmbedBuilder } from "discord.js";
 import { truncate, formatNumber } from "../../utils/formatting.js";
 import { calculateSeasonPoints } from "../scores/points.js";
 
@@ -86,39 +85,36 @@ export const printWeeklyLeaderboard = (
   expandedLayout,
   showScores,
 ) => {
-  const outputLines = ["**Weekly Leaderboard:**"];
-
   if (!scores || scores.length === 0) {
-    outputLines.push("NO SCORES CURRENTLY POSTED");
-    return outputLines;
+    return ["NO SCORES CURRENTLY POSTED"];
   }
 
-  const header = ["Rank", "User"];
-  const align = ["l", "l"];
+  const embed = new EmbedBuilder()
+    .setTitle("Weekly Leaderboard")
+    .setColor("#0099ff");
 
-  if (showScores) {
-    header.push("Score");
-    align.push("r");
-  }
-
-  if (expandedLayout) {
-    header.push("+/- Last");
-    align.push("r");
-    header.push("Posted");
-    align.push("l");
-  }
-
-  const body = [];
   const limit = numOfScoresToShow || scores.length;
 
-  scores.slice(0, limit).forEach((score, i) => {
-    body.push(createTableRow(i + 1, score, expandedLayout, showScores));
-  });
+  for (let i = 0; i < limit; i++) {
+    const score = scores[i];
+    let value = `**User:** ${truncate(score?.username?.replace(/`/g, ""), 11)}`;
 
-  const tableString = markdownTable([header, ...body], { align });
-  outputLines.push(...tableString.split("\n"));
+    if (showScores) {
+      value += `\n**Score:** ${formatNumber(score?.score)}`;
+    }
 
-  return outputLines;
+    if (expandedLayout) {
+      const diff = score?.diff || 0;
+      const str = formatNumber(diff);
+      const formatted = "(" + (diff > 0 ? "+" : "") + str + ")";
+      value += `\n**+/- Last:** ${formatted}`;
+      value += `\n**Posted:** ${score?.posted || ""}`;
+    }
+
+    embed.addFields({ name: `#${i + 1}`, value });
+  }
+
+  return [embed];
 };
 
 /**
@@ -126,25 +122,23 @@ export const printWeeklyLeaderboard = (
  * Returns an array of strings, each representing a line of the table output.
  */
 export const printTeamSummary = (teams, scores) => {
-  const outputLines = ["**Team Summary:**"];
-
   calculateTeamTotals(teams, scores);
 
   // Sort teams by total score descending
   teams.sort((a, b) => b.totalScore - a.totalScore);
 
-  const header = ["Rank", "Team", "Score"];
-  const align = ["l", "l", "r"];
-  const body = [];
-  
-  teams.forEach((team, i) => {
-    body.push(createTableRowTeam(i + 1, team));
-  });
+  const embed = new EmbedBuilder()
+    .setTitle("Team Summary")
+    .setColor("#0099ff");
 
-  const tableString = markdownTable([header, ...body], { align });
-  outputLines.push(...tableString.split("\n"));
+  for (let i = 0; i < teams.length; i++) {
+    const team = teams[i];
+    let value = `**Score:** ${formatNumber(team?.totalScore)}`;
 
-  return outputLines;
+    embed.addFields({ name: `#${i + 1} - ${truncate(team?.name, 15)}`, value });
+  }
+
+  return [embed];
 };
 
 /**
@@ -152,10 +146,12 @@ export const printTeamSummary = (teams, scores) => {
  * Returns an array of strings, each representing a line of the table output.
  */
 export const printTeamLeaderboard = (scores, teams, expandedLayout) => {
-  const outputLines = ["**Team Leaderboard**:"];
+  const embeds = [];
 
-  teams.forEach((team) => {
-    outputLines.push(`**Team:** ${team.name}`);
+  for (const team of teams) {
+    const embed = new EmbedBuilder()
+      .setTitle(`Team Leaderboard - ${team.name}`)
+      .setColor("#0099ff");
 
     const memberScores = team.members.map((member) => {
       const found = scores.find((x) => x.username === member.trim());
@@ -165,31 +161,30 @@ export const printTeamLeaderboard = (scores, teams, expandedLayout) => {
     // Sort by score descending
     memberScores.sort((a, b) => b.score - a.score);
 
-    const header = ["Rank", "User", "Score"];
-    const align = ["l", "l", "r"];
-    
-    if (expandedLayout) {
-      header.push("+/- Last");
-      align.push("r");
-      header.push("Posted");
-      align.push("l");
-    }
+    for (let i = 0; i < memberScores.length; i++) {
+      const score = memberScores[i];
+      let value = `**User:** ${truncate(score?.username?.replace(/`/g, ""), 11)}`;
+      value += `\n**Score:** ${formatNumber(score?.score)}`;
 
-    const body = [];
-    memberScores.forEach((score, i) => {
-      body.push(createTableRow(i + 1, score, expandedLayout, true));
-    });
+      if (expandedLayout) {
+        const diff = score?.diff || 0;
+        const str = formatNumber(diff);
+        const formatted = "(" + (diff > 0 ? "+" : "") + str + ")";
+        value += `\n**+/- Last:** ${formatted}`;
+        value += `\n**Posted:** ${score?.posted || ""}`;
+      }
+
+      embed.addFields({ name: `#${i + 1}`, value });
+    }
 
     // Total row
     const totalScore = memberScores.reduce((acc, curr) => acc + (curr.score || 0), 0);
-    body.push(["", "Total:", formatNumber(totalScore), ...(expandedLayout ? ["", ""] : [])]);
+    embed.addFields({ name: "Total:", value: formatNumber(totalScore) });
 
-    const tableString = markdownTable([header, ...body], { align });
-    outputLines.push(...tableString.split("\n"));
-    outputLines.push(""); // Add an empty line for spacing between teams
-  });
+    embeds.push(embed);
+  }
 
-  return outputLines;
+  return embeds;
 };
 
 /**
@@ -202,31 +197,28 @@ export const printCombinedLeaderboard = (
   showTeamDetails,
   expandedLayout,
 ) => {
-  let allContentLines = [];
+  let allEmbeds = [];
 
   if (!scores || scores.length === 0) {
-    allContentLines.push("**NO SCORES CURRENTLY POSTED**");
-    return allContentLines;
+    return [new EmbedBuilder().setTitle("NO SCORES CURRENTLY POSTED").setColor("#ff0000")];
   }
 
   if (teams && teams.length > 0) {
-    allContentLines.push(...printTeamSummary(teams, scores));
-    allContentLines.push(""); // Add a blank line for spacing
+    allEmbeds.push(...printTeamSummary(teams, scores));
 
     if (showTeamDetails) {
-      allContentLines.push(...printTeamLeaderboard(scores, teams, expandedLayout));
-      allContentLines.push(""); // Add a blank line for spacing
+      allEmbeds.push(...printTeamLeaderboard(scores, teams, expandedLayout));
     }
   }
 
-  allContentLines.push(...printWeeklyLeaderboard(
+  allEmbeds.push(...printWeeklyLeaderboard(
     scores,
     numOfScoresToShow,
     expandedLayout,
     true,
   ));
 
-  return splitPosts(allContentLines);
+  return allEmbeds;
 };
 
 /**
@@ -238,30 +230,31 @@ export const printSeasonLeaderboard = (
   expandedLayout,
 ) => {
   if (!weeks || weeks.length === 0) {
-    return ["**NO SEASON LEADERBOARD CURRENTLY POSTED**"];
+    return [new EmbedBuilder().setTitle("NO SEASON LEADERBOARD CURRENTLY POSTED").setColor("#ff0000")];
   }
 
-  const allContentLines = ["**Season Leaderboard:**"];
+  const allEmbeds = [];
   const leaderboard = calculateSeasonPoints(weeks);
   const limit = numOfScoresToShow || leaderboard.length;
 
-  const header = ["Rank", "User", "Points"];
-  const align = ["l", "l", "r"];
-  
-  if (expandedLayout) {
-    header.push("Score");
-    align.push("r");
+  const embed = new EmbedBuilder()
+    .setTitle("Season Leaderboard")
+    .setColor("#0099ff");
+
+  for (let i = 0; i < limit; i++) {
+    const player = leaderboard[i];
+    let value = `**Points:** ${formatNumber(player?.points)}`;
+
+    if (expandedLayout) {
+      value += `\n**Score:** ${formatNumber(player?.score)}`;
+    }
+
+    embed.addFields({ name: `#${i + 1} - ${truncate(player?.username, 15)}`, value });
   }
 
-  const body = [];
-  leaderboard.slice(0, limit).forEach((player, i) => {
-    body.push(createTableRowSeason(i + 1, player, expandedLayout));
-  });
+  allEmbeds.push(embed);
 
-  const tableString = markdownTable([header, ...body], { align });
-  allContentLines.push(...tableString.split("\n"));
-
-  return splitPosts(allContentLines);
+  return allEmbeds;
 };
 
 /**
