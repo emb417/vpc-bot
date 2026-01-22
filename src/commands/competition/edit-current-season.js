@@ -94,7 +94,7 @@ export class EditCurrentSeasonCommand extends Command {
       );
 
       return interaction.reply({
-        content: "Season has been updated.",
+        content: "Season Leaderboard pinned message updated successfully.",
         flags: 64,
       });
     } catch (e) {

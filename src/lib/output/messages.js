@@ -37,11 +37,11 @@ export const generateWeeklyBoilerPlateText = (
   bp += `**Table Name:** ${tableName ?? "N/A"}\n`;
   bp += `**Author Name:** ${authorName ?? "N/A"}\n`;
   bp += `**Version:** ${versionNumber ?? "N/A"}\n`;
-  bp += mode !== "default" ? `**Mode:** ${mode ?? "N/A"}\n` : "";
+  bp += mode && mode !== "default" ? `**Mode:** ${mode}\n` : `**Mode:** N/A\n`;
   bp += `**Table Url:** ${tableUrl ?? "N/A"}\n`;
   bp += `**Rom Url:** ${romUrl ?? "N/A"}\n`;
   bp += `**Rom Name:** ${romName ?? "N/A"}\n`;
-  bp += `**B2S Url:** ${b2sUrl ?? "N/A"}\n`;
+  bp += `**B2S Url:** ${b2sUrl && b2sUrl.trim() !== "" ? b2sUrl : "N/A"}\n`;
   bp += `**Notes:** ${notes ?? "N/A"}\n\n`;
 
   const leaderboardEmbed = printCombinedLeaderboard(
@@ -52,8 +52,11 @@ export const generateWeeklyBoilerPlateText = (
     false,
   )[0];
   if (leaderboardEmbed instanceof EmbedBuilder) {
-    bp += leaderboardEmbed.toJSON().description + "\n";
+    const desc = leaderboardEmbed.toJSON().description;
+    bp +=
+      (desc && desc.trim() !== "" ? desc : "_No scores yet this week._") + "\n";
   }
+  bp += "\n";
   bp += "**All Current & Historical Results:**\n";
   bp += `<${process.env.COMPETITIONS_URL}>`;
 
@@ -78,7 +81,7 @@ export const generateSeasonBoilerPlateText = (season, weeks) => {
   }
 
   bp +=
-    '** * Only the Top 40 positions will displayed due to Discord character limitations.  Please use the "/show-season-leaderboard" command for full results.**\n';
+    '** * Only the Top 40 positions will displayed.  Please use the "/show-season-leaderboard" command for full results.**\n';
 
   return bp;
 };
