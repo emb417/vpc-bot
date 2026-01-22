@@ -3,6 +3,7 @@ import { Command } from "@sapphire/framework";
 import logger from "../../utils/logging.js";
 import { printWeeklyLeaderboard } from "../../lib/output/leaderboard.js";
 import { findCurrentWeek } from "../../services/database.js";
+import { EmbedBuilder } from "discord.js";
 
 const COMPETITION_CHANNEL = process.env.COMPETITION_CHANNEL_NAME;
 
@@ -25,7 +26,6 @@ export class RunRaffleCommand extends Command {
   async chatInputRun(interaction) {
     const channel = interaction.channel;
 
-    // Check if in valid channel
     if (channel.name !== COMPETITION_CHANNEL) {
       return interaction.reply({
         content:
@@ -52,19 +52,41 @@ export class RunRaffleCommand extends Command {
       const winnerIndex = Math.floor(Math.random() * participantCount);
       const winner = currentWeek.scores[winnerIndex];
 
-      let raffleList = printWeeklyLeaderboard(
+      // Weekly leaderboard embeds
+      const leaderboardEmbeds = printWeeklyLeaderboard(
         currentWeek.scores,
         null,
         false,
-        false,
+        true,
       );
 
-      raffleList += "\n\n";
-      raffleList += "and the winner is......\n";
-      raffleList += `**(${winnerIndex + 1}) ${winner.username}**\n\n`;
+      // Winner announcement embed
+      const winnerEmbed = new EmbedBuilder()
+        .setTitle("🎉 Raffle Winner!")
+        .setColor("#00cc66")
+        .setDescription(
+          `and the winner is...\n\n**(#${winnerIndex + 1}) ${winner.username}**`,
+        );
 
-      return interaction.reply({
-        content: raffleList,
+      // Send leaderboard first
+      for (const embed of leaderboardEmbeds) {
+        if (!interaction.replied) {
+          await interaction.reply({
+            embeds: [embed],
+            flags: 64,
+          });
+        } else {
+          await interaction.followUp({
+            embeds: [embed],
+            flags: 64,
+          });
+        }
+      }
+
+      // Then send winner announcement
+      await interaction.followUp({
+        embeds: [winnerEmbed],
+        flags: 64,
       });
     } catch (e) {
       logger.error(e);

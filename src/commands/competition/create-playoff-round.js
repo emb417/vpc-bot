@@ -16,7 +16,7 @@ export class CreatePlayoffRoundCommand extends Command {
       ...options,
       name: "create-playoff-round",
       description: "Creates a new playoff round manually.",
-      preconditions: ["CompetitionAdminRole"],
+      preconditions: ["CompetitionChannel", "CompetitionAdminRole"],
     });
   }
 

@@ -2,7 +2,10 @@ import { Listener } from "@sapphire/framework";
 import { InteractionType } from "discord.js";
 import logger from "../../utils/logging.js";
 import { formatDateTime, formatNumber } from "../../utils/formatting.js";
-import { searchScorePipeline } from "../../lib/data/pipelines.js";
+import {
+  searchTableByVpsIdPipeline,
+  searchScorePipeline,
+} from "../../lib/data/pipelines.js";
 import { printHighScoreTables } from "../../lib/output/tables.js";
 import { getScoresByVpsId } from "../../lib/data/vpc.js";
 import { aggregate } from "../../services/database.js";
@@ -22,42 +25,52 @@ export class HighScoreSelectListener extends Listener {
 
     try {
       const selectedJson = JSON.parse(interaction.values[0]);
-      const pipeline = searchScorePipeline(selectedJson.vpsId, selectedJson.v);
-      const tables = await aggregate(pipeline, "tables");
 
-      if (tables.length === 0) {
-        throw new Error("No matches found.");
-      }
-
-      if (tables.length > 1) {
-        throw new Error("Multiple matches found.");
-      }
-
-      const data = tables[0];
-      selectedJson.tableName = data.tableName;
-      selectedJson.authorName = data.authorName;
-      selectedJson.versionNumber = data.versionNumber;
-      selectedJson.vpsId = data.vpsId;
-
+      // Parse the select menu value
+      const vpsId = selectedJson.vpsId;
+      const versionNumber = selectedJson.v;
       const newScore = selectedJson.s;
-      const existingScore = data?.score;
 
-      const authorsArray = selectedJson?.authorName?.split(", ");
-      const firstAuthor = authorsArray?.shift();
+      // 1. Fetch table info (to get author + table name)
+      const tablePipeline = searchTableByVpsIdPipeline(vpsId);
+      const tableResults = await aggregate(tablePipeline, "tables");
+      const table = tableResults[0];
+
+      const authorName =
+        table?.authors?.[0]?.authorName ??
+        table?.authorName ??
+        "Unknown Author";
+
+      const tableName = table.tableName;
+
+      // 2. Fetch score info (to get existing high score + previous user)
+      const scorePipeline = searchScorePipeline(vpsId, versionNumber);
+      const scoreResults = await aggregate(scorePipeline, "tables");
+      const scoreData = scoreResults[0];
+
+      const existingScore = scoreData?.score;
+      const existingUserId = scoreData?.user?.id ?? null;
+
+      // 3. Prepare selectedJson for saveHighScore
+      selectedJson.tableName = tableName;
+      selectedJson.authorName = authorName;
+      selectedJson.v = versionNumber;
+      selectedJson.vpsId = vpsId;
+
+      const authorsArray = authorName.split(", ");
+      const firstAuthor = authorsArray.shift();
 
       let existingUser = null;
-      if (data?.user?.id) {
-        existingUser = await this.container.client.users.fetch(data.user.id);
+      if (existingUserId) {
+        existingUser = await this.container.client.users.fetch(existingUserId);
       }
 
       const isNewTopScore = !existingScore || newScore > existingScore;
 
       // Save the high score
-      await saveHighScore(selectedJson, interaction);
+      await saveHighScore(selectedJson, interaction.user);
 
-      const user = this.container.client.users.cache.find(
-        (u) => u.username === selectedJson.u,
-      );
+      const user = interaction.user;
 
       const headerText = isNewTopScore
         ? "**NEW TOP HIGH SCORE POSTED:**"
@@ -67,7 +80,7 @@ export class HighScoreSelectListener extends Listener {
         content:
           `${headerText}\n` +
           `**User**: <@${user.id}>\n` +
-          `**Table:** ${selectedJson.tableName} (${firstAuthor}... ${selectedJson.versionNumber})\n` +
+          `**Table:** ${selectedJson.tableName} (${firstAuthor}... ${selectedJson.v})\n` +
           `**VPS Id:** ${selectedJson.vpsId}\n` +
           `**Score:** ${formatNumber(selectedJson.s)}\n` +
           `**Posted**: ${formatDateTime(new Date())}\n`,
@@ -75,16 +88,18 @@ export class HighScoreSelectListener extends Listener {
       });
 
       // Show high scores for the table
-      const tableScores = await getScoresByVpsId(selectedJson.vpsId);
+      const tables = await getScoresByVpsId(selectedJson.vpsId);
+
       const contentArray = printHighScoreTables(
         selectedJson.tableName,
-        tableScores || [],
+        tables || [],
         10,
         5,
       );
 
-      for (const post of contentArray) {
-        await interaction.channel.send(post);
+      // If you only expect embeds here:
+      for (const embed of contentArray) {
+        await interaction.channel.send({ embeds: [embed] });
       }
 
       // DM previous high score holder if someone beat their score
@@ -95,14 +110,20 @@ export class HighScoreSelectListener extends Listener {
       ) {
         const content =
           `**@${user?.username}** just topped your high score for:\n` +
-          `**${selectedJson?.tableName} (${firstAuthor}... ${selectedJson?.versionNumber})**\n` +
+          `**${selectedJson?.tableName} (${firstAuthor}... ${selectedJson?.v})**\n` +
           `**Score:** ${formatNumber(selectedJson?.s)}\n` +
-          `**Posted**: ${formatDateTime(new Date())}\n\n` +
+          `**Posted:** ${formatDateTime(new Date())}\n\n` +
           `Link: ${interaction?.message?.url}`;
 
-        logger.info("Sending DM to previous High Score holder.");
+        // Compact one-line log
+        logger.info(
+          `sendingDM event=highScoreBeaten user=${user?.username} table="${selectedJson?.tableName}" score=${selectedJson?.s} url=${interaction?.message?.url}`,
+        );
+
         await existingUser.send(content).catch(() => {
-          logger.info("Could not send DM to previous High Score holder.");
+          logger.error(
+            `dmFailed event=highScoreBeaten user=${existingUser?.username} table="${selectedJson?.tableName}"`,
+          );
         });
       }
     } catch (e) {

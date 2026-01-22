@@ -19,8 +19,15 @@ export class CrossPostHighScoreListener extends Listener {
   }
 
   async run(data) {
-    const { user, score, attachment, currentWeek, channelId, postSubscript, doPost } =
-      data;
+    const {
+      user,
+      score,
+      attachment,
+      currentWeek,
+      channelId,
+      postSubscript,
+      doPost,
+    } = data;
 
     const channel = this.container.client.channels.cache.get(channelId);
     if (!channel) {
@@ -42,20 +49,16 @@ export class CrossPostHighScoreListener extends Listener {
       const exists = await highScoreExists(highScoreData);
 
       if (!exists) {
-        // Mock interaction object for saveHighScore
-        const mockInteraction = {
-          user: user,
-          message: { url: "" },
-          options: { data: [] },
-        };
-
-        const newHighScore = await saveHighScore(highScoreData, mockInteraction);
+        const newHighScore = await saveHighScore(highScoreData, user);
 
         // Get the score ID from the saved document
         const highScoreId = newHighScore?.authors
           ?.find((a) => a.vpsId === highScoreData.vpsId)
-          ?.versions?.find((v) => v.versionNumber === highScoreData.versionNumber)
-          ?.scores?.reduce((a, b) => (a.score > b.score ? a : b))?._id?.toString();
+          ?.versions?.find(
+            (v) => v.versionNumber === highScoreData.versionNumber,
+          )
+          ?.scores?.reduce((a, b) => (a.score > b.score ? a : b))
+          ?._id?.toString();
 
         if (doPost) {
           const mode = highScoreData.mode ?? "default";
@@ -84,11 +87,21 @@ export class CrossPostHighScoreListener extends Listener {
             highScoreData.tableName,
             tableScores || [],
             10,
-            5
+            5,
           );
 
+          if (!Array.isArray(contentArray) || contentArray.length === 0) {
+            await channel.send("No results found for that VPS ID or table.");
+            return;
+          }
+
           for (const post of contentArray) {
-            await channel.send(post);
+            if (typeof post === "string") {
+              await channel.send({ content: post });
+            } else {
+              // assume post is an embed-like object
+              await channel.send({ embeds: [post] });
+            }
           }
         }
       }

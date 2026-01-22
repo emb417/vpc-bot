@@ -1,6 +1,5 @@
 import "dotenv/config";
 import { Command } from "@sapphire/framework";
-import Table from "easy-table";
 import logger from "../../utils/logging.js";
 import { findOne, updateOne } from "../../services/database.js";
 
@@ -79,14 +78,13 @@ export class CreateTeamCommand extends Command {
       }
 
       // Create text table for display
-      const t = new Table();
-      members.forEach((member) => {
-        t.cell(teamName, member);
-        t.newRow();
-      });
+      const header = teamName;
+      const rows = members.map((m) => `| ${m} |`).join("\n");
+
+      const table = `| ${header} |\n${rows}`;
 
       return interaction.reply({
-        content: `Team created successfully. \n\n${t.toString()}`,
+        content: `Team created successfully.\n\n${table}`,
         flags: 64,
       });
     } catch (e) {

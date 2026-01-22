@@ -8,7 +8,7 @@ import { SapphirePinoLogger } from "./utils/sapphire-logger.js";
 // Register preconditions
 import "./preconditions/CompetitionChannel.js";
 import "./preconditions/CompetitionAdminRole.js";
-import "./preconditions/HighScoreChannel.js";
+import "./preconditions/HighScoresChannel.js";
 
 const client = new SapphireClient({
   intents: [

@@ -20,11 +20,12 @@ export class PostHighScoreCommand extends Command {
       name: "post-high-score",
       aliases: ["high"],
       description: "Post a high score.",
-      preconditions: ["HighScoreChannel"],
+      preconditions: ["HighScoresChannel"],
     });
   }
 
   registerApplicationCommands(registry) {
+    // keep it registered so users see it, but it won't actually post
     registry.registerChatInputCommand((builder) =>
       builder
         .setName(this.name)
@@ -44,6 +45,19 @@ export class PostHighScoreCommand extends Command {
     );
   }
 
+  async chatInputRun(interaction) {
+    const score = interaction.options.getString("score") ?? "<score>";
+    const tableSearchTerm =
+      interaction.options.getString("tablesearchterm") ?? "<table>";
+
+    return interaction.reply({
+      content:
+        "The post-high-score slash command cannot be used because images are required.\n" +
+        `Please attach an image and use:\n\`!high ${score} ${tableSearchTerm}\``,
+      flags: 64,
+    });
+  }
+
   async messageRun(message, args) {
     const score = await args.pick("string").catch(() => null);
     const tableSearchTerm = await args.rest("string").catch(() => null);
@@ -60,19 +74,6 @@ export class PostHighScoreCommand extends Command {
       score,
       tableSearchTerm,
       true,
-    );
-  }
-
-  async chatInputRun(interaction) {
-    const score = interaction.options.getString("score");
-    const tableSearchTerm = interaction.options.getString("tablesearchterm");
-
-    return this.handleHighScore(
-      interaction,
-      interaction.user,
-      score,
-      tableSearchTerm,
-      false,
     );
   }
 
@@ -99,15 +100,19 @@ export class PostHighScoreCommand extends Command {
 
       if (tables.length > 0 && tables.length <= 10) {
         const options = tables.map((item) => {
-          const authorsArray = item?.authorName?.split(", ");
-          const firstAuthor = authorsArray?.shift();
+          const authorName =
+            item?.authors?.[0]?.authorName ??
+            item?.authorName ??
+            "Unknown Author";
+
+          const authorsArray = authorName.split(", ");
+          const firstAuthor = authorsArray.shift();
 
           return {
             label: `${item.tableName} (${firstAuthor}... ${item.versionNumber})`,
             value: JSON.stringify({
               vpsId: item.vpsId,
               v: item.versionNumber,
-              u: user.username,
               s: scoreValue,
             }),
           };
@@ -125,7 +130,9 @@ export class PostHighScoreCommand extends Command {
           if (!attachment) {
             const reply = await context.reply({
               content:
-                "No photo attached. Please attach a photo with your high score. This message will be deleted in 10 seconds.",
+                "No photo attached. Please attach a photo with your high score.\n" +
+                `\`!high ${scoreValue} ${tableSearchTerm}\`\n` +
+                "This message will be deleted in 10 seconds.",
             });
             await context.delete().catch(() => {});
             setTimeout(() => reply.delete().catch(() => {}), 10000);
@@ -175,25 +182,33 @@ export class PostHighScoreCommand extends Command {
   }
 }
 
-// Export utility functions for use by events
 export const highScoreExists = async (data) => {
-  const pipeline = searchScoreByVpsIdUsernameScorePipeline(data);
+  const pipeline = searchScoreByVpsIdUsernameScorePipeline({
+    vpsId: data.vpsId,
+    u: data.u || data.username,
+    s: data.s || data.score,
+  });
   const tables = await aggregate(pipeline, "tables");
   return tables.length > 0;
 };
 
-export const saveHighScore = async (data, interaction) => {
-  const newHighScore = await findOneAndUpdate(
+export const saveHighScore = async (data, user) => {
+  const userObj = user || data.user;
+  const username = userObj?.username || data.username;
+  const versionNumber = data.versionNumber || data.v;
+  const scoreValue = data.score || data.s;
+
+  return findOneAndUpdate(
     { tableName: data.tableName },
     {
       $push: {
         "authors.$[a].versions.$[v].scores": {
           _id: generateObjectId(),
-          user: interaction.user,
-          username: data.u.replace("`", ""),
-          score: data.s,
+          user: userObj,
+          username: username,
+          score: scoreValue,
           mode: data.mode,
-          postUrl: interaction.message?.url ?? "",
+          postUrl: data.postUrl ?? "",
           createdAt: formatDateTime(new Date()),
         },
       },
@@ -202,12 +217,11 @@ export const saveHighScore = async (data, interaction) => {
       returnDocument: "after",
       arrayFilters: [
         { "a.vpsId": data.vpsId },
-        { "v.versionNumber": data.versionNumber },
+        { "v.versionNumber": versionNumber },
       ],
     },
     "tables",
   );
-  return newHighScore;
 };
 
 export const updateHighScore = async (data, postUrl) => {

@@ -61,10 +61,12 @@ export class PostScoreCommand extends Command {
   }
 
   async chatInputRun(interaction) {
+    const score = interaction.options.getString("score") ?? "<score>";
     // Slash command is disabled - instruct to use message command
     return interaction.reply({
       content:
-        "The post-score slash command has been turned off. Please use the following format to post your score:\n`!score 1234567 (an image is REQUIRED as an attachment)`",
+        "The post-score slash command cannot be used because images are required.\n" +
+        `Please attach an image and use:\n\`!score ${score}\``,
       flags: 64,
     });
   }
@@ -90,7 +92,9 @@ export class PostScoreCommand extends Command {
       if (!attachment) {
         const reply = await message.reply({
           content:
-            "No photo attached. Please attach a photo with your high score. This message will be deleted in 10 seconds.",
+            "No photo attached. Please attach a photo with your score.\n" +
+            `\`!score ${validation.value}\`\n` +
+            "This message will be deleted in 10 seconds.",
         });
         await message.delete().catch(() => {});
         setTimeout(() => reply.delete().catch(() => {}), 10000);
@@ -132,10 +136,13 @@ export class PostScoreCommand extends Command {
         `**User:** <@${user.id}>\n` +
         `**Table:** ${currentWeek.table}\n` +
         (result.mode !== "default" ? `**Mode:** ${result.mode}\n` : "") +
-        `**Score:** ${formatNumber(result.scoreAsInt)} (${result.scoreDiff >= 0 ? "+" : ""} ${formatNumber(result.scoreDiff)})\n` +
+        `**Score:** ${formatNumber(result.scoreAsInt)} (${result.scoreDiff >= 0 ? "+" : ""}${formatNumber(result.scoreDiff)})\n` +
         `**Rank:** ${result.currentRank} (${result.rankChange >= 0 ? "+" + result.rankChange : result.rankChange})`;
 
-      logger.info(retVal);
+      // Compact one-line log
+      logger.info(
+        `weeklyScorePosted user=${user.username} table="${currentWeek.table}" mode=${result.mode} score=${result.scoreAsInt} scoreDiff=${result.scoreDiff} rank=${result.currentRank} rankChange=${result.rankChange}`,
+      );
 
       // Build action row with buttons
       const showPlayoffButton = await findCurrentPlayoff(channel.name);
@@ -174,7 +181,6 @@ export class PostScoreCommand extends Command {
         currentWeek,
         channelId: process.env.HIGH_SCORES_CHANNEL_ID,
         postSubscript: `copied from <#${channel.id}>`,
-        postDescription: "just posted a score for",
         doPost: shouldPost,
       });
 

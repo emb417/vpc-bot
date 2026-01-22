@@ -12,7 +12,7 @@ export class EditCurrentSeasonCommand extends Command {
       ...options,
       name: "edit-current-season",
       description: "Edit the current season.",
-      preconditions: ["CompetitionAdminRole"],
+      preconditions: ["CompetitionChannel", "CompetitionAdminRole"],
     });
   }
 

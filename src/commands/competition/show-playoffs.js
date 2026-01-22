@@ -17,6 +17,7 @@ export class ShowPlayoffsCommand extends Command {
       ...options,
       name: "show-playoffs",
       description: "Show playoffs for the channel.",
+      preconditions: ["CompetitionChannel"],
     });
   }
 
@@ -75,13 +76,19 @@ export class ShowPlayoffsCommand extends Command {
       currentPlayoffRound,
     );
 
-    const contentArray = printPlayoffRoundMatchups(games);
+    const embeds = printPlayoffRoundMatchups(games);
 
-    for (const post of contentArray) {
+    for (const embed of embeds) {
       if (!interaction.replied) {
-        await interaction.reply({ content: post, flags: 64 });
+        await interaction.reply({
+          embeds: [embed],
+          flags: 64,
+        });
       } else {
-        await interaction.followUp({ content: post, flags: 64 });
+        await interaction.followUp({
+          embeds: [embed],
+          flags: 64,
+        });
       }
     }
   }
@@ -106,13 +113,19 @@ export const getPlayoffRoundMatchups = async (interaction, channel) => {
     currentPlayoffRound,
   );
 
-  const contentArray = printPlayoffRoundMatchups(games);
+  const embeds = printPlayoffRoundMatchups(games);
 
-  for (const post of contentArray) {
+  for (const embed of embeds) {
     if (!interaction.replied) {
-      await interaction.reply({ content: post, flags: 64 });
+      await interaction.reply({
+        embeds: [embed],
+        flags: 64,
+      });
     } else {
-      await interaction.followUp({ content: post, flags: 64 });
+      await interaction.followUp({
+        embeds: [embed],
+        flags: 64,
+      });
     }
   }
 };

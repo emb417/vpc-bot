@@ -16,7 +16,7 @@ export class CreatePlayoffCommand extends Command {
       ...options,
       name: "create-playoff",
       description: "Creates new playoff bracket.",
-      preconditions: ["CompetitionAdminRole"],
+      preconditions: ["CompetitionChannel", "CompetitionAdminRole"],
     });
   }
 

@@ -15,7 +15,7 @@ export class CreateHighScoreTableCommand extends Command {
       ...options,
       name: "create-high-score-table",
       description: "Creates new high score table.",
-      preconditions: ["CompetitionAdminRole"],
+      preconditions: ["CompetitionAdminRole", "HighScoresChannel"],
     });
   }
 

@@ -47,19 +47,19 @@ export class ShowLeaderboardCommand extends Command {
   }
 
   async showLeaderboard(scores, teams, interaction) {
-    const contentArray = printCombinedLeaderboard(
-      scores,
-      null,
-      teams,
-      false,
-      false,
-    );
+    const embeds = printCombinedLeaderboard(scores, null, teams, false, false);
 
-    for (const post of contentArray) {
+    for (const embed of embeds) {
       if (!interaction.replied) {
-        await interaction.reply({ content: post, flags: 64 });
+        await interaction.reply({
+          embeds: [embed],
+          flags: 64,
+        });
       } else {
-        await interaction.followUp({ content: post, flags: 64 });
+        await interaction.followUp({
+          embeds: [embed],
+          flags: 64,
+        });
       }
     }
   }
@@ -75,19 +75,25 @@ export const getLeaderboard = async (interaction, channel) => {
     });
   }
 
-  const contentArray = printCombinedLeaderboard(
+  const embeds = printCombinedLeaderboard(
     currentWeek.scores || [],
-    currentWeek.teams || [],
     null,
+    currentWeek.teams || [],
     false,
     false,
   );
 
-  for (const post of contentArray) {
+  for (const embed of embeds) {
     if (!interaction.replied) {
-      await interaction.reply({ content: post, flags: 64 });
+      await interaction.reply({
+        embeds: [embed],
+        flags: 64,
+      });
     } else {
-      await interaction.followUp({ content: post, flags: 64 });
+      await interaction.followUp({
+        embeds: [embed],
+        flags: 64,
+      });
     }
   }
 };

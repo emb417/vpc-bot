@@ -1,6 +1,9 @@
 import "dotenv/config";
 import { EmbedBuilder } from "discord.js";
-import { printCombinedLeaderboard, printSeasonLeaderboard } from "./leaderboard.js";
+import {
+  printCombinedLeaderboard,
+  printSeasonLeaderboard,
+} from "./leaderboard.js";
 
 /**
  * Generate weekly boilerplate text for the pinned competition message.
@@ -21,7 +24,7 @@ export const generateWeeklyBoilerPlateText = (
   notes,
   currentSeasonWeekNumber,
   b2sUrl,
-  mode
+  mode,
 ) => {
   let bp = "\n\n";
 
@@ -41,16 +44,18 @@ export const generateWeeklyBoilerPlateText = (
   bp += `**B2S Url:** ${b2sUrl ?? "N/A"}\n`;
   bp += `**Notes:** ${notes ?? "N/A"}\n\n`;
 
-  const leaderboardEmbed = printCombinedLeaderboard(scores, 20, teams, false, false)[0];
+  const leaderboardEmbed = printCombinedLeaderboard(
+    scores,
+    40,
+    teams,
+    false,
+    false,
+  )[0];
   if (leaderboardEmbed instanceof EmbedBuilder) {
     bp += leaderboardEmbed.toJSON().description + "\n";
   }
-
-  bp +=
-    '** * Only the Top 20 scores will displayed due to Discord character limitations.  Please use the "/show-leaderboard" command for full results.**\n';
-  bp += "\n";
   bp += "**All Current & Historical Results:**\n";
-  bp += "https://www.iscored.info/?mode=public&user=ED209 \n";
+  bp += `<${process.env.COMPETITIONS_URL}>`;
 
   return bp;
 };
@@ -85,13 +90,13 @@ export const editWeeklyCompetitionCornerMessage = async (
   scores,
   client,
   week,
-  teams
+  teams,
 ) => {
   const channel = await client.channels.fetch(
-    process.env.COMPETITION_CHANNEL_ID
+    process.env.COMPETITION_CHANNEL_ID,
   );
   const message = await channel.messages.fetch(
-    process.env.COMPETITION_WEEKLY_POST_ID
+    process.env.COMPETITION_WEEKLY_POST_ID,
   );
 
   const leaderboardEmbeds = printCombinedLeaderboard(
@@ -99,7 +104,7 @@ export const editWeeklyCompetitionCornerMessage = async (
     20,
     teams,
     false,
-    false
+    false,
   );
 
   if (leaderboardEmbeds.length > 0) {
@@ -121,7 +126,7 @@ export const editWeeklyCompetitionCornerMessage = async (
         week.notes,
         week.currentSeasonWeekNumber,
         week.b2sUrl,
-        week.mode
+        week.mode,
       ),
       embeds: [embed],
     });
@@ -143,7 +148,7 @@ export const editWeeklyCompetitionCornerMessage = async (
         week.notes,
         week.currentSeasonWeekNumber,
         week.b2sUrl,
-        week.mode
+        week.mode,
       ),
     });
   }
@@ -154,15 +159,19 @@ export const editWeeklyCompetitionCornerMessage = async (
 /**
  * Edit the season competition corner message.
  */
-export const editSeasonCompetitionCornerMessage = async (season, weeks, client) => {
+export const editSeasonCompetitionCornerMessage = async (
+  season,
+  weeks,
+  client,
+) => {
   const channel = await client.channels.fetch(
-    process.env.COMPETITION_CHANNEL_ID
+    process.env.COMPETITION_CHANNEL_ID,
   );
   const message = await channel.messages.fetch(
-    process.env.COMPETITION_SEASON_POST_ID
+    process.env.COMPETITION_SEASON_POST_ID,
   );
 
-  const leaderboardEmbeds = printSeasonLeaderboard(season, weeks, false);
+  const leaderboardEmbeds = printSeasonLeaderboard(weeks, 40, false);
 
   if (leaderboardEmbeds.length > 0) {
     const embed = leaderboardEmbeds[0];

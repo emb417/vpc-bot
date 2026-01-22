@@ -40,16 +40,25 @@ export class ShowTeamsCommand extends Command {
         });
       }
 
-      const content = printTeamLeaderboard(
+      const embeds = printTeamLeaderboard(
         currentWeek.scores || [],
         currentWeek.teams,
         false,
       );
 
-      return interaction.reply({
-        content,
-        flags: 64,
-      });
+      for (const embed of embeds) {
+        if (!interaction.replied) {
+          await interaction.reply({
+            embeds: [embed],
+            flags: 64,
+          });
+        } else {
+          await interaction.followUp({
+            embeds: [embed],
+            flags: 64,
+          });
+        }
+      }
     } catch (e) {
       logger.error(e);
       return interaction.reply({

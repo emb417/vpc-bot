@@ -9,7 +9,7 @@ export class RemoveHighScoreCommand extends Command {
       ...options,
       name: "remove-high-score",
       description: "Remove high score from a high score table.",
-      preconditions: ["CompetitionAdminRole"],
+      preconditions: ["CompetitionAdminRole", "HighScoresChannel"],
     });
   }
 

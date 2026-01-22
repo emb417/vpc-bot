@@ -12,7 +12,7 @@ export class CreateSeasonCommand extends Command {
       ...options,
       name: "create-season",
       description: "Creates new season.",
-      preconditions: ["CompetitionAdminRole"],
+      preconditions: ["CompetitionChannel", "CompetitionAdminRole"],
     });
   }
 

@@ -1,6 +1,5 @@
 import "dotenv/config";
 import { Command } from "@sapphire/framework";
-import dot from "mongo-dot-notation";
 import logger from "../../utils/logging.js";
 import { editWeeklyCompetitionCornerMessage } from "../../lib/output/messages.js";
 import { findOneAndUpdate } from "../../services/database.js";
@@ -122,10 +121,9 @@ export class EditCurrentWeekCommand extends Command {
         });
       }
 
-      const set = dot.flatten(updatedWeek);
       const week = await findOneAndUpdate(
         { channelName: channel.name, isArchived: false },
-        set,
+        { $set: updatedWeek },
         { returnDocument: "after" },
         "weeks",
       );

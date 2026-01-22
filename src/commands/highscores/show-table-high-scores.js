@@ -13,6 +13,7 @@ export class ShowTableHighScoresCommand extends Command {
       ...options,
       name: "show-table-high-scores",
       description: "Search table high scores.",
+      preconditions: ["HighScoresChannel"],
     });
   }
 
@@ -43,16 +44,9 @@ export class ShowTableHighScoresCommand extends Command {
     const isEphemeral = interaction.options.getBoolean("isephemeral") ?? true;
 
     try {
-      let tables = null;
-
-      if (tableSearchTerm) {
-        tables =
-          await getScoresByTableAndAuthorUsingFuzzyTableSearch(tableSearchTerm);
-      }
-
-      if (vpsId) {
-        tables = await getScoresByVpsId(vpsId);
-      }
+      const tables = vpsId
+        ? await getScoresByVpsId(vpsId)
+        : await getScoresByTableAndAuthorUsingFuzzyTableSearch(tableSearchTerm);
 
       if (!tableSearchTerm && !vpsId) {
         return interaction.reply({
@@ -70,7 +64,7 @@ export class ShowTableHighScoresCommand extends Command {
     } catch (e) {
       logger.error(e);
       return interaction.reply({
-        content: e.message,
+        content: e.message ?? "An unexpected error occurred.",
         flags: 64,
       });
     }
@@ -79,13 +73,26 @@ export class ShowTableHighScoresCommand extends Command {
   async showHighScoreTables(tables, searchTerm, interaction, isEphemeral) {
     const contentArray = printHighScoreTables(searchTerm, tables || [], 10, 5);
 
-    for (const post of contentArray) {
+    for (let post of contentArray) {
+      // If post is a string, send as content
+      if (typeof post === "string") {
+        if (!isEphemeral && interaction.channel) {
+          await interaction.channel.send({ content: post });
+        } else if (!interaction.replied) {
+          await interaction.reply({ content: post, flags: 64 });
+        } else {
+          await interaction.followUp({ content: post, flags: 64 });
+        }
+        continue;
+      }
+
+      // If post is an embed, send as embed
       if (!isEphemeral && interaction.channel) {
-        await interaction.channel.send(post);
+        await interaction.channel.send({ embeds: [post] });
       } else if (!interaction.replied) {
-        await interaction.reply({ content: post, flags: 64 });
+        await interaction.reply({ embeds: [post], flags: 64 });
       } else {
-        await interaction.followUp({ content: post, flags: 64 });
+        await interaction.followUp({ embeds: [post], flags: 64 });
       }
     }
   }

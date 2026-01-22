@@ -12,6 +12,7 @@ export class ShowSeasonLeaderboardCommand extends Command {
       ...options,
       name: "show-season-leaderboard",
       description: "Show season leaderboard for the Competition Corner.",
+      preconditions: ["CompetitionChannel"],
     });
   }
 
@@ -24,7 +25,6 @@ export class ShowSeasonLeaderboardCommand extends Command {
   async chatInputRun(interaction) {
     const channel = interaction.channel;
 
-    // Check if in valid channel
     if (channel.name !== COMPETITION_CHANNEL) {
       return interaction.reply({
         content:
@@ -45,6 +45,7 @@ export class ShowSeasonLeaderboardCommand extends Command {
       if (!currentSeason) {
         return interaction.reply({
           content: "No season found.",
+          flags: 64,
         });
       }
 
@@ -69,13 +70,19 @@ export class ShowSeasonLeaderboardCommand extends Command {
       "weeks",
     );
 
-    const contentArray = printSeasonLeaderboard(weeks, null, false);
+    const embeds = printSeasonLeaderboard(weeks, null, false);
 
-    for (const post of contentArray) {
+    for (const embed of embeds) {
       if (!interaction.replied) {
-        await interaction.reply({ content: post, flags: 64 });
+        await interaction.reply({
+          embeds: [embed],
+          flags: 64,
+        });
       } else {
-        await interaction.followUp({ content: post, flags: 64 });
+        await interaction.followUp({
+          embeds: [embed],
+          flags: 64,
+        });
       }
     }
   }
@@ -108,13 +115,19 @@ export const getSeasonLeaderboard = async (channel, interaction) => {
     "weeks",
   );
 
-  const contentArray = printSeasonLeaderboard(weeks, null, false);
+  const embeds = printSeasonLeaderboard(weeks, null, false);
 
-  for (const post of contentArray) {
+  for (const embed of embeds) {
     if (!interaction.replied) {
-      await interaction.reply({ content: post, flags: 64 });
+      await interaction.reply({
+        embeds: [embed],
+        flags: 64,
+      });
     } else {
-      await interaction.followUp({ content: post, flags: 64 });
+      await interaction.followUp({
+        embeds: [embed],
+        flags: 64,
+      });
     }
   }
 };

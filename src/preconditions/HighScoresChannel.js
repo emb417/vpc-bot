@@ -2,9 +2,9 @@ import "dotenv/config";
 import { Precondition } from "@sapphire/framework";
 import logger from "../utils/logging.js";
 
-const COMPETITION_CHANNEL_ID = process.env.COMPETITION_CHANNEL_ID;
+const HIGH_SCORES_CHANNEL_ID = process.env.HIGH_SCORES_CHANNEL_ID;
 
-export class CompetitionChannelPrecondition extends Precondition {
+export class HighScoresChannelPrecondition extends Precondition {
   chatInputRun(interaction) {
     return this.checkChannel(interaction.channelId);
   }
@@ -14,10 +14,10 @@ export class CompetitionChannelPrecondition extends Precondition {
   }
 
   checkChannel(channelId) {
-    return channelId === COMPETITION_CHANNEL_ID
+    return channelId === HIGH_SCORES_CHANNEL_ID
       ? this.ok()
       : this.error({
-          message: "This command can only be used in the competition channel.",
+          message: "This command can only be used in the high scores channel.",
         });
   }
 }

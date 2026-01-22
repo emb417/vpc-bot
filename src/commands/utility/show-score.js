@@ -1,16 +1,17 @@
 import "dotenv/config";
 import { Command } from "@sapphire/framework";
-import Table from "easy-table";
 import logger from "../../utils/logging.js";
+import { EmbedBuilder } from "discord.js";
 import { createTableRow } from "../../lib/output/leaderboard.js";
 import { findCurrentWeek } from "../../services/database.js";
+import { AsciiTable3, AlignmentEnum } from "ascii-table3";
 
 export class ShowScoreCommand extends Command {
   constructor(context, options) {
     super(context, {
       ...options,
       name: "show-score",
-      description: "Show current score for user.",
+      description: "Show your current score and rank.",
       preconditions: ["CompetitionChannel"],
     });
   }
@@ -48,11 +49,33 @@ export class ShowScoreCommand extends Command {
         currentWeek.scores.findIndex((x) => x.username === username) + 1;
       const numOfScores = currentWeek.scores.length;
 
-      const t = new Table();
-      createTableRow(`${rank} of ${numOfScores}`, t, score, true, true);
+      // Build a single-row ASCII table
+      const headers = ["Rank", "User", "Score", "+/-", "Posted"];
+      const row = createTableRow(rank, score, true, true);
+
+      const table = new AsciiTable3()
+        .setHeading(...headers)
+        .setStyle("compact")
+        .setCellMargin(0);
+
+      table.setAlign(1, AlignmentEnum.RIGHT);
+      table.setAlign(2, AlignmentEnum.LEFT);
+      table.setAlign(3, AlignmentEnum.RIGHT);
+      table.setWidths([5, 12, 12, 8, 16]);
+
+      table.addRowMatrix([row]);
+
+      const embed = new EmbedBuilder()
+        .setTitle(`📊 Score for ${username}`)
+        .setColor("#0099ff")
+        .setDescription("```\n" + table.toString() + "\n```")
+        .setFooter({
+          text: `Rank ${rank} of ${numOfScores}`,
+          iconURL: score.userAvatarUrl || null,
+        });
 
       return interaction.reply({
-        content: "`" + t.toString() + "`",
+        embeds: [embed],
         flags: 64,
       });
     } catch (e) {

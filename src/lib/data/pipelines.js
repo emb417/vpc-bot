@@ -26,6 +26,14 @@ export const searchPipeline = (searchTerm) => [
 ];
 
 /**
+ * Search pipeline for finding tables by VPS ID.
+ */
+export const searchTableByVpsIdPipeline = (vpsId) => [
+  { $match: { "authors.vpsId": vpsId } },
+  { $project: { tableName: 1, authors: 1 } },
+];
+
+/**
  * Search pipeline for finding a specific score by VPS ID and version.
  */
 export const searchScorePipeline = (vpsId, versionNumber) => [
