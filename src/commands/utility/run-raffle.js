@@ -65,7 +65,7 @@ export class RunRaffleCommand extends Command {
         .setTitle("🎉 Raffle Winner!")
         .setColor("#00cc66")
         .setDescription(
-          `and the winner is...\n\n**(#${winnerIndex + 1}) ${winner.username}**`,
+          `and the winner is...\n\n**#${winnerIndex + 1} ${winner.username}**`,
         );
 
       // Send leaderboard first
