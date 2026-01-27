@@ -309,7 +309,7 @@ docker-compose -f docker-compose-local.yml logs --tail=50 vpc-bot
 
 ## Project Structure
 
-```
+```bash
 vpc-bot/
 ├── commands/       # Slash and message commands
 ├── events/         # Discord event handlers

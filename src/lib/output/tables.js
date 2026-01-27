@@ -48,7 +48,9 @@ export const printHighScoreTables = (
     const authorsLine = truncate(authorsRaw, 40);
 
     // --- VERSION ON ITS OWN LINE ---
-    const versionLine = table.versionNumber ? `v${table.versionNumber}` : "";
+    const vpsIdVersionLine = table.versionNumber
+      ? `v${table.versionNumber} - vpsId: ${table.vpsId}`
+      : "";
 
     let tableBlock = "";
 
@@ -80,7 +82,7 @@ export const printHighScoreTables = (
     // --- BUILD SECTION FOR THIS TABLE ---
     buffer += `**${shortTitle}**\n`;
     if (authorsLine) buffer += `${authorsLine}\n`;
-    if (versionLine) buffer += `${versionLine}\n`;
+    if (vpsIdVersionLine) buffer += `${vpsIdVersionLine}\n`;
     if (tableBlock) buffer += `${tableBlock}\n\n`;
 
     count++;
