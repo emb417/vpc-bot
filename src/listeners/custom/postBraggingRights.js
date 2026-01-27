@@ -33,11 +33,14 @@ export class PostBraggingRightsListener extends Listener {
         content:
           `**Week:** ${currentWeek.weekNumber}\n` +
           `**End Date:** ${currentWeek.periodEnd}\n` +
-          `**User: ${winner.username}**\n` +
+          (winner.userId
+            ? `**User: <@${winner.userId}>**\n`
+            : `**User: ${winner.username}**\n`) +
           `**Score:** ${formatNumber(winner.score)}\n` +
           `**Table:** ${currentWeek.table}\n` +
           `**Table Link:** ${currentWeek.tableUrl}\n` +
-          `**VPS Id:** ${currentWeek.vpsId}`,
+          `**VPS Id:** ${currentWeek.vpsId}\n` +
+          `**Version Number:** v${currentWeek.versionNumber}`,
       });
     } catch (e) {
       logger.error("Error in postBraggingRights:", e);

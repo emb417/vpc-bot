@@ -10,7 +10,9 @@ import { assignPoints } from "./points.js";
  */
 export const getRankChange = (username, previousScores, newScores) => {
   const newIndex = newScores.findIndex((x) => x.username === username);
-  const previousIndex = previousScores.findIndex((x) => x.username === username);
+  const previousIndex = previousScores.findIndex(
+    (x) => x.username === username,
+  );
 
   if (previousIndex === -1) {
     // New player - their rank change is positions from bottom
@@ -66,6 +68,7 @@ export const processScore = (user, scoreValue, currentWeek) => {
     existing.userAvatarUrl = avatarUrl;
   } else {
     scores.push({
+      userId: user.id,
       username: username.replace("`", ""),
       userAvatarUrl: avatarUrl,
       score: scoreAsInt,
