@@ -136,7 +136,7 @@ export const printWeeklyLeaderboard = (
 
   if (scores[0]?.userAvatarUrl) {
     embed.setFooter({
-      text: `${scores[0].username} is winning with ${formatNumber(scores[0].score)}!`,
+      text: `${scores[0].username} is 🥇 with ${formatNumber(scores[0].score)}! 🔥🔥`,
       iconURL: scores[0].userAvatarUrl,
     });
   }
