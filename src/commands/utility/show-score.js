@@ -1,10 +1,12 @@
 import "dotenv/config";
 import { Command } from "@sapphire/framework";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 import logger from "../../utils/logging.js";
-import { EmbedBuilder } from "discord.js";
-import { createTableRow } from "../../lib/output/leaderboard.js";
-import { findCurrentWeek } from "../../services/database.js";
-import { AsciiTable3, AlignmentEnum } from "ascii-table3";
+import {
+  findCurrentWeek,
+  findCurrentPlayoff,
+} from "../../services/database.js";
+import { formatNumber } from "../../utils/formatting.js";
 
 export class ShowScoreCommand extends Command {
   constructor(context, options) {
@@ -49,33 +51,36 @@ export class ShowScoreCommand extends Command {
         currentWeek.scores.findIndex((x) => x.username === username) + 1;
       const numOfScores = currentWeek.scores.length;
 
-      // Build a single-row ASCII table
-      const headers = ["Rank", "User", "Score", "+/-", "Posted"];
-      const row = createTableRow(rank, score, true, true);
+      const replyMessage =
+        `📊 **Score Summary**\n\n` +
+        `**Week:** ${currentWeek.weekNumber}\n` +
+        `**User:** <@${interaction.user.id}>\n` +
+        `**Table:** ${currentWeek.table}\n` +
+        `**Mode:** ${score.mode}\n` +
+        `**Score:** ${formatNumber(score.score)} ` +
+        `(${score.diff >= 0 ? "+" : ""}${formatNumber(score.diff)})\n` +
+        `**Posted:** ${score.posted}\n`;
 
-      const table = new AsciiTable3()
-        .setHeading(...headers)
-        .setStyle("compact")
-        .setCellMargin(0);
+      const showPlayoffButton = await findCurrentPlayoff(channel.name);
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId("showLeaderboard")
+          .setLabel("Show Leaderboard")
+          .setStyle(ButtonStyle.Primary),
+      );
 
-      table.setAlign(1, AlignmentEnum.RIGHT);
-      table.setAlign(2, AlignmentEnum.LEFT);
-      table.setAlign(3, AlignmentEnum.RIGHT);
-      table.setWidths([5, 12, 12, 8, 16]);
-
-      table.addRowMatrix([row]);
-
-      const embed = new EmbedBuilder()
-        .setTitle(`📊 Score for ${username}`)
-        .setColor("#0099ff")
-        .setDescription("```\n" + table.toString() + "\n```")
-        .setFooter({
-          text: `Rank ${rank} of ${numOfScores}`,
-          iconURL: score.userAvatarUrl || null,
-        });
+      if (showPlayoffButton) {
+        row.addComponents(
+          new ButtonBuilder()
+            .setCustomId("showPlayoffs")
+            .setLabel("Show Playoffs")
+            .setStyle(ButtonStyle.Primary),
+        );
+      }
 
       return interaction.reply({
-        embeds: [embed],
+        content: replyMessage,
+        components: [row],
         flags: 64,
       });
     } catch (e) {
