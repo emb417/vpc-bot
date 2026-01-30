@@ -1,6 +1,5 @@
 import "dotenv/config";
 import { Precondition } from "@sapphire/framework";
-import logger from "../utils/logging.js";
 
 const COMPETITION_CHANNEL_ID = process.env.COMPETITION_CHANNEL_ID;
 

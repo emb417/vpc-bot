@@ -1,4 +1,3 @@
-// utils/sapphire-logger.js
 import { LogLevel } from "@sapphire/framework";
 import logger from "./logging.js";
 

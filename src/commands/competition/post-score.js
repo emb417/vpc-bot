@@ -141,7 +141,7 @@ export class PostScoreCommand extends Command {
 
       // Compact one-line log
       logger.info(
-        `weeklyScorePosted user=${user.username} table="${currentWeek.table}" mode=${result.mode} score=${result.scoreAsInt} scoreDiff=${result.scoreDiff} rank=${result.currentRank} rankChange=${result.rankChange}`,
+        `${user.username} posted weekly score: ${result.scoreAsInt} for ${currentWeek.table} ranked ${result.currentRank}`,
       );
 
       // Build action row with buttons

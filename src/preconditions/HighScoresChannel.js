@@ -1,6 +1,5 @@
 import "dotenv/config";
 import { Precondition } from "@sapphire/framework";
-import logger from "../utils/logging.js";
 
 const HIGH_SCORES_CHANNEL_ID = process.env.HIGH_SCORES_CHANNEL_ID;
 

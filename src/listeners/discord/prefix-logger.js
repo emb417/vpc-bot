@@ -15,9 +15,7 @@ export class PrefixLogger extends Listener {
     if (message.content.startsWith("!")) {
       const commandName = message.content.split(" ")[0];
 
-      logger.info(
-        `prefixCommand type=prefix command=${commandName} user=${message.author.username}`,
-      );
+      logger.info(`${message.author.username} used ${commandName}`);
     }
   }
 }

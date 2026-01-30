@@ -71,6 +71,9 @@ export class HighScoreSelectListener extends Listener {
       await saveHighScore(selectedJson, interaction.user);
 
       const user = interaction.user;
+      logger.info(
+        `${user.username} posted high score: ${selectedJson.s} for ${selectedJson.tableName}`,
+      );
 
       const headerText = isNewTopScore
         ? "**NEW TOP HIGH SCORE POSTED:**"
@@ -117,13 +120,11 @@ export class HighScoreSelectListener extends Listener {
 
         // Compact one-line log
         logger.info(
-          `sendingDM event=highScoreBeaten user=${user?.username} table="${selectedJson?.tableName}" score=${selectedJson?.s} url=${interaction?.message?.url}`,
+          `high score beaten DM sent to ${user?.username}: ${selectedJson?.s} for ${selectedJson?.tableName}`,
         );
 
         await existingUser.send(content).catch(() => {
-          logger.error(
-            `dmFailed event=highScoreBeaten user=${existingUser?.username} table="${selectedJson?.tableName}"`,
-          );
+          logger.error(`high score beaten DM failed to ${user?.username}`);
         });
       }
     } catch (e) {
