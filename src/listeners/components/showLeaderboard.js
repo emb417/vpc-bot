@@ -1,6 +1,6 @@
 import { Listener } from "@sapphire/framework";
 import { InteractionType } from "discord.js";
-import logger from "../../utils/logging.js";
+import logger from "../../utils/logger.js";
 import { getLeaderboard } from "../../commands/competition/show-leaderboard.js";
 
 export class ShowLeaderboardButtonListener extends Listener {

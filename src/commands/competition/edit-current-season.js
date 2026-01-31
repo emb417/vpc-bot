@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { Command } from "@sapphire/framework";
-import logger from "../../utils/logging.js";
+import logger from "../../utils/logger.js";
 import { editSeasonCompetitionCornerMessage } from "../../lib/output/messages.js";
 import { findOneAndUpdate, find } from "../../services/database.js";
 

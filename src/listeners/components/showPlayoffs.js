@@ -1,6 +1,6 @@
 import { Listener } from "@sapphire/framework";
 import { InteractionType } from "discord.js";
-import logger from "../../utils/logging.js";
+import logger from "../../utils/logger.js";
 import { getPlayoffRoundMatchups } from "../../commands/competition/show-playoffs.js";
 
 export class ShowPlayoffsButtonListener extends Listener {

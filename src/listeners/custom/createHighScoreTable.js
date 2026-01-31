@@ -1,5 +1,5 @@
 import { Listener } from "@sapphire/framework";
-import logger from "../../utils/logging.js";
+import logger from "../../utils/logger.js";
 import { createHighScoreTable } from "../../commands/highscores/create-high-score-table.js";
 
 export class CreateHighScoreTableListener extends Listener {

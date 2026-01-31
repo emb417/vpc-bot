@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { Command } from "@sapphire/framework";
-import logger from "../../utils/logging.js";
+import logger from "../../utils/logger.js";
 import { findCurrentWeek, updateOne } from "../../services/database.js";
 
 export class RemoveTeamCommand extends Command {

@@ -1,5 +1,5 @@
 import { Listener } from "@sapphire/framework";
-import logger from "../../utils/logging.js";
+import logger from "../../utils/logger.js";
 import { formatDateTime, formatNumber } from "../../utils/formatting.js";
 import { printHighScoreTables } from "../../lib/output/tables.js";
 import { getScoresByVpsId } from "../../lib/data/vpc.js";

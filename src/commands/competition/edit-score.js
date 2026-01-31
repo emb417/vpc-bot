@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { Command } from "@sapphire/framework";
-import logger from "../../utils/logging.js";
+import logger from "../../utils/logger.js";
 import { formatNumber } from "../../utils/formatting.js";
 import { processScore } from "../../lib/scores/scoring.js";
 import { editWeeklyCompetitionCornerMessage } from "../../lib/output/messages.js";

@@ -1,5 +1,5 @@
 import { Listener } from "@sapphire/framework";
-import logger from "../../utils/logging.js";
+import logger from "../../utils/logger.js";
 
 export class UnifiedErrorLogger extends Listener {
   constructor(context, options) {

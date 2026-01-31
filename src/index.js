@@ -2,7 +2,7 @@ import "dotenv/config";
 import { SapphireClient, LogLevel } from "@sapphire/framework";
 import { GatewayIntentBits, Partials } from "discord.js";
 import { initDatabase, closeDatabase } from "./services/database.js";
-import logger from "./utils/logging.js";
+import logger from "./utils/logger.js";
 import { SapphirePinoLogger } from "./utils/sapphire-logger.js";
 
 // Register preconditions

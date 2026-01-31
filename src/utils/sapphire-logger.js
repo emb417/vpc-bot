@@ -1,5 +1,5 @@
 import { LogLevel } from "@sapphire/framework";
-import logger from "./logging.js";
+import logger from "./logger.js";
 
 export class SapphirePinoLogger {
   constructor(level = LogLevel.Info) {

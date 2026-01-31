@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { Command } from "@sapphire/framework";
-import logger from "../../utils/logging.js";
+import logger from "../../utils/logger.js";
 import { formatNumber } from "../../utils/formatting.js";
 import { rankingPipeline } from "../../lib/data/pipelines.js";
 import { findCurrentWeek, aggregate } from "../../services/database.js";

@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { Command } from "@sapphire/framework";
-import logger from "../../utils/logging.js";
+import logger from "../../utils/logger.js";
 
 const COMPETITION_CHANNEL = process.env.COMPETITION_CHANNEL_NAME;
 

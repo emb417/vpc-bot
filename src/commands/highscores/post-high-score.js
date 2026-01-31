@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { Command } from "@sapphire/framework";
 import { ActionRowBuilder, StringSelectMenuBuilder } from "discord.js";
-import logger from "../../utils/logging.js";
+import logger from "../../utils/logger.js";
 import { formatDateTime } from "../../utils/formatting.js";
 import {
   searchPipeline,

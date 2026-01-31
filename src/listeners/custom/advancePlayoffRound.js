@@ -1,5 +1,5 @@
 import { Listener } from "@sapphire/framework";
-import logger from "../../utils/logging.js";
+import logger from "../../utils/logger.js";
 import {
   getCurrentPlayoffMatchups,
   findWinningSeeds,
@@ -28,7 +28,7 @@ export class AdvancePlayoffRoundListener extends Listener {
     try {
       const currentPlayoff = await findOne(
         { channelName: channel.name, isArchived: false },
-        "playoffs"
+        "playoffs",
       );
 
       if (!currentPlayoff) {
@@ -37,7 +37,7 @@ export class AdvancePlayoffRoundListener extends Listener {
 
       const currentPlayoffRound = await findOne(
         { channelName: channel.name, isArchived: false },
-        "rounds"
+        "rounds",
       );
 
       if (!currentPlayoffRound) {
@@ -47,7 +47,7 @@ export class AdvancePlayoffRoundListener extends Listener {
       const games = getCurrentPlayoffMatchups(
         currentWeek,
         currentPlayoff,
-        currentPlayoffRound
+        currentPlayoffRound,
       );
 
       const winningSeeds = findWinningSeeds(games);
@@ -63,7 +63,7 @@ export class AdvancePlayoffRoundListener extends Listener {
         },
         { $set: { isArchived: true } },
         null,
-        "rounds"
+        "rounds",
       );
 
       // Insert new round
@@ -75,10 +75,12 @@ export class AdvancePlayoffRoundListener extends Listener {
           games: winningSeeds,
           isArchived: false,
         },
-        "rounds"
+        "rounds",
       );
 
-      await channel.send({ content: `Advanced playoff round to: ${roundName}` });
+      await channel.send({
+        content: `Advanced playoff round to: ${roundName}`,
+      });
     } catch (e) {
       logger.error("Error in advancePlayoffRound:", e);
     }

@@ -1,5 +1,5 @@
 import { Listener } from "@sapphire/framework";
-import logger from "../../utils/logging.js";
+import logger from "../../utils/logger.js";
 import { formatNumber } from "../../utils/formatting.js";
 
 export class PostBraggingRightsListener extends Listener {
