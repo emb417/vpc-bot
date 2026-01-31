@@ -4,9 +4,10 @@ Discord bot for the Virtual Pinball Chat league - manages weekly competitions, h
 
 ## Tech Stack
 
-- Node.js 22
+- Node.js 24
 - discord.js 14
-- WOKCommands 2.1
+- @sapphire/framework
+- @sapphire/plugin-subcommands
 - MongoDB
 
 ## Setup
@@ -21,6 +22,7 @@ Discord bot for the Virtual Pinball Chat league - manages weekly competitions, h
    - `BOT_TOKEN` - Discord bot token
    - `GUILD_ID` - Discord server ID
    - `COMMANDS_DIR` - Path to commands directory
+   - `CONTEST_CHANNELS` - Comma-separated list of channel IDs where contests are active
    - `COMPETITION_CHANNEL_NAME` - Main competition channel name
    - `HIGHSCORES_CHANNEL_NAME` - High scores channel name
    - `BOT_COMPETITION_ADMIN_ROLE_NAME` - Role name for competition admins
@@ -309,14 +311,15 @@ docker-compose -f docker-compose-local.yml logs --tail=50 vpc-bot
 
 ## Project Structure
 
-```bash
-vpc-bot/
-├── commands/       # Slash and message commands
-├── events/         # Discord event handlers
-├── helpers/        # Utility functions
-├── services/       # Business logic services
-└── index.js        # Entry point
-```
+The project follows a modular structure within the `src/` directory:
+
+- `commands/`: Contains various command handlers for user and admin interactions, categorized by function (e.g., `competition`, `highscores`, `teams`, `utility`).
+- `lib/`: Houses reusable logic and data handling, such as data pipelines, VPC/VPS data, and output formatting.
+- `listeners/`: Handles Discord events and custom event listeners.
+- `preconditions/`: Implements checks for command execution (e.g., channel restrictions, role requirements).
+- `services/`: Contains core business logic, like database interactions (`database.js`).
+- `utils/`: Provides utility functions for argument parsing, formatting, and logging.
+- `index.js`: The main entry point for the application, responsible for initializing the Discord client, database connection, and logging in.
 
 ## Notes
 
