@@ -35,4 +35,4 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/vpc-bot:refactor
             ${{ secrets.DOCKER_USERNAME }}/vpc-bot:${{ github.sha }}
-          platforms: linux/amd64,linux/arm64,linux/arm64
+          platforms: linux/amd64,linux/arm64
