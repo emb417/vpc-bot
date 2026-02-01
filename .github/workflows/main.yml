@@ -1,55 +1,38 @@
-# This is a basic workflow to help you get started with Actions
+# This workflow builds and pushes the Docker image to Docker Hub.
 
-name: Build and Publish Docker Image
+name: Docker CI for vpc-bot service
 
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the main branch
   push:
-    branches: [main]
-
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+    branches:
+      - main
 
 jobs:
-  push_to_registry:
-    name: Push Docker image to Docker Hub
+  build-and-push-node-image:
     runs-on: ubuntu-latest
-    environment:
-      name: PRODUCTION
     steps:
-      - name: Check out the repo
-        uses: actions/checkout@v2
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Extract tag
-        run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-
-      - name: Install NPM Dependencies
-        run: npm install
-
-      # - name: Run Unit Tests
-      #  run: npm test
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
-        with:
-          images: ericfaris/vpc-bot
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v2
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
         with:
           context: .
+          file: ./Dockerfile
           push: true
-          tags: ericfaris/vpc-bot:latest
-          build-args: |
-            VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/vpc-bot:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/vpc-bot:${{ github.sha }}
+          platforms: linux/amd64,linux/arm64
