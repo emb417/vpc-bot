@@ -1,6 +1,6 @@
 # This workflow builds and pushes the Docker image to Docker Hub.
 
-name: Docker CI for vpc-bot service
+name: Docker CI for main branch
 
 on:
   push:
