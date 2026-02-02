@@ -13,8 +13,16 @@ export class CreateMessageCommand extends Command {
   }
 
   registerApplicationCommands(registry) {
-    registry.registerChatInputCommand((builder) =>
-      builder.setName(this.name).setDescription(this.description),
+    const guildId = process.env.GUILD_ID;
+    if (!guildId) {
+      throw new Error("GUILD_ID environment variable is not set");
+    }
+
+    registry.registerChatInputCommand(
+      (builder) => builder.setName(this.name).setDescription(this.description),
+      {
+        guildIds: [guildId],
+      },
     );
   }
 

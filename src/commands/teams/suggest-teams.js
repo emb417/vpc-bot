@@ -17,34 +17,43 @@ export class SuggestTeamsCommand extends Command {
   }
 
   registerApplicationCommands(registry) {
-    registry.registerChatInputCommand((builder) =>
-      builder
-        .setName(this.name)
-        .setDescription(this.description)
-        .addStringOption((option) =>
-          option
-            .setName("messageid")
-            .setDescription("Message ID to get reactions from")
-            .setRequired(true),
-        )
-        .addIntegerOption((option) =>
-          option
-            .setName("numberofweeks")
-            .setDescription("Number of weeks to total")
-            .setRequired(true),
-        )
-        .addIntegerOption((option) =>
-          option
-            .setName("numberofteams")
-            .setDescription("Number of teams to create")
-            .setRequired(true),
-        )
-        .addIntegerOption((option) =>
-          option
-            .setName("minteamsize")
-            .setDescription("Minimum team size")
-            .setRequired(true),
-        ),
+    const guildId = process.env.GUILD_ID;
+    if (!guildId) {
+      throw new Error("GUILD_ID environment variable is not set");
+    }
+
+    registry.registerChatInputCommand(
+      (builder) =>
+        builder
+          .setName(this.name)
+          .setDescription(this.description)
+          .addStringOption((option) =>
+            option
+              .setName("messageid")
+              .setDescription("Message ID to get reactions from")
+              .setRequired(true),
+          )
+          .addIntegerOption((option) =>
+            option
+              .setName("numberofweeks")
+              .setDescription("Number of weeks to total")
+              .setRequired(true),
+          )
+          .addIntegerOption((option) =>
+            option
+              .setName("numberofteams")
+              .setDescription("Number of teams to create")
+              .setRequired(true),
+          )
+          .addIntegerOption((option) =>
+            option
+              .setName("minteamsize")
+              .setDescription("Minimum team size")
+              .setRequired(true),
+          ),
+      {
+        guildIds: [guildId],
+      },
     );
   }
 

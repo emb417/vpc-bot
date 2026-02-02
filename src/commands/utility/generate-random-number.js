@@ -12,16 +12,25 @@ export class GenerateRandomNumberCommand extends Command {
   }
 
   registerApplicationCommands(registry) {
-    registry.registerChatInputCommand((builder) =>
-      builder
-        .setName(this.name)
-        .setDescription(this.description)
-        .addIntegerOption((option) =>
-          option
-            .setName("max")
-            .setDescription("Maximum number")
-            .setRequired(true),
-        ),
+    const guildId = process.env.GUILD_ID;
+    if (!guildId) {
+      throw new Error("GUILD_ID environment variable is not set");
+    }
+
+    registry.registerChatInputCommand(
+      (builder) =>
+        builder
+          .setName(this.name)
+          .setDescription(this.description)
+          .addIntegerOption((option) =>
+            option
+              .setName("max")
+              .setDescription("Maximum number")
+              .setRequired(true),
+          ),
+      {
+        guildIds: [guildId],
+      },
     );
   }
 

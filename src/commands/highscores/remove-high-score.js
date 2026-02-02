@@ -14,28 +14,37 @@ export class RemoveHighScoreCommand extends Command {
   }
 
   registerApplicationCommands(registry) {
-    registry.registerChatInputCommand((builder) =>
-      builder
-        .setName(this.name)
-        .setDescription(this.description)
-        .addStringOption((option) =>
-          option
-            .setName("vpsid")
-            .setDescription("VPS ID of the table")
-            .setRequired(true),
-        )
-        .addStringOption((option) =>
-          option
-            .setName("username")
-            .setDescription("Username of the score to remove")
-            .setRequired(true),
-        )
-        .addIntegerOption((option) =>
-          option
-            .setName("score")
-            .setDescription("Score value to remove")
-            .setRequired(true),
-        ),
+    const guildId = process.env.GUILD_ID;
+    if (!guildId) {
+      throw new Error("GUILD_ID environment variable is not set");
+    }
+
+    registry.registerChatInputCommand(
+      (builder) =>
+        builder
+          .setName(this.name)
+          .setDescription(this.description)
+          .addStringOption((option) =>
+            option
+              .setName("vpsid")
+              .setDescription("VPS ID of the table")
+              .setRequired(true),
+          )
+          .addStringOption((option) =>
+            option
+              .setName("username")
+              .setDescription("Username of the score to remove")
+              .setRequired(true),
+          )
+          .addIntegerOption((option) =>
+            option
+              .setName("score")
+              .setDescription("Score value to remove")
+              .setRequired(true),
+          ),
+      {
+        guildIds: [guildId],
+      },
     );
   }
 

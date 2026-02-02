@@ -25,23 +25,32 @@ export class PostHighScoreCommand extends Command {
   }
 
   registerApplicationCommands(registry) {
+    const guildId = process.env.GUILD_ID;
+    if (!guildId) {
+      throw new Error("GUILD_ID environment variable is not set");
+    }
+
     // keep it registered so users see it, but it won't actually post
-    registry.registerChatInputCommand((builder) =>
-      builder
-        .setName(this.name)
-        .setDescription(this.description)
-        .addStringOption((option) =>
-          option
-            .setName("score")
-            .setDescription("Your score")
-            .setRequired(true),
-        )
-        .addStringOption((option) =>
-          option
-            .setName("tablesearchterm")
-            .setDescription("Search term for table")
-            .setRequired(true),
-        ),
+    registry.registerChatInputCommand(
+      (builder) =>
+        builder
+          .setName(this.name)
+          .setDescription(this.description)
+          .addStringOption((option) =>
+            option
+              .setName("score")
+              .setDescription("Your score")
+              .setRequired(true),
+          )
+          .addStringOption((option) =>
+            option
+              .setName("tablesearchterm")
+              .setDescription("Search term for table")
+              .setRequired(true),
+          ),
+      {
+        guildIds: [guildId],
+      },
     );
   }
 

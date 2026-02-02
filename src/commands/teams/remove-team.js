@@ -14,16 +14,25 @@ export class RemoveTeamCommand extends Command {
   }
 
   registerApplicationCommands(registry) {
-    registry.registerChatInputCommand((builder) =>
-      builder
-        .setName(this.name)
-        .setDescription(this.description)
-        .addStringOption((option) =>
-          option
-            .setName("teamname")
-            .setDescription("Name of the team to remove")
-            .setRequired(true),
-        ),
+    const guildId = process.env.GUILD_ID;
+    if (!guildId) {
+      throw new Error("GUILD_ID environment variable is not set");
+    }
+
+    registry.registerChatInputCommand(
+      (builder) =>
+        builder
+          .setName(this.name)
+          .setDescription(this.description)
+          .addStringOption((option) =>
+            option
+              .setName("teamname")
+              .setDescription("Name of the team to remove")
+              .setRequired(true),
+          ),
+      {
+        guildIds: [guildId],
+      },
     );
   }
 

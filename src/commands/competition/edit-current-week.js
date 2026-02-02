@@ -15,59 +15,70 @@ export class EditCurrentWeekCommand extends Command {
   }
 
   registerApplicationCommands(registry) {
-    registry.registerChatInputCommand((builder) =>
-      builder
-        .setName(this.name)
-        .setDescription(this.description)
-        .addIntegerOption((option) =>
-          option.setName("weeknumber").setDescription("Week number"),
-        )
-        .addStringOption((option) =>
-          option
-            .setName("periodstart")
-            .setDescription("Period start (YYYY-MM-DD)"),
-        )
-        .addStringOption((option) =>
-          option.setName("periodend").setDescription("Period end (YYYY-MM-DD)"),
-        )
-        .addStringOption((option) =>
-          option.setName("table").setDescription("Table name"),
-        )
-        .addStringOption((option) =>
-          option.setName("authorname").setDescription("Author name"),
-        )
-        .addStringOption((option) =>
-          option.setName("versionnumber").setDescription("Version number"),
-        )
-        .addStringOption((option) =>
-          option.setName("mode").setDescription("Game mode"),
-        )
-        .addStringOption((option) =>
-          option.setName("tableurl").setDescription("Table URL"),
-        )
-        .addStringOption((option) =>
-          option.setName("vpsid").setDescription("VPS ID"),
-        )
-        .addStringOption((option) =>
-          option.setName("romurl").setDescription("ROM URL"),
-        )
-        .addStringOption((option) =>
-          option.setName("romname").setDescription("ROM name"),
-        )
-        .addStringOption((option) =>
-          option.setName("b2surl").setDescription("B2S URL"),
-        )
-        .addIntegerOption((option) =>
-          option.setName("season").setDescription("Season number"),
-        )
-        .addIntegerOption((option) =>
-          option
-            .setName("currentseasonweeknumber")
-            .setDescription("Current season week number"),
-        )
-        .addStringOption((option) =>
-          option.setName("notes").setDescription("Notes"),
-        ),
+    const guildId = process.env.GUILD_ID;
+    if (!guildId) {
+      throw new Error("GUILD_ID environment variable is not set");
+    }
+
+    registry.registerChatInputCommand(
+      (builder) =>
+        builder
+          .setName(this.name)
+          .setDescription(this.description)
+          .addIntegerOption((option) =>
+            option.setName("weeknumber").setDescription("Week number"),
+          )
+          .addStringOption((option) =>
+            option
+              .setName("periodstart")
+              .setDescription("Period start (YYYY-MM-DD)"),
+          )
+          .addStringOption((option) =>
+            option
+              .setName("periodend")
+              .setDescription("Period end (YYYY-MM-DD)"),
+          )
+          .addStringOption((option) =>
+            option.setName("table").setDescription("Table name"),
+          )
+          .addStringOption((option) =>
+            option.setName("authorname").setDescription("Author name"),
+          )
+          .addStringOption((option) =>
+            option.setName("versionnumber").setDescription("Version number"),
+          )
+          .addStringOption((option) =>
+            option.setName("mode").setDescription("Game mode"),
+          )
+          .addStringOption((option) =>
+            option.setName("tableurl").setDescription("Table URL"),
+          )
+          .addStringOption((option) =>
+            option.setName("vpsid").setDescription("VPS ID"),
+          )
+          .addStringOption((option) =>
+            option.setName("romurl").setDescription("ROM URL"),
+          )
+          .addStringOption((option) =>
+            option.setName("romname").setDescription("ROM name"),
+          )
+          .addStringOption((option) =>
+            option.setName("b2surl").setDescription("B2S URL"),
+          )
+          .addIntegerOption((option) =>
+            option.setName("season").setDescription("Season number"),
+          )
+          .addIntegerOption((option) =>
+            option
+              .setName("currentseasonweeknumber")
+              .setDescription("Current season week number"),
+          )
+          .addStringOption((option) =>
+            option.setName("notes").setDescription("Notes"),
+          ),
+      {
+        guildIds: [guildId],
+      },
     );
   }
 

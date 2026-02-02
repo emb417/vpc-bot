@@ -17,19 +17,28 @@ export class EditScoreCommand extends Command {
   }
 
   registerApplicationCommands(registry) {
-    registry.registerChatInputCommand((builder) =>
-      builder
-        .setName(this.name)
-        .setDescription(this.description)
-        .addStringOption((option) =>
-          option
-            .setName("username")
-            .setDescription("Username of the player")
-            .setRequired(true),
-        )
-        .addStringOption((option) =>
-          option.setName("score").setDescription("New score").setRequired(true),
-        ),
+    const guildId = process.env.GUILD_ID;
+    if (!guildId) {
+      throw new Error("GUILD_ID environment variable is not set");
+    }
+
+    registry.registerChatInputCommand(
+      (builder) =>
+        builder
+          .setName(this.name)
+          .setDescription(this.description)
+          .addStringOption((option) =>
+            option
+              .setName("username")
+              .setDescription("Username of the player")
+              .setRequired(true),
+          )
+          .addStringOption((option) =>
+            option.setName("score").setDescription("New score").setRequired(true),
+          ),
+      {
+        guildIds: [guildId],
+      },
     );
   }
 

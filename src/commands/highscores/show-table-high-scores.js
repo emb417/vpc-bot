@@ -18,23 +18,32 @@ export class ShowTableHighScoresCommand extends Command {
   }
 
   registerApplicationCommands(registry) {
-    registry.registerChatInputCommand((builder) =>
-      builder
-        .setName(this.name)
-        .setDescription(this.description)
-        .addStringOption((option) =>
-          option
-            .setName("tablesearchterm")
-            .setDescription("Search term for table name"),
-        )
-        .addStringOption((option) =>
-          option.setName("vpsid").setDescription("VPS ID to search by"),
-        )
-        .addBooleanOption((option) =>
-          option
-            .setName("isephemeral")
-            .setDescription("Show results only to you"),
-        ),
+    const guildId = process.env.GUILD_ID;
+    if (!guildId) {
+      throw new Error("GUILD_ID environment variable is not set");
+    }
+
+    registry.registerChatInputCommand(
+      (builder) =>
+        builder
+          .setName(this.name)
+          .setDescription(this.description)
+          .addStringOption((option) =>
+            option
+              .setName("tablesearchterm")
+              .setDescription("Search term for table name"),
+          )
+          .addStringOption((option) =>
+            option.setName("vpsid").setDescription("VPS ID to search by"),
+          )
+          .addBooleanOption((option) =>
+            option
+              .setName("isephemeral")
+              .setDescription("Show results only to you"),
+          ),
+      {
+        guildIds: [guildId],
+      },
     );
   }
 

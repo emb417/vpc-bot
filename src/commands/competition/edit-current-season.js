@@ -17,24 +17,33 @@ export class EditCurrentSeasonCommand extends Command {
   }
 
   registerApplicationCommands(registry) {
-    registry.registerChatInputCommand((builder) =>
-      builder
-        .setName(this.name)
-        .setDescription(this.description)
-        .addStringOption((option) =>
-          option.setName("seasonnumber").setDescription("Season number"),
-        )
-        .addStringOption((option) =>
-          option.setName("seasonname").setDescription("Season name"),
-        )
-        .addStringOption((option) =>
-          option
-            .setName("seasonstart")
-            .setDescription("Season start (YYYY-MM-DD)"),
-        )
-        .addStringOption((option) =>
-          option.setName("seasonend").setDescription("Season end (YYYY-MM-DD)"),
-        ),
+    const guildId = process.env.GUILD_ID;
+    if (!guildId) {
+      throw new Error("GUILD_ID environment variable is not set");
+    }
+
+    registry.registerChatInputCommand(
+      (builder) =>
+        builder
+          .setName(this.name)
+          .setDescription(this.description)
+          .addStringOption((option) =>
+            option.setName("seasonnumber").setDescription("Season number"),
+          )
+          .addStringOption((option) =>
+            option.setName("seasonname").setDescription("Season name"),
+          )
+          .addStringOption((option) =>
+            option
+              .setName("seasonstart")
+              .setDescription("Season start (YYYY-MM-DD)"),
+          )
+          .addStringOption((option) =>
+            option.setName("seasonend").setDescription("Season end (YYYY-MM-DD)"),
+          ),
+      {
+        guildIds: [guildId],
+      },
     );
   }
 

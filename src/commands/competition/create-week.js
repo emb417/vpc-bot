@@ -26,46 +26,58 @@ export class CreateWeekCommand extends Command {
   }
 
   registerApplicationCommands(registry) {
-    registry.registerChatInputCommand((builder) =>
-      builder
-        .setName(this.name)
-        .setDescription(this.description)
-        .addStringOption((option) =>
-          option
-            .setName("vpsid")
-            .setDescription("VPS ID for the table")
-            .setRequired(true),
-        )
-        .addBooleanOption((option) =>
-          option
-            .setName("romrequired")
-            .setDescription("Is ROM required?")
-            .setRequired(false),
-        )
-        .addStringOption((option) =>
-          option.setName("mode").setDescription("Game mode").setRequired(false),
-        )
-        .addStringOption((option) =>
-          option
-            .setName("startdateoverride")
-            .setDescription("Override start date (YYYY-MM-DD)")
-            .setRequired(false),
-        )
-        .addStringOption((option) =>
-          option
-            .setName("enddateoverride")
-            .setDescription("Override end date (YYYY-MM-DD)")
-            .setRequired(false),
-        )
-        .addStringOption((option) =>
-          option
-            .setName("b2sidoverride")
-            .setDescription("Override B2S ID")
-            .setRequired(false),
-        )
-        .addStringOption((option) =>
-          option.setName("notes").setDescription("Notes").setRequired(false),
-        ),
+    const guildId = process.env.GUILD_ID;
+    if (!guildId) {
+      throw new Error("GUILD_ID environment variable is not set");
+    }
+
+    registry.registerChatInputCommand(
+      (builder) =>
+        builder
+          .setName(this.name)
+          .setDescription(this.description)
+          .addStringOption((option) =>
+            option
+              .setName("vpsid")
+              .setDescription("VPS ID for the table")
+              .setRequired(true),
+          )
+          .addBooleanOption((option) =>
+            option
+              .setName("romrequired")
+              .setDescription("Is ROM required?")
+              .setRequired(false),
+          )
+          .addStringOption((option) =>
+            option
+              .setName("mode")
+              .setDescription("Game mode")
+              .setRequired(false),
+          )
+          .addStringOption((option) =>
+            option
+              .setName("startdateoverride")
+              .setDescription("Override start date (YYYY-MM-DD)")
+              .setRequired(false),
+          )
+          .addStringOption((option) =>
+            option
+              .setName("enddateoverride")
+              .setDescription("Override end date (YYYY-MM-DD)")
+              .setRequired(false),
+          )
+          .addStringOption((option) =>
+            option
+              .setName("b2sidoverride")
+              .setDescription("Override B2S ID")
+              .setRequired(false),
+          )
+          .addStringOption((option) =>
+            option.setName("notes").setDescription("Notes").setRequired(false),
+          ),
+      {
+        guildIds: [guildId],
+      },
     );
   }
 

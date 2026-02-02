@@ -14,22 +14,31 @@ export class EditTeamNameCommand extends Command {
   }
 
   registerApplicationCommands(registry) {
-    registry.registerChatInputCommand((builder) =>
-      builder
-        .setName(this.name)
-        .setDescription(this.description)
-        .addStringOption((option) =>
-          option
-            .setName("currentteamname")
-            .setDescription("Current team name")
-            .setRequired(true),
-        )
-        .addStringOption((option) =>
-          option
-            .setName("newteamname")
-            .setDescription("New team name")
-            .setRequired(true),
-        ),
+    const guildId = process.env.GUILD_ID;
+    if (!guildId) {
+      throw new Error("GUILD_ID environment variable is not set");
+    }
+
+    registry.registerChatInputCommand(
+      (builder) =>
+        builder
+          .setName(this.name)
+          .setDescription(this.description)
+          .addStringOption((option) =>
+            option
+              .setName("currentteamname")
+              .setDescription("Current team name")
+              .setRequired(true),
+          )
+          .addStringOption((option) =>
+            option
+              .setName("newteamname")
+              .setDescription("New team name")
+              .setRequired(true),
+          ),
+      {
+        guildIds: [guildId],
+      },
     );
   }
 
