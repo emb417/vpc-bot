@@ -80,7 +80,7 @@ export class ShowTableHighScoresCommand extends Command {
   }
 
   async showHighScoreTables(tables, searchTerm, interaction, isEphemeral) {
-    const contentArray = printHighScoreTables(searchTerm, tables || [], 10, 5);
+    const contentArray = printHighScoreTables(searchTerm, tables || [], 10, 2);
 
     for (let post of contentArray) {
       // If post is a string, send as content

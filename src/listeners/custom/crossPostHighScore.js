@@ -87,7 +87,7 @@ export class CrossPostHighScoreListener extends Listener {
             highScoreData.tableName,
             tableScores || [],
             10,
-            5,
+            2,
           );
 
           if (!Array.isArray(contentArray) || contentArray.length === 0) {

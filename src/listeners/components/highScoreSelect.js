@@ -97,7 +97,7 @@ export class HighScoreSelectListener extends Listener {
         selectedJson.tableName,
         tables || [],
         10,
-        5,
+        2,
       );
 
       // If you only expect embeds here:
