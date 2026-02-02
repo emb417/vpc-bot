@@ -26,7 +26,11 @@ export const printHighScoreTables = (
         new EmbedBuilder()
           .setTitle("High Score Search")
           .setColor("#ff0000")
-          .setDescription("**NO TABLES FOUND**"),
+          .setDescription("**NO TABLES FOUND**")
+          .addFields({
+            name: "🌟  VPC High Score Corner",
+            value: `<${process.env.HIGH_SCORES_URL}>`,
+          }),
       ];
     }
     showAll = false;
@@ -93,7 +97,15 @@ export const printHighScoreTables = (
         new EmbedBuilder()
           .setTitle("🏆  High Scores")
           .setColor("#0099ff")
-          .setDescription(buffer),
+          .setDescription(buffer)
+          .addFields({
+            name: "🌟  VPC High Score Corner",
+            value: `<${process.env.HIGH_SCORES_URL}>`,
+          })
+          .addFields({
+            name: "📌  How to Post",
+            value: "Attach an image and use `!high 12345678 tablename`",
+          }),
       );
       buffer = "";
       count = 0;
@@ -106,7 +118,15 @@ export const printHighScoreTables = (
       new EmbedBuilder()
         .setTitle("🏆  High Scores")
         .setColor("#0099ff")
-        .setDescription(buffer),
+        .setDescription(buffer)
+        .addFields({
+          name: "🌟  VPC High Score Corner",
+          value: `<${process.env.HIGH_SCORES_URL}>`,
+        })
+        .addFields({
+          name: "📌  How to Post",
+          value: "Attach an image and use `!high 12345678 tablename`",
+        }),
     );
   }
 
