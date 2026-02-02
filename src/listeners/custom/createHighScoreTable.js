@@ -19,11 +19,11 @@ export class CreateHighScoreTableListener extends Listener {
 
       if (!interaction.replied) {
         await interaction.followUp({
-          content: `**Trying to create new high score table:** ${result}`,
+          content: `**Creating new high score table:**\n${result}`,
         });
       } else {
         await channel.send({
-          content: `**Trying to create new high score table:** ${result}`,
+          content: `**Creating new high score table:**\n${result}`,
         });
       }
     } catch (e) {

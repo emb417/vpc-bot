@@ -102,9 +102,17 @@ export const printWeeklyLeaderboard = (
   if (!scores || scores.length === 0) {
     return [
       new EmbedBuilder()
-        .setTitle("Weekly Leaderboard")
+        .setTitle("🏆  Weekly Leaderboard")
         .setDescription("NO SCORES POSTED")
-        .setColor("#ff0000"),
+        .setColor("#ff0000")
+        .addFields({
+          name: "🌟  VPC Competition Corner",
+          value: `<${process.env.COMPETITIONS_URL}>`,
+        })
+        .addFields({
+          name: "📌  How to Post",
+          value: "Attach an image and use `!score 12345678`",
+        }),
     ];
   }
 
@@ -132,14 +140,15 @@ export const printWeeklyLeaderboard = (
         ],
         widths: [3, 11, 15],
       }),
-    );
-
-  if (scores[0]?.userAvatarUrl) {
-    embed.setFooter({
-      text: `${scores[0].username} is 🥇 with ${formatNumber(scores[0].score)}! 🔥🔥`,
-      iconURL: scores[0].userAvatarUrl,
+    )
+    .addFields({
+      name: "🌟  VPC Competition Corner",
+      value: `<${process.env.COMPETITIONS_URL}>`,
+    })
+    .addFields({
+      name: "📌  How to Post",
+      value: "Attach an image and use `!score 12345678`",
     });
-  }
 
   return [embed];
 };
@@ -167,7 +176,6 @@ export const printTeamSummary = (teams, scores) => {
         widths: [3, 14, 10],
       }),
     );
-
   return [embed];
 };
 
@@ -279,8 +287,17 @@ export const printCombinedLeaderboard = (
   if (!scores || scores.length === 0) {
     return [
       new EmbedBuilder()
-        .setTitle("NO SCORES CURRENTLY POSTED")
-        .setColor("#ff0000"),
+        .setTitle("🏆  Weekly Leaderboard")
+        .setDescription("NO SCORES CURRENTLY POSTED")
+        .setColor("#ff0000")
+        .addFields({
+          name: "🌟  VPC Competition Corner",
+          value: `<${process.env.COMPETITIONS_URL}>`,
+        })
+        .addFields({
+          name: "📌  How to Post",
+          value: "Attach an image and use `!score 12345678`",
+        }),
     ];
   }
 

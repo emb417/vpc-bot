@@ -18,7 +18,7 @@ export class ShowTableListCommand extends Command {
 
   async chatInputRun(interaction) {
     return interaction.reply({
-      content: `For an up to date list of high score tables, please visit:\n<${process.env.HIGH_SCORES_URL}>`,
+      content: `VPC High Score Corner\n<${process.env.HIGH_SCORES_URL}>`,
       flags: 64,
     });
   }

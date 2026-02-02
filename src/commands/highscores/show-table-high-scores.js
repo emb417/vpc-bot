@@ -50,7 +50,7 @@ export class ShowTableHighScoresCommand extends Command {
 
       if (!tableSearchTerm && !vpsId) {
         return interaction.reply({
-          content: "Please provide either a table search term or VPS ID.",
+          content: `Please provide either a table search term or VPS ID.\n\nVPC High Score Corner\n<${process.env.HIGH_SCORES_URL}>`,
           flags: 64,
         });
       }

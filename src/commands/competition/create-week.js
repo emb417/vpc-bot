@@ -85,7 +85,9 @@ export class CreateWeekCommand extends Command {
     try {
       const vpsGame = await getVpsGame(vpsid);
 
-      if (!vpsGame?.table) {
+      const tableFile = vpsGame?.tableFiles?.find((t) => t.id === vpsid);
+
+      if (!tableFile) {
         return interaction.editReply({
           content: "No VPS Tables were found. Please double check your VPS ID.",
         });
@@ -110,9 +112,9 @@ export class CreateWeekCommand extends Command {
         formatDateISO(addDays(parseDate(currentWeek.periodEnd), 7));
 
       const table = `${vpsGame?.name} (${vpsGame?.manufacturer} ${vpsGame?.year})`;
-      const authorName = vpsGame.table?.authors?.join(", ") ?? "";
-      const versionNumber = vpsGame?.table?.version ?? "";
-      const tableUrl = vpsGame.table?.urls?.[0]?.url ?? "";
+      const authorName = tableFile?.authors?.join(", ") ?? "";
+      const versionNumber = tableFile?.version ?? "";
+      const tableUrl = tableFile?.urls?.[0]?.url ?? "";
 
       let romUrl = "";
       let romName = "";
@@ -148,7 +150,7 @@ export class CreateWeekCommand extends Command {
         romName = "N/A";
       }
 
-      if (errors.length > 0 && romrequired) {
+      if (errors.length > 0) {
         return interaction.editReply({
           content: `***Error creating new week. New week HAS NOT been created***: \n\n${errors.join("\n")}`,
         });

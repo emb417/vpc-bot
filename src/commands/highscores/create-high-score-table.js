@@ -56,15 +56,19 @@ export class CreateHighScoreTableCommand extends Command {
 export const createHighScoreTable = async (vpsid) => {
   const vpsGame = await getVpsGame(vpsid);
 
-  if (!vpsGame?.table) {
+  const tableFile = vpsGame?.tableFiles?.find((t) => t.id === vpsid);
+
+  if (!tableFile) {
     return "No VPS Tables were found. Please double check your VPS Id.";
   }
 
-  const tableName = `${vpsGame?.name} (${vpsGame?.manufacturer} ${vpsGame?.year})`;
-  const comment = vpsGame?.table?.comment;
-  const authorName = vpsGame?.table?.authors?.join(", ") ?? "";
-  const versionNumber = vpsGame?.table?.version ?? "";
-  const versionUrl = vpsGame?.table?.urls?.[0]?.url ?? "";
+  const tableName = `${vpsGame.name} (${vpsGame.manufacturer} ${vpsGame.year})`;
+
+  const comment = tableFile.comment ?? "";
+  const authorName = tableFile.authors?.join(", ") ?? "";
+  const versionNumber = tableFile.version ?? "";
+  const versionUrl = tableFile.urls?.[0]?.url ?? "";
+
   const romName = vpsGame?.romFiles?.[0]?.version ?? "";
 
   const table = {
@@ -93,7 +97,7 @@ export const createHighScoreTable = async (vpsid) => {
 
   if (!existingTable) {
     await insertOne(table, "tables");
-    return `${table.tableName} (${authorName} ${versionNumber}) created successfully`;
+    return `${table.tableName}\nv${versionNumber}\n${authorName}\n\nSuccessfully created table!`;
   }
 
   const existingAuthor = existingTable?.authors?.find((a) => a.vpsId === vpsid);
@@ -125,7 +129,7 @@ export const createHighScoreTable = async (vpsid) => {
       null,
       "tables",
     );
-    return `New author and version created for ${existingTable.tableName}.`;
+    return `${existingTable.tableName}\n\nNew author and version created.`;
   }
 
   if (!existingVersion) {
@@ -145,8 +149,8 @@ export const createHighScoreTable = async (vpsid) => {
       { arrayFilters: [{ "a.vpsId": vpsid }] },
       "tables",
     );
-    return `New version created for ${existingTable.tableName} (${existingAuthor.authorName}).`;
+    return `${table.tableName}\n${authorName}\n\nNew version created.`;
   }
 
-  return `${existingTable.tableName} (${existingAuthor.authorName}) (${versionNumber}) already exists.`;
+  return `${table.tableName}\nv${versionNumber}\n${authorName}\n\nTable already exists.`;
 };
