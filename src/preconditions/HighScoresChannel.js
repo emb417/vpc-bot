@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { Precondition } from "@sapphire/framework";
+import logger from "../utils/logger.js";
 
 const HIGH_SCORES_CHANNEL_ID = process.env.HIGH_SCORES_CHANNEL_ID;
 
@@ -13,10 +14,13 @@ export class HighScoresChannelPrecondition extends Precondition {
   }
 
   checkChannel(channelId) {
-    return channelId === HIGH_SCORES_CHANNEL_ID
-      ? this.ok()
-      : this.error({
-          message: "This command can only be used in the high scores channel.",
-        });
+    if (channelId === HIGH_SCORES_CHANNEL_ID) {
+      return this.ok();
+    }
+
+    return this.error({
+      identifier: "HighScoresChannel",
+      message: `This command can only be used in the #${process.env.HIGH_SCORES_CHANNEL_NAME} channel.`,
+    });
   }
 }

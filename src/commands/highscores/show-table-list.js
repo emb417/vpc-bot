@@ -17,8 +17,7 @@ export class ShowTableListCommand extends Command {
     }
 
     registry.registerChatInputCommand(
-      (builder) =>
-        builder.setName(this.name).setDescription(this.description),
+      (builder) => builder.setName(this.name).setDescription(this.description),
       {
         guildIds: [guildId],
       },

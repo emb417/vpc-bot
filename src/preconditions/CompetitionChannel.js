@@ -13,10 +13,13 @@ export class CompetitionChannelPrecondition extends Precondition {
   }
 
   checkChannel(channelId) {
-    return channelId === COMPETITION_CHANNEL_ID
-      ? this.ok()
-      : this.error({
-          message: "This command can only be used in the competition channel.",
-        });
+    if (channelId === COMPETITION_CHANNEL_ID) {
+      return this.ok();
+    }
+
+    return this.error({
+      identifier: "CompetitionChannel",
+      message: `This command can only be used in the #${process.env.COMPETITION_CHANNEL_NAME} channel.`,
+    });
   }
 }

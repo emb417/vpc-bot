@@ -1,45 +1,43 @@
 import "dotenv/config";
 import { Precondition } from "@sapphire/framework";
+import { GuildMember } from "discord.js";
 
-const ADMIN_ROLE_NAME = process.env.BOT_COMPETITION_ADMIN_ROLE_NAME;
+const ADMIN_ROLE_ID = process.env.BOT_COMPETITION_ADMIN_ROLE_ID;
 
 export class CompetitionAdminRolePrecondition extends Precondition {
-  async chatInputRun(interaction) {
-    return this.checkRole(interaction);
-  }
-
-  async messageRun(message) {
-    return this.checkRoleFromMessage(message);
-  }
-
-  async checkRole(interaction) {
-    const guild = await interaction.client.guilds.fetch(process.env.GUILD_ID);
-    const member = await guild.members.fetch(interaction.user.id);
-    const hasRole = [...member.roles.cache.values()].some(
-      (role) => role.name === ADMIN_ROLE_NAME,
-    );
-
-    return hasRole
-      ? this.ok()
-      : this.error({
-          message: `You do not have the required role (${ADMIN_ROLE_NAME}) to run this command.`,
-        });
-  }
-
-  async checkRoleFromMessage(message) {
-    const member = message.member;
-    if (!member) {
-      return this.error({ message: "Could not determine your roles." });
+  chatInputRun(interaction) {
+    if (!(interaction.member instanceof GuildMember)) {
+      return this.error({
+        message: "This command can only be used in a server.",
+      });
     }
 
-    const hasRole = [...member.roles.cache.values()].some(
-      (role) => role.name === ADMIN_ROLE_NAME,
-    );
+    return this.checkRole(interaction.member);
+  }
+
+  messageRun(message) {
+    if (!(message.member instanceof GuildMember)) {
+      return this.error({
+        message: "This command can only be used in a server.",
+      });
+    }
+
+    return this.checkRole(message.member);
+  }
+
+  checkRole(member) {
+    if (!ADMIN_ROLE_ID) {
+      return this.error({
+        message: "Bot configuration error. Please contact an administrator.",
+      });
+    }
+
+    const hasRole = member.roles.cache.has(ADMIN_ROLE_ID);
 
     return hasRole
       ? this.ok()
       : this.error({
-          message: `You do not have the required role (${ADMIN_ROLE_NAME}) to run this command.`,
+          message: "Permission denied! You do not have access to this command.",
         });
   }
 }
