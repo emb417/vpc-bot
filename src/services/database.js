@@ -63,27 +63,11 @@ export const getCollection = async (collectionName) => {
 export const generateObjectId = () => new ObjectId();
 
 /**
- * Get all documents from a collection.
- */
-export const getAll = async (collectionName) => {
-  const collection = await getCollection(collectionName);
-  return collection.find({}).toArray();
-};
-
-/**
  * Insert a single document.
  */
 export const insertOne = async (doc, collectionName) => {
   const collection = await getCollection(collectionName);
   return collection.insertOne(doc);
-};
-
-/**
- * Insert multiple documents.
- */
-export const insertMany = async (docs, collectionName) => {
-  const collection = await getCollection(collectionName);
-  return collection.insertMany(docs);
 };
 
 /**
@@ -109,7 +93,7 @@ export const findOneAndUpdate = async (
   filter,
   update,
   options,
-  collectionName
+  collectionName,
 ) => {
   const collection = await getCollection(collectionName);
   return collection.findOneAndUpdate(filter, update, options);
@@ -168,14 +152,6 @@ export const updateOne = async (filter, update, options, collectionName) => {
 };
 
 /**
- * Delete all documents in a collection.
- */
-export const deleteAll = async (collectionName) => {
-  const collection = await getCollection(collectionName);
-  return collection.deleteMany({});
-};
-
-/**
  * Run an aggregation pipeline.
  */
 export const aggregate = async (pipeline, collectionName) => {
@@ -199,9 +175,7 @@ export default {
   getDb,
   getCollection,
   generateObjectId,
-  getAll,
   insertOne,
-  insertMany,
   find,
   findOne,
   findOneAndUpdate,
@@ -210,7 +184,6 @@ export default {
   findCurrentPlayoff,
   findCurrentPlayoffRound,
   updateOne,
-  deleteAll,
   aggregate,
   closeDatabase,
 };
