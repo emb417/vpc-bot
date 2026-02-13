@@ -172,7 +172,7 @@ export class PostScoreCommand extends Command {
       }
 
       // Reply with score info
-      await message.reply({
+      await message.channel.send({
         content: retVal,
         files: [attachment],
         components: [row],
