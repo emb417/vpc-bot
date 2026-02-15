@@ -22,7 +22,8 @@ export class CrossPostHighScoreListener extends Listener {
     const {
       user,
       score,
-      attachment,
+      attachmentBuffer,
+      attachmentName,
       currentWeek,
       channelId,
       postSubscript,
@@ -72,7 +73,12 @@ export class CrossPostHighScoreListener extends Listener {
               `**Score:** ${formatNumber(highScoreData.s)}\n` +
               `**Posted**: ${formatDateTime(new Date())}\n` +
               `*${postSubscript}*`,
-            files: [attachment],
+            files: [
+              {
+                attachment: attachmentBuffer,
+                name: attachmentName,
+              },
+            ],
           });
 
           // Update the high score with the post URL

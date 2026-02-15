@@ -110,6 +110,24 @@ export class PostScoreCommand extends Command {
         return;
       }
 
+      let attachmentBuffer, attachmentName;
+      try {
+        const response = await fetch(attachment.url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch: ${response.statusText}`);
+        }
+        attachmentBuffer = Buffer.from(await response.arrayBuffer());
+        attachmentName = attachment.name;
+      } catch (fetchError) {
+        logger.error("Failed to download attachment:", fetchError);
+        const reply = await message.reply({
+          content: "Failed to process image. Please try again.",
+        });
+        await message.delete().catch(() => {});
+        setTimeout(() => reply.delete().catch(() => {}), 10000);
+        return;
+      }
+
       // Get current week
       const currentWeek = await findCurrentWeek(channel.name);
       if (!currentWeek) {
@@ -174,7 +192,12 @@ export class PostScoreCommand extends Command {
       // Reply with score info
       await message.channel.send({
         content: retVal,
-        files: [attachment],
+        files: [
+          {
+            attachment: attachmentBuffer,
+            name: attachmentName,
+          },
+        ],
         components: [row],
       });
 
@@ -186,7 +209,8 @@ export class PostScoreCommand extends Command {
       this.container.client.emit("crossPostHighScore", {
         user,
         score: validation.value,
-        attachment,
+        attachmentBuffer,
+        attachmentName,
         currentWeek,
         channelId: process.env.HIGH_SCORES_CHANNEL_ID,
         postSubscript: `copied from <#${channel.id}>`,
