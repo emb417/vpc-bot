@@ -39,6 +39,12 @@ export class PostScoreCommand extends Command {
               .setDescription("Your score")
               .setRequired(true),
           )
+          .addAttachmentOption((option) =>
+            option
+              .setName("image")
+              .setDescription("Screenshot of full playfield and score")
+              .setRequired(true),
+          )
           .addStringOption((option) =>
             option
               .setName("posttohighscorechannel")
@@ -71,12 +77,34 @@ export class PostScoreCommand extends Command {
 
   async chatInputRun(interaction) {
     const score = interaction.options.getString("score") ?? "<score>";
-    // Slash command is disabled - instruct to use message command
-    return interaction.reply({
-      content:
-        "The post-score slash command cannot be used because images are required.\n" +
-        `Please attach an image and use:\n\`!score ${score}\``,
+    const postToHighScore = interaction.options.getString(
+      "posttohighscorechannel",
+    );
+    const attachment = interaction.options.getAttachment("image");
+
+    await interaction.reply({
+      content: "Posting score...",
       flags: 64,
+    });
+
+    const fakeMessage = {
+      channel: interaction.channel,
+      author: interaction.user,
+      attachments: { first: () => attachment },
+      reply: (opts) => interaction.channel.send(opts),
+      delete: () => Promise.resolve(),
+    };
+
+    await this.handleScore(
+      fakeMessage,
+      interaction.user,
+      score,
+      postToHighScore,
+      false,
+    );
+
+    return interaction.editReply({
+      content: "✅ Score posted successfully.",
     });
   }
 
