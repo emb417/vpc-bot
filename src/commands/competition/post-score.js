@@ -9,6 +9,8 @@ import {
   findCurrentWeek,
   findCurrentPlayoff,
   updateOne,
+  updateMany,
+  findOne,
 } from "../../services/database.js";
 
 export class PostScoreCommand extends Command {
@@ -167,6 +169,11 @@ export class PostScoreCommand extends Command {
       // Process the score
       const result = processScore(user, validation.value, currentWeek);
 
+      // Asynchronously update historical avatars if changed
+      this.updateHistoricalAvatars(user).catch((e) =>
+        logger.error("Error updating historical avatars:", e),
+      );
+
       // Save to database
       await updateOne(
         { channelName: channel.name, isArchived: false },
@@ -254,6 +261,31 @@ export class PostScoreCommand extends Command {
       });
       await message.delete().catch(() => {});
       setTimeout(() => reply.delete().catch(() => {}), 10000);
+    }
+  }
+
+  async updateHistoricalAvatars(user) {
+    const currentAvatarUrl = user.displayAvatarURL({
+      dynamic: true,
+      size: 128,
+    });
+
+    // Find the most recent week this user has a score in
+    const lastWeek = await findOne({ "scores.userId": user.id }, "weeks");
+
+    const storedAvatarUrl = lastWeek?.scores?.find(
+      (s) => s.userId === user.id,
+    )?.userAvatarUrl;
+
+    if (currentAvatarUrl !== storedAvatarUrl) {
+      await updateMany(
+        { "scores.userId": user.id },
+        { $set: { "scores.$[s].userAvatarUrl": currentAvatarUrl } },
+        { arrayFilters: [{ "s.userId": user.id }] },
+        "weeks",
+      );
+
+      logger.info(`Updated historical avatars for ${user.username}`);
     }
   }
 }

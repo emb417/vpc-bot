@@ -152,6 +152,14 @@ export const updateOne = async (filter, update, options, collectionName) => {
 };
 
 /**
+ * Update multiple documents.
+ */
+export const updateMany = async (filter, update, options, collectionName) => {
+  const collection = await getCollection(collectionName);
+  return collection.updateMany(filter, update, options);
+};
+
+/**
  * Run an aggregation pipeline.
  */
 export const aggregate = async (pipeline, collectionName) => {
@@ -184,6 +192,7 @@ export default {
   findCurrentPlayoff,
   findCurrentPlayoffRound,
   updateOne,
+  updateMany,
   aggregate,
   closeDatabase,
 };
