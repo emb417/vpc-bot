@@ -1,5 +1,5 @@
 import { Listener } from "@sapphire/framework";
-import { InteractionType } from "discord.js";
+import { InteractionType, EmbedBuilder } from "discord.js";
 import logger from "../../utils/logger.js";
 import { formatDateTime, formatNumber } from "../../utils/formatting.js";
 import {
@@ -86,12 +86,9 @@ export class HighScoreSelectListener extends Listener {
         `${user.username} posted high score: ${selectedJson.s} for ${selectedJson.tableName}`,
       );
 
-      const headerText = isNewTopScore
-        ? "**NEW TOP HIGH SCORE POSTED:**"
-        : "**NEW HIGH SCORE POSTED:**";
+      const title = isNewTopScore ? "🥇 PERSONAL BEST" : "🏆 NEW HIGH SCORE";
 
-      const headerContent =
-        `${headerText}\n` +
+      const description =
         `**User**: <@${user.id}>\n` +
         `**Table:** ${selectedJson.tableName} (${firstAuthor}... ${selectedJson.v})\n` +
         `**VPS Id:** ${selectedJson.vpsId}\n` +
@@ -99,7 +96,7 @@ export class HighScoreSelectListener extends Listener {
         `**Posted**: ${formatDateTime(new Date())}\n`;
 
       if (isSlashCommand) {
-        // Dismiss the ephemeral select menu, then post everything publicly
+        // Dismiss the ephemeral select menu
         await interaction.update({
           content: "✅ High Score Posted Successfully",
           components: [],
@@ -110,8 +107,16 @@ export class HighScoreSelectListener extends Listener {
           if (!response.ok)
             throw new Error(`Failed to fetch: ${response.statusText}`);
           const buffer = Buffer.from(await response.arrayBuffer());
+
+          const embed = new EmbedBuilder()
+            .setTitle(title)
+            .setDescription(description)
+            .setImage("attachment://score.png")
+            .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 64 }))
+            .setColor("Green");
+
           await interaction.channel.send({
-            content: headerContent,
+            embeds: [embed],
             files: [{ attachment: buffer, name: "score.png" }],
           });
         } catch (e) {
@@ -121,8 +126,24 @@ export class HighScoreSelectListener extends Listener {
           );
         }
       } else {
-        // Message command flow - update the existing message in place
-        await interaction.update({ content: headerContent, components: [] });
+        // Message command flow - update the existing message with the embed
+        const attachment = interaction.message.attachments.first();
+
+        const embed = new EmbedBuilder()
+          .setTitle(title)
+          .setDescription(description)
+          .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 64 }))
+          .setColor("Green");
+
+        if (attachment) {
+          embed.setImage(attachment.url);
+        }
+
+        await interaction.update({
+          content: "",
+          embeds: [embed],
+          components: [],
+        });
       }
 
       // Show high scores for the table

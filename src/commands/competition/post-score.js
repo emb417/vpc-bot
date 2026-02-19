@@ -1,6 +1,11 @@
 import "dotenv/config";
 import { Command } from "@sapphire/framework";
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  EmbedBuilder,
+} from "discord.js";
 import logger from "../../utils/logger.js";
 import { formatNumber } from "../../utils/formatting.js";
 import { processScore, validateScore } from "../../lib/scores/scoring.js";
@@ -192,19 +197,35 @@ export class PostScoreCommand extends Command {
         );
       }
 
-      // Format response
-      const retVal =
-        "**NEW WEEKLY SCORE POSTED:**\n" +
-        `**User:** <@${user.id}>\n` +
-        `**Table:** ${currentWeek.table}\n` +
-        (result.mode !== "default" ? `**Mode:** ${result.mode}\n` : "") +
-        `**Score:** ${formatNumber(result.scoreAsInt)} (${result.scoreDiff >= 0 ? "+" : ""}${formatNumber(result.scoreDiff)})\n` +
-        `**Rank:** ${result.currentRank} (${result.rankChange >= 0 ? "+" + result.rankChange : result.rankChange})`;
-
-      // Compact one-line log
       logger.info(
         `${user.username} posted weekly score: ${result.scoreAsInt} for ${currentWeek.table} ranked ${result.currentRank}`,
       );
+
+      // Build embed
+      const description =
+        `**User:** <@${user.id}>\n` +
+        `**Table:** ${currentWeek.table}\n` +
+        (result.mode !== "default" ? `**Mode:** ${result.mode}\n` : "") +
+        `**Score:** ${formatNumber(result.scoreAsInt)} (${result.scoreDiff >= 0 ? "+" : ""}${formatNumber(result.scoreDiff)})\n`;
+
+      const title = result.currentRank.startsWith("1 of")
+        ? "🥇  NEW TOP WEEKLY SCORE"
+        : "🏆  NEW WEEKLY SCORE";
+
+      const embed = new EmbedBuilder()
+        .setTitle(title)
+        .setDescription(description)
+        .addFields({
+          name: "Rank",
+          value: `${result.currentRank} (${result.rankChange >= 0 ? "+" + result.rankChange : result.rankChange})`,
+          inline: true,
+        })
+        .setImage("attachment://score.png")
+        .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 64 }))
+        .setColor("Green");
+
+      // Used for cross-post check — mirrors what was previously in retVal
+      const retVal = `**Rank:** ${result.currentRank} (${result.rankChange >= 0 ? "+" + result.rankChange : result.rankChange})`;
 
       // Build action row with buttons
       const showPlayoffButton = await findCurrentPlayoff(channel.name);
@@ -224,15 +245,10 @@ export class PostScoreCommand extends Command {
         );
       }
 
-      // Reply with score info
+      // Reply with score embed
       await message.channel.send({
-        content: retVal,
-        files: [
-          {
-            attachment: attachmentBuffer,
-            name: attachmentName,
-          },
-        ],
+        embeds: [embed],
+        files: [{ attachment: attachmentBuffer, name: "score.png" }],
         components: [row],
       });
 
@@ -252,7 +268,6 @@ export class PostScoreCommand extends Command {
         doPost: shouldPost,
       });
 
-      // Delete original message
       await message.delete().catch(() => {});
     } catch (e) {
       logger.error(e);
@@ -267,10 +282,9 @@ export class PostScoreCommand extends Command {
   async updateHistoricalAvatars(user) {
     const currentAvatarUrl = user.displayAvatarURL({
       dynamic: true,
-      size: 128,
+      size: 64,
     });
 
-    // Find the most recent week this user has a score in
     const lastWeek = await findOne({ "scores.userId": user.id }, "weeks");
 
     const storedAvatarUrl = lastWeek?.scores?.find(

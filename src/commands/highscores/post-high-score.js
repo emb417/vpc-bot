@@ -217,16 +217,6 @@ export class PostHighScoreCommand extends Command {
   }
 }
 
-export const highScoreExists = async (data) => {
-  const pipeline = searchScoreByVpsIdUsernameScorePipeline({
-    vpsId: data.vpsId,
-    u: data.u || data.username,
-    s: data.s || data.score,
-  });
-  const tables = await aggregate(pipeline, "tables");
-  return tables.length > 0;
-};
-
 export const saveHighScore = async (data, user) => {
   const userObj = user || data.user;
   const username = userObj?.username || data.username;
@@ -253,23 +243,6 @@ export const saveHighScore = async (data, user) => {
       arrayFilters: [
         { "a.vpsId": data.vpsId },
         { "v.versionNumber": versionNumber },
-      ],
-    },
-    "tables",
-  );
-};
-
-export const updateHighScore = async (data, postUrl) => {
-  const { ObjectId } = await import("mongodb");
-  return findOneAndUpdate(
-    { tableName: data.tableName },
-    { $set: { "authors.$[a].versions.$[v].scores.$[s].postUrl": postUrl } },
-    {
-      returnDocument: "after",
-      arrayFilters: [
-        { "a.vpsId": data.vpsId },
-        { "v.versionNumber": data.versionNumber },
-        { "s._id": new ObjectId(data.scoreId) },
       ],
     },
     "tables",

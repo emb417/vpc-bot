@@ -40,7 +40,7 @@ export class PostBraggingRightsListener extends Listener {
             `**Table:** [${currentWeek.table} v${currentWeek.versionNumber}](${currentWeek.tableUrl})\n` +
             `**Score:** ${formatNumber(winner.score)}\n`,
         )
-        .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 128 }))
+        .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 64 }))
         .setColor("Random");
 
       await braggingRightsChannel.send({ embeds: [embed] });

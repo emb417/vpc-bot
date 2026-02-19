@@ -1,13 +1,40 @@
 import { Listener } from "@sapphire/framework";
-import logger from "../../utils/logger.js";
-import { formatDateTime, formatNumber } from "../../utils/formatting.js";
-import { printHighScoreTables } from "../../lib/output/tables.js";
+import { EmbedBuilder } from "discord.js";
+import { saveHighScore } from "../../commands/highscores/post-high-score.js";
+import { searchScoreByVpsIdUsernameScorePipeline } from "../../lib/data/pipelines.js";
 import { getScoresByVpsId } from "../../lib/data/vpc.js";
-import {
-  highScoreExists,
-  saveHighScore,
-  updateHighScore,
-} from "../../commands/highscores/post-high-score.js";
+import { printHighScoreTables } from "../../lib/output/tables.js";
+import { aggregate, findOneAndUpdate } from "../../services/database.js";
+import { formatDateTime, formatNumber } from "../../utils/formatting.js";
+
+import logger from "../../utils/logger.js";
+
+export const highScoreExists = async (data) => {
+  const pipeline = searchScoreByVpsIdUsernameScorePipeline({
+    vpsId: data.vpsId,
+    u: data.u || data.username,
+    s: data.s || data.score,
+  });
+  const tables = await aggregate(pipeline, "tables");
+  return tables.length > 0;
+};
+
+export const updateHighScore = async (data, postUrl) => {
+  const { ObjectId } = await import("mongodb");
+  return findOneAndUpdate(
+    { tableName: data.tableName },
+    { $set: { "authors.$[a].versions.$[v].scores.$[s].postUrl": postUrl } },
+    {
+      returnDocument: "after",
+      arrayFilters: [
+        { "a.vpsId": data.vpsId },
+        { "v.versionNumber": data.versionNumber },
+        { "s._id": new ObjectId(data.scoreId) },
+      ],
+    },
+    "tables",
+  );
+};
 
 export class CrossPostHighScoreListener extends Listener {
   constructor(context, options) {
@@ -23,7 +50,6 @@ export class CrossPostHighScoreListener extends Listener {
       user,
       score,
       attachmentBuffer,
-      attachmentName,
       currentWeek,
       channelId,
       postSubscript,
@@ -52,6 +78,21 @@ export class CrossPostHighScoreListener extends Listener {
       if (!exists) {
         const newHighScore = await saveHighScore(highScoreData, user);
 
+        const allScores =
+          newHighScore?.authors
+            ?.find((a) => a.vpsId === highScoreData.vpsId)
+            ?.versions?.find(
+              (v) => v.versionNumber === highScoreData.versionNumber,
+            )?.scores ?? [];
+
+        const topScore = allScores.reduce(
+          (a, b) => (a.score > b.score ? a : b),
+          { score: 0 },
+        );
+        const isNewTopScore = topScore.score === score;
+
+        const title = isNewTopScore ? "🥇 PERSONAL BEST" : "🏆 NEW HIGH SCORE";
+
         // Get the score ID from the saved document
         const highScoreId = newHighScore?.authors
           ?.find((a) => a.vpsId === highScoreData.vpsId)
@@ -63,22 +104,26 @@ export class CrossPostHighScoreListener extends Listener {
 
         if (doPost) {
           const mode = highScoreData.mode ?? "default";
+
+          const description =
+            `**User**: <@${user.id}>\n` +
+            `**Table:** ${highScoreData.tableName}\n` +
+            (mode !== "default" ? `**Mode:** ${mode}\n` : "") +
+            `**VPS Id:** ${highScoreData.vpsId}\n` +
+            `**Score:** ${formatNumber(highScoreData.s)}\n` +
+            `**Posted**: ${formatDateTime(new Date())}\n` +
+            `*${postSubscript}*`;
+
+          const embed = new EmbedBuilder()
+            .setTitle(title)
+            .setDescription(description)
+            .setImage("attachment://score.png")
+            .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 64 }))
+            .setColor("Green");
+
           const message = await channel.send({
-            content:
-              `**NEW HIGH SCORE POSTED:**\n` +
-              `**User**: <@${user.id}>\n` +
-              `**Table:** ${highScoreData.tableName}\n` +
-              (mode !== "default" ? `**Mode:** ${mode}\n` : "") +
-              `**VPS Id:** ${highScoreData.vpsId}\n` +
-              `**Score:** ${formatNumber(highScoreData.s)}\n` +
-              `**Posted**: ${formatDateTime(new Date())}\n` +
-              `*${postSubscript}*`,
-            files: [
-              {
-                attachment: attachmentBuffer,
-                name: attachmentName,
-              },
-            ],
+            embeds: [embed],
+            files: [{ attachment: attachmentBuffer, name: "score.png" }],
           });
 
           // Update the high score with the post URL
@@ -105,7 +150,6 @@ export class CrossPostHighScoreListener extends Listener {
             if (typeof post === "string") {
               await channel.send({ content: post });
             } else {
-              // assume post is an embed-like object
               await channel.send({ embeds: [post] });
             }
           }
