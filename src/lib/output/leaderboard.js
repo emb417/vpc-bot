@@ -268,7 +268,15 @@ export const printSeasonLeaderboard = (
         ],
         widths: expandedLayout ? [3, 15, 8, 10] : [3, 15, 8],
       }),
-    );
+    )
+    .addFields({
+      name: "📊  VPC Season Corner",
+      value: `<${process.env.SEASON_URL}>`,
+    })
+    .addFields({
+      name: "📌  How to Post",
+      value: "Use `/post-score` or\nAttach an image and use `!score 12345678`",
+    });
 
   return [embed];
 };
