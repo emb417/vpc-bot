@@ -13,6 +13,9 @@ import {
   generateObjectId,
 } from "../../services/database.js";
 
+global.pendingAttachments = global.pendingAttachments ?? new Map();
+export const pendingAttachments = global.pendingAttachments;
+
 export class PostHighScoreCommand extends Command {
   constructor(context, options) {
     super(context, {
@@ -30,7 +33,6 @@ export class PostHighScoreCommand extends Command {
       throw new Error("GUILD_ID environment variable is not set");
     }
 
-    // keep it registered so users see it, but it won't actually post
     registry.registerChatInputCommand(
       (builder) =>
         builder
@@ -40,6 +42,14 @@ export class PostHighScoreCommand extends Command {
             option
               .setName("score")
               .setDescription("Your score")
+              .setRequired(true),
+          )
+          .addAttachmentOption((option) =>
+            option
+              .setName("image")
+              .setDescription(
+                "Screenshot of your high score and full playfield",
+              )
               .setRequired(true),
           )
           .addStringOption((option) =>
@@ -58,13 +68,30 @@ export class PostHighScoreCommand extends Command {
     const score = interaction.options.getString("score") ?? "<score>";
     const tableSearchTerm =
       interaction.options.getString("tablesearchterm") ?? "<table>";
+    const attachment = interaction.options.getAttachment("image");
 
-    return interaction.reply({
-      content:
-        "The post-high-score slash command cannot be used because images are required.\n" +
-        `Please attach an image and use:\n\`!high ${score} ${tableSearchTerm}\``,
-      flags: 64,
-    });
+    if (attachment?.url) {
+      pendingAttachments.set(interaction.user.id, attachment.url);
+
+      logger.info(
+        `pendingAttachments set for ${interaction.user.id}, size: ${pendingAttachments.size}`,
+      );
+    }
+
+    const fakeContext = {
+      attachments: { first: () => attachment },
+      reply: (opts) => interaction.reply({ ...opts, flags: 64 }),
+      delete: () => Promise.resolve(),
+      channel: interaction.channel,
+    };
+
+    return this.handleHighScore(
+      fakeContext,
+      interaction.user,
+      score,
+      tableSearchTerm,
+      false,
+    );
   }
 
   async messageRun(message, args) {
@@ -158,7 +185,6 @@ export class PostHighScoreCommand extends Command {
           await context.reply({
             content: "Which table do you want to post this high score?",
             components: [row],
-            flags: 64,
           });
         }
       } else if (tables.length > 10) {
@@ -168,7 +194,7 @@ export class PostHighScoreCommand extends Command {
           await context.delete().catch(() => {});
           setTimeout(() => reply.delete().catch(() => {}), 10000);
         } else {
-          return context.reply({ content, flags: 64 });
+          return context.reply({ content });
         }
       } else {
         const content = `No high score tables were found using "${tableSearchTerm}". Try posting high score again using a different table search term.`;
@@ -177,7 +203,7 @@ export class PostHighScoreCommand extends Command {
           await context.delete().catch(() => {});
           setTimeout(() => reply.delete().catch(() => {}), 10000);
         } else {
-          return context.reply({ content, flags: 64 });
+          return context.reply({ content });
         }
       }
     } catch (e) {
@@ -185,7 +211,7 @@ export class PostHighScoreCommand extends Command {
       if (isMessage) {
         context.reply({ content: e.message });
       } else {
-        context.reply({ content: e.message, flags: 64 });
+        context.reply({ content: e.message });
       }
     }
   }

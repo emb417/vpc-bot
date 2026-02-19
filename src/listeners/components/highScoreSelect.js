@@ -9,7 +9,10 @@ import {
 import { printHighScoreTables } from "../../lib/output/tables.js";
 import { getScoresByVpsId } from "../../lib/data/vpc.js";
 import { aggregate } from "../../services/database.js";
-import { saveHighScore } from "../../commands/highscores/post-high-score.js";
+import {
+  saveHighScore,
+  pendingAttachments,
+} from "../../commands/highscores/post-high-score.js";
 
 export class HighScoreSelectListener extends Listener {
   constructor(context, options) {
@@ -22,6 +25,9 @@ export class HighScoreSelectListener extends Listener {
   async run(interaction) {
     if (interaction.type !== InteractionType.MessageComponent) return;
     if (interaction.customId !== "select") return;
+    logger.info(
+      `select fired for ${interaction.user.id}, pendingAttachments size: ${pendingAttachments.size}`,
+    );
 
     try {
       const selectedJson = JSON.parse(interaction.values[0]);
@@ -30,6 +36,11 @@ export class HighScoreSelectListener extends Listener {
       const vpsId = selectedJson.vpsId;
       const versionNumber = selectedJson.v;
       const newScore = selectedJson.s;
+
+      // Check if this came from a slash command via the pendingAttachments Map
+      const isSlashCommand = pendingAttachments.has(interaction.user.id);
+      const attachmentUrl = pendingAttachments.get(interaction.user.id);
+      if (isSlashCommand) pendingAttachments.delete(interaction.user.id);
 
       // 1. Fetch table info (to get author + table name)
       const tablePipeline = searchTableByVpsIdPipeline(vpsId);
@@ -79,16 +90,40 @@ export class HighScoreSelectListener extends Listener {
         ? "**NEW TOP HIGH SCORE POSTED:**"
         : "**NEW HIGH SCORE POSTED:**";
 
-      await interaction.update({
-        content:
-          `${headerText}\n` +
-          `**User**: <@${user.id}>\n` +
-          `**Table:** ${selectedJson.tableName} (${firstAuthor}... ${selectedJson.v})\n` +
-          `**VPS Id:** ${selectedJson.vpsId}\n` +
-          `**Score:** ${formatNumber(selectedJson.s)}\n` +
-          `**Posted**: ${formatDateTime(new Date())}\n`,
-        components: [],
-      });
+      const headerContent =
+        `${headerText}\n` +
+        `**User**: <@${user.id}>\n` +
+        `**Table:** ${selectedJson.tableName} (${firstAuthor}... ${selectedJson.v})\n` +
+        `**VPS Id:** ${selectedJson.vpsId}\n` +
+        `**Score:** ${formatNumber(selectedJson.s)}\n` +
+        `**Posted**: ${formatDateTime(new Date())}\n`;
+
+      if (isSlashCommand) {
+        // Dismiss the ephemeral select menu, then post everything publicly
+        await interaction.update({
+          content: "✅ High Score Posted Successfully",
+          components: [],
+        });
+
+        try {
+          const response = await fetch(attachmentUrl);
+          if (!response.ok)
+            throw new Error(`Failed to fetch: ${response.statusText}`);
+          const buffer = Buffer.from(await response.arrayBuffer());
+          await interaction.channel.send({
+            content: headerContent,
+            files: [{ attachment: buffer, name: "score.png" }],
+          });
+        } catch (e) {
+          logger.error(
+            "Failed to fetch attachment for slash command high score:",
+            e,
+          );
+        }
+      } else {
+        // Message command flow - update the existing message in place
+        await interaction.update({ content: headerContent, components: [] });
+      }
 
       // Show high scores for the table
       const tables = await getScoresByVpsId(selectedJson.vpsId);
@@ -100,7 +135,6 @@ export class HighScoreSelectListener extends Listener {
         2,
       );
 
-      // If you only expect embeds here:
       for (const embed of contentArray) {
         await interaction.channel.send({ embeds: [embed] });
       }
@@ -118,7 +152,6 @@ export class HighScoreSelectListener extends Listener {
           `**Posted:** ${formatDateTime(new Date())}\n\n` +
           `Link: ${interaction?.message?.url}`;
 
-        // Compact one-line log
         logger.info(
           `high score beaten DM sent to ${user?.username}: ${selectedJson?.s} for ${selectedJson?.tableName}`,
         );
