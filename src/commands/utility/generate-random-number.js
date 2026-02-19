@@ -26,7 +26,8 @@ export class GenerateRandomNumberCommand extends Command {
             option
               .setName("max")
               .setDescription("Maximum number")
-              .setRequired(true),
+              .setRequired(true)
+              .setMinValue(1),
           ),
       {
         guildIds: [guildId],
