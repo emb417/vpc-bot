@@ -111,7 +111,8 @@ export const printWeeklyLeaderboard = (
         })
         .addFields({
           name: "📌  How to Post",
-          value: "Attach an image and use `!score 12345678`",
+          value:
+            "Use `/post-score` or\nAttach an image and use `!score 12345678`",
         }),
     ];
   }
@@ -147,7 +148,7 @@ export const printWeeklyLeaderboard = (
     })
     .addFields({
       name: "📌  How to Post",
-      value: "Attach an image and use `!score 12345678`",
+      value: "Use `/post-score` or\nAttach an image and use `!score 12345678`",
     });
 
   return [embed];
@@ -296,7 +297,8 @@ export const printCombinedLeaderboard = (
         })
         .addFields({
           name: "📌  How to Post",
-          value: "Attach an image and use `!score 12345678`",
+          value:
+            "Use `/post-score` or\nAttach an image and use `!score 12345678`",
         }),
     ];
   }
