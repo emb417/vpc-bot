@@ -1,4 +1,5 @@
 import { Listener } from "@sapphire/framework";
+import { EmbedBuilder } from "discord.js";
 import logger from "../../utils/logger.js";
 import { formatNumber } from "../../utils/formatting.js";
 
@@ -28,20 +29,21 @@ export class PostBraggingRightsListener extends Listener {
       }
 
       const winner = currentWeek.scores[0];
+      const user = await client.users.fetch(winner.userId);
 
-      await braggingRightsChannel.send({
-        content:
-          `**Week:** ${currentWeek.weekNumber}\n` +
+      const embed = new EmbedBuilder()
+        .setTitle(`🏆 Braggin' Rights - Week ${currentWeek.weekNumber} 🏆`)
+        .setDescription(
           `**End Date:** ${currentWeek.periodEnd}\n` +
-          (winner.userId
-            ? `**User: <@${winner.userId}>**\n`
-            : `**User: ${winner.username}**\n`) +
-          `**Score:** ${formatNumber(winner.score)}\n` +
-          `**Table:** ${currentWeek.table}\n` +
-          `**Table Link:** ${currentWeek.tableUrl}\n` +
-          `**VPS Id:** ${currentWeek.vpsId}\n` +
-          `**Version Number:** v${currentWeek.versionNumber}`,
-      });
+            `**User:** <@${winner.userId}>\n` +
+            `**VPS Id:** ${currentWeek.vpsId}\n` +
+            `**Table:** [${currentWeek.table} v${currentWeek.versionNumber}](${currentWeek.tableUrl})\n` +
+            `**Score:** ${formatNumber(winner.score)}\n`,
+        )
+        .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 128 }))
+        .setColor("Random");
+
+      await braggingRightsChannel.send({ embeds: [embed] });
     } catch (e) {
       logger.error("Error in postBraggingRights:", e);
     }
