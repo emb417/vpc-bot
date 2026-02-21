@@ -106,7 +106,7 @@ export class CrossPostHighScoreListener extends Listener {
           const mode = highScoreData.mode ?? "default";
 
           const description =
-            `**User**: <@${user.id}>\n` +
+            `**User**: ${user}\n` +
             `**Table:** ${highScoreData.tableName}\n` +
             (mode !== "default" ? `**Mode:** ${mode}\n` : "") +
             `**VPS Id:** ${highScoreData.vpsId}\n` +
@@ -118,12 +118,15 @@ export class CrossPostHighScoreListener extends Listener {
             .setTitle(title)
             .setDescription(description)
             .setImage("attachment://score.png")
-            .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 64 }))
+            .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 128 }))
             .setColor("Green");
 
           const message = await channel.send({
             embeds: [embed],
             files: [{ attachment: attachmentBuffer, name: "score.png" }],
+            allowedMentions: {
+              users: [user.id],
+            },
           });
 
           // Update the high score with the post URL

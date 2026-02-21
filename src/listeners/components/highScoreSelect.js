@@ -89,7 +89,7 @@ export class HighScoreSelectListener extends Listener {
       const title = isNewTopScore ? "🥇 PERSONAL BEST" : "🏆 NEW HIGH SCORE";
 
       const description =
-        `**User**: <@${user.id}>\n` +
+        `**User**: ${user}\n` +
         `**Table:** ${selectedJson.tableName} (${firstAuthor}... ${selectedJson.v})\n` +
         `**VPS Id:** ${selectedJson.vpsId}\n` +
         `**Score:** ${formatNumber(selectedJson.s)}\n` +
@@ -112,12 +112,15 @@ export class HighScoreSelectListener extends Listener {
             .setTitle(title)
             .setDescription(description)
             .setImage("attachment://score.png")
-            .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 64 }))
+            .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 128 }))
             .setColor("Green");
 
           await interaction.channel.send({
             embeds: [embed],
             files: [{ attachment: buffer, name: "score.png" }],
+            allowedMentions: {
+              users: [user.id],
+            },
           });
         } catch (e) {
           logger.error(
@@ -132,7 +135,7 @@ export class HighScoreSelectListener extends Listener {
         const embed = new EmbedBuilder()
           .setTitle(title)
           .setDescription(description)
-          .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 64 }))
+          .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 128 }))
           .setColor("Green");
 
         if (attachment) {

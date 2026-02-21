@@ -115,7 +115,10 @@ export class PostScoreCommand extends Command {
     });
   }
 
-  async handleScore(message, user, score, postToHighScoreChannel, isMessage) {
+  async handleScore(message, user, score, postToHighScoreChannel) {
+    const member = await message.channel.guild.members
+      .fetch(user.id)
+      .catch(() => null);
     const channel = message.channel;
     const reHighScoreCheck = /Rank:\*\* [1|2|3|4|5|6|7|8|9|10] of/;
 
@@ -203,14 +206,14 @@ export class PostScoreCommand extends Command {
 
       // Build embed
       const description =
-        `**User:** <@${user.id}>\n` +
+        `**User:** ${member ?? user}\n` +
         `**Table:** ${currentWeek.table}\n` +
         (result.mode !== "default" ? `**Mode:** ${result.mode}\n` : "") +
         `**Score:** ${formatNumber(result.scoreAsInt)} (${result.scoreDiff >= 0 ? "+" : ""}${formatNumber(result.scoreDiff)})\n`;
 
       const title = result.currentRank.startsWith("1 of")
-        ? "🥇  NEW TOP WEEKLY SCORE"
-        : "🏆  NEW WEEKLY SCORE";
+        ? "🥇  NEW TOP SCORE"
+        : "🏆  NEW SCORE";
 
       const embed = new EmbedBuilder()
         .setTitle(title)
@@ -221,7 +224,7 @@ export class PostScoreCommand extends Command {
           inline: true,
         })
         .setImage("attachment://score.png")
-        .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 64 }))
+        .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 128 }))
         .setColor("Green");
 
       // Used for cross-post check — mirrors what was previously in retVal
@@ -250,6 +253,9 @@ export class PostScoreCommand extends Command {
         embeds: [embed],
         files: [{ attachment: attachmentBuffer, name: "score.png" }],
         components: [row],
+        allowedMentions: {
+          users: [user.id],
+        },
       });
 
       // Emit cross-post event
@@ -282,7 +288,7 @@ export class PostScoreCommand extends Command {
   async updateHistoricalAvatars(user) {
     const currentAvatarUrl = user.displayAvatarURL({
       dynamic: true,
-      size: 64,
+      size: 128,
     });
 
     const lastWeek = await findOne({ "scores.userId": user.id }, "weeks");

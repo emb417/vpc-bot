@@ -35,15 +35,20 @@ export class PostBraggingRightsListener extends Listener {
         .setTitle(`🏆 Braggin' Rights - Week ${currentWeek.weekNumber} 🏆`)
         .setDescription(
           `**End Date:** ${currentWeek.periodEnd}\n` +
-            `**User:** <@${winner.userId}>\n` +
+            `**User:** ${user}\n` +
             `**VPS Id:** ${currentWeek.vpsId}\n` +
             `**Table:** [${currentWeek.table} v${currentWeek.versionNumber}](${currentWeek.tableUrl})\n` +
             `**Score:** ${formatNumber(winner.score)}\n`,
         )
-        .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 64 }))
+        .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 128 }))
         .setColor("Random");
 
-      await braggingRightsChannel.send({ embeds: [embed] });
+      await braggingRightsChannel.send({
+        embeds: [embed],
+        allowedMentions: {
+          users: [user.id],
+        },
+      });
     } catch (e) {
       logger.error("Error in postBraggingRights:", e);
     }
