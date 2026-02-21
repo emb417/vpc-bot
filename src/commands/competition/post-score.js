@@ -116,9 +116,6 @@ export class PostScoreCommand extends Command {
   }
 
   async handleScore(message, user, score, postToHighScoreChannel) {
-    const member = await message.channel.guild.members
-      .fetch(user.id)
-      .catch(() => null);
     const channel = message.channel;
     const reHighScoreCheck = /Rank:\*\* [1|2|3|4|5|6|7|8|9|10] of/;
 
@@ -206,7 +203,7 @@ export class PostScoreCommand extends Command {
 
       // Build embed
       const description =
-        `**User:** ${member ?? user}\n` +
+        `**User:** ${user.username}\n` +
         `**Table:** ${currentWeek.table}\n` +
         (result.mode !== "default" ? `**Mode:** ${result.mode}\n` : "") +
         `**Score:** ${formatNumber(result.scoreAsInt)} (${result.scoreDiff >= 0 ? "+" : ""}${formatNumber(result.scoreDiff)})\n`;
@@ -253,9 +250,6 @@ export class PostScoreCommand extends Command {
         embeds: [embed],
         files: [{ attachment: attachmentBuffer, name: "score.png" }],
         components: [row],
-        allowedMentions: {
-          users: [user.id],
-        },
       });
 
       // Emit cross-post event
@@ -270,7 +264,7 @@ export class PostScoreCommand extends Command {
         attachmentName,
         currentWeek,
         channelId: process.env.HIGH_SCORES_CHANNEL_ID,
-        postSubscript: `copied from <#${channel.id}>`,
+        postSubscript: `🔗 <#${channel.id}>`,
         doPost: shouldPost,
       });
 

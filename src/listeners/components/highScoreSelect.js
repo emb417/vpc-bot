@@ -47,10 +47,8 @@ export class HighScoreSelectListener extends Listener {
       const tableResults = await aggregate(tablePipeline, "tables");
       const table = tableResults[0];
 
-      const authorName =
-        table?.authors?.[0]?.authorName ??
-        table?.authorName ??
-        "Unknown Author";
+      const matchingAuthor = table?.authors?.find((a) => a.vpsId === vpsId);
+      const authorName = matchingAuthor?.authorName ?? "Unknown Author";
 
       const tableName = table.tableName;
 
@@ -68,7 +66,7 @@ export class HighScoreSelectListener extends Listener {
       selectedJson.v = versionNumber;
       selectedJson.vpsId = vpsId;
 
-      const authorsArray = authorName.split(", ");
+      const authorsArray = selectedJson.authorName.split(", ");
       const firstAuthor = authorsArray.shift();
 
       let existingUser = null;
@@ -89,7 +87,7 @@ export class HighScoreSelectListener extends Listener {
       const title = isNewTopScore ? "🥇 PERSONAL BEST" : "🏆 NEW HIGH SCORE";
 
       const description =
-        `**User**: ${user}\n` +
+        `**User**: ${user.username}\n` +
         `**Table:** ${selectedJson.tableName} (${firstAuthor}... ${selectedJson.v})\n` +
         `**VPS Id:** ${selectedJson.vpsId}\n` +
         `**Score:** ${formatNumber(selectedJson.s)}\n` +
@@ -118,9 +116,6 @@ export class HighScoreSelectListener extends Listener {
           await interaction.channel.send({
             embeds: [embed],
             files: [{ attachment: buffer, name: "score.png" }],
-            allowedMentions: {
-              users: [user.id],
-            },
           });
         } catch (e) {
           logger.error(
@@ -170,11 +165,11 @@ export class HighScoreSelectListener extends Listener {
         existingUser.username !== user.username
       ) {
         const content =
-          `**@${user?.username}** just topped your high score for:\n` +
+          `**${user?.username}** just topped your high score for:\n` +
           `**${selectedJson?.tableName} (${firstAuthor}... ${selectedJson?.v})**\n` +
           `**Score:** ${formatNumber(selectedJson?.s)}\n` +
           `**Posted:** ${formatDateTime(new Date())}\n\n` +
-          `Link: ${interaction?.message?.url}`;
+          `🔗 ${interaction?.message?.url}`;
 
         logger.info(
           `high score beaten DM sent to ${user?.username}: ${selectedJson?.s} for ${selectedJson?.tableName}`,

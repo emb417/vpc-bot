@@ -35,7 +35,7 @@ export class PostBraggingRightsListener extends Listener {
         .setTitle(`🏆 Braggin' Rights - Week ${currentWeek.weekNumber} 🏆`)
         .setDescription(
           `**End Date:** ${currentWeek.periodEnd}\n` +
-            `**User:** ${user}\n` +
+            `**User:** ${user.username}\n` +
             `**VPS Id:** ${currentWeek.vpsId}\n` +
             `**Table:** [${currentWeek.table} v${currentWeek.versionNumber}](${currentWeek.tableUrl})\n` +
             `**Score:** ${formatNumber(winner.score)}\n`,
@@ -44,6 +44,7 @@ export class PostBraggingRightsListener extends Listener {
         .setColor("Random");
 
       await braggingRightsChannel.send({
+        content: `${user}`,
         embeds: [embed],
         allowedMentions: {
           users: [user.id],

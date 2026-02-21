@@ -106,7 +106,7 @@ export class CrossPostHighScoreListener extends Listener {
           const mode = highScoreData.mode ?? "default";
 
           const description =
-            `**User**: ${user}\n` +
+            `**User**: ${user.username}\n` +
             `**Table:** ${highScoreData.tableName}\n` +
             (mode !== "default" ? `**Mode:** ${mode}\n` : "") +
             `**VPS Id:** ${highScoreData.vpsId}\n` +
@@ -122,6 +122,7 @@ export class CrossPostHighScoreListener extends Listener {
             .setColor("Green");
 
           const message = await channel.send({
+            content: `${user}`,
             embeds: [embed],
             files: [{ attachment: attachmentBuffer, name: "score.png" }],
             allowedMentions: {
