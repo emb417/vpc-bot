@@ -13,6 +13,7 @@ import "./preconditions/HighScoresChannel.js";
 const client = new SapphireClient({
   intents: [
     GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.DirectMessages,
     GatewayIntentBits.MessageContent,
