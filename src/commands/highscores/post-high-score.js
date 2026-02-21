@@ -72,10 +72,6 @@ export class PostHighScoreCommand extends Command {
 
     if (attachment?.url) {
       pendingAttachments.set(interaction.user.id, attachment.url);
-
-      logger.info(
-        `pendingAttachments set for ${interaction.user.id}, size: ${pendingAttachments.size}`,
-      );
     }
 
     const fakeContext = {

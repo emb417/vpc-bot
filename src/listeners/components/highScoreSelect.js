@@ -25,9 +25,6 @@ export class HighScoreSelectListener extends Listener {
   async run(interaction) {
     if (interaction.type !== InteractionType.MessageComponent) return;
     if (interaction.customId !== "select") return;
-    logger.info(
-      `select fired for ${interaction.user.id}, pendingAttachments size: ${pendingAttachments.size}`,
-    );
 
     try {
       const selectedJson = JSON.parse(interaction.values[0]);
