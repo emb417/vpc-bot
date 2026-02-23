@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { Command } from "@sapphire/framework";
 import logger from "../../utils/logger.js";
-import { getVpsGame } from "../../lib/data/vps.js";
+import { getVpsGameById } from "../../lib/data/vps.js";
 import {
   findOne,
   insertOne,
@@ -63,7 +63,7 @@ export class CreateHighScoreTableCommand extends Command {
 
 // Export for use by events
 export const createHighScoreTable = async (vpsid) => {
-  const vpsGame = await getVpsGame(vpsid);
+  const vpsGame = await getVpsGameById(vpsid);
 
   const tableFile = vpsGame?.tableFiles?.find((t) => t.id === vpsid);
 

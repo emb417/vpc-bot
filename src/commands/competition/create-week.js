@@ -6,7 +6,7 @@ import {
   editWeeklyCompetitionCornerMessage,
   editSeasonCompetitionCornerMessage,
 } from "../../lib/output/messages.js";
-import { getVpsGame } from "../../lib/data/vps.js";
+import { getVpsGameById } from "../../lib/data/vps.js";
 import { getCurrentWeek } from "../../lib/data/vpc.js";
 import {
   findCurrentSeason,
@@ -95,7 +95,7 @@ export class CreateWeekCommand extends Command {
     const notes = interaction.options.getString("notes");
 
     try {
-      const vpsGame = await getVpsGame(vpsid);
+      const vpsGame = await getVpsGameById(vpsid);
 
       const tableFile = vpsGame?.tableFiles?.find((t) => t.id === vpsid);
 
