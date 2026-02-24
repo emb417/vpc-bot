@@ -132,11 +132,15 @@ export class ChangeRaffleEntryCommand extends Command {
         "raffles",
       );
 
-      const raffleBoardButton = new ActionRowBuilder().addComponents(
+      const raffleBoardButtons = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId("show_raffle_board")
           .setLabel("Show Raffle Board")
           .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId("show_raffle_rules")
+          .setLabel("Show Raffle Rules")
+          .setStyle(ButtonStyle.Secondary),
       );
 
       const embed = new EmbedBuilder()
@@ -154,7 +158,7 @@ export class ChangeRaffleEntryCommand extends Command {
 
       return interaction.reply({
         embeds: [embed],
-        components: [raffleBoardButton],
+        components: [raffleBoardButtons],
       });
     } catch (e) {
       logger.error(e);
