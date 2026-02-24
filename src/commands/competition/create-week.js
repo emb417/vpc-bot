@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { Command } from "@sapphire/framework";
+import { EmbedBuilder } from "discord.js";
 import logger from "../../utils/logger.js";
 import { formatDateISO, parseDate, addDays } from "../../utils/formatting.js";
 import {
@@ -95,10 +96,51 @@ export class CreateWeekCommand extends Command {
         vpsid,
         options,
       );
-      return interaction.editReply({ content: result.message });
+      return interaction.editReply({
+        embeds: [
+          new EmbedBuilder()
+            .setColor("Green")
+            .setTitle(`✅ Week ${result.week.weekNumber} Created`)
+            .addFields(
+              { name: "Table", value: result.week.table, inline: false },
+              { name: "Author", value: result.week.authorName, inline: true },
+              {
+                name: "Version",
+                value: result.week.versionNumber,
+                inline: true,
+              },
+              {
+                name: "Period",
+                value: `${result.week.periodStart} – ${result.week.periodEnd}`,
+                inline: false,
+              },
+              {
+                name: "ROM",
+                value:
+                  result.week.romUrl !== "N/A"
+                    ? "✅ Required"
+                    : "❌ Not Required",
+                inline: true,
+              },
+              {
+                name: "B2S",
+                value:
+                  result.week.b2sUrl !== "N/A"
+                    ? "✅ Available"
+                    : "❌ Not Available",
+                inline: true,
+              },
+            )
+            .setFooter({ text: `Channel: ${result.week.channelName}` }),
+        ],
+      });
     } catch (e) {
       logger.error(e);
-      return interaction.editReply({ content: e.message });
+      return interaction.editReply({
+        embeds: [
+          new EmbedBuilder().setColor("Red").setDescription(`❌ ${e.message}`),
+        ],
+      });
     }
   }
 }
