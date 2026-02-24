@@ -51,7 +51,7 @@ export class ShowRaffleRulesCommand extends Command {
             "Want to change your table? Use `/change-raffle-entry`",
         },
       )
-      .setColor("Gold");
+      .setColor("Red");
 
     return interaction.reply({ embeds: [embed], flags: 64 });
   }
