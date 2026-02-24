@@ -111,6 +111,7 @@ const findOrCreateByVpsId = async (
 ) => {
   const authorName = tableFile.authors?.join(", ") ?? "";
   const versionNumber = tableFile.version ?? "";
+  const romUrl = vpsGame.romFiles?.[0]?.urls?.[0]?.url ?? null; // derive here
 
   const localEntry = await tablesCollection.findOne({
     authors: {
@@ -134,6 +135,7 @@ const findOrCreateByVpsId = async (
         vpsId: author.vpsId,
         url: version.versionUrl,
         name: localEntry.tableName,
+        romUrl, // added
         metadata: {
           authorName: author.authorName,
           versionNumber: version.versionNumber,
@@ -154,6 +156,7 @@ const findOrCreateByVpsId = async (
       vpsId: author.vpsId,
       url: version.versionUrl,
       name: record.tableName,
+      romUrl, // added
       metadata: {
         authorName: author.authorName,
         versionNumber: version.versionNumber,
