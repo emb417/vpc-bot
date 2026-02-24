@@ -101,8 +101,17 @@ export class CreateWeekCommand extends Command {
           new EmbedBuilder()
             .setColor("Green")
             .setTitle(`✅ Week ${result.week.weekNumber} Created`)
+            .setURL(
+              `https://discord.com/channels/${process.env.GUILD_ID}/${interaction.channel.id}/${process.env.COMPETITION_WEEKLY_POST_ID}`,
+            )
             .addFields(
-              { name: "Table", value: result.week.table, inline: false },
+              {
+                name: "Table",
+                value: result.week.tableUrl
+                  ? `[🔗 ${result.week.table}](${result.week.tableUrl})`
+                  : result.week.table,
+                inline: false,
+              },
               { name: "Author", value: result.week.authorName, inline: true },
               {
                 name: "Version",
@@ -118,20 +127,20 @@ export class CreateWeekCommand extends Command {
                 name: "ROM",
                 value:
                   result.week.romUrl !== "N/A"
-                    ? "✅ Required"
-                    : "❌ Not Required",
+                    ? `[🔗 Required](${result.week.romUrl})`
+                    : "N/A",
                 inline: true,
               },
               {
                 name: "B2S",
                 value:
                   result.week.b2sUrl !== "N/A"
-                    ? "✅ Available"
-                    : "❌ Not Available",
+                    ? `[🔗 Available](${result.week.b2sUrl})`
+                    : "N/A",
                 inline: true,
               },
             )
-            .setFooter({ text: `Channel: ${result.week.channelName}` }),
+            .setFooter({ text: "Good luck everyone!" }),
         ],
       });
     } catch (e) {

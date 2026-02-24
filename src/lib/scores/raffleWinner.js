@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { EmbedBuilder } from "discord.js";
-import { find, findOne } from "../../services/database.js";
+import { find } from "../../services/database.js";
 import { calculateRaffleData } from "./raffle.js";
 import { createWeek } from "../../commands/competition/create-week.js";
 import logger from "../../utils/logger.js";
@@ -98,9 +98,18 @@ export const runRaffleAndCreateNextWeek = async (client, channel) => {
 
       const winnerEmbed = new EmbedBuilder()
         .setTitle("🎉 Weekly Raffle Winner! 🎉")
-        .setDescription(
-          `Congratulations to **${winner.username}**!
-Your submitted table, [${winner.table.name}](${winner.table.url}), has been selected for next week's competition!`,
+        .setDescription(`And the winner is...`)
+        .addFields(
+          {
+            name: "User",
+            value: `**${winner.username}**`,
+            inline: false,
+          },
+          {
+            name: "Table",
+            value: `[${winner.table.name}](${winner.table.url})`,
+            inline: false,
+          },
         )
         .setColor("Red");
 
@@ -108,28 +117,73 @@ Your submitted table, [${winner.table.name}](${winner.table.url}), has been sele
         content: `<@${winner.userId}>`,
         embeds: [winnerEmbed],
       });
-
-      // Create the new week using the winner's table
-      const createWeekOptions = {
-        romrequired: !!winner.table.romUrl,
-        interaction: null, // No interaction for scheduled task
-      };
-
-      const createWeekResult = await createWeek(
-        client,
-        channel,
-        winner.table.vpsId,
-        createWeekOptions,
-      );
-
-      if (createWeekResult.success) {
-        logger.info("New competition week created successfully.");
-      } else {
-        logger.error(
-          `Failed to create new competition week: ${createWeekResult.message}`,
+      if (process.env.RAFFLE_CREATE_WEEK_ENABLED === "true") {
+        const createWeekResult = await createWeek(
+          client,
+          channel,
+          winner.table.vpsId,
+          { interaction: null },
         );
-        await channel.send(
-          `Failed to start the new competition week: ${createWeekResult.message}`,
+
+        if (createWeekResult.success) {
+          logger.info("New competition week created successfully.");
+          const week = createWeekResult.week;
+          const weekEmbed = new EmbedBuilder()
+            .setColor("Green")
+            .setTitle(`✅ Week ${week.weekNumber} Created`)
+            .setURL(
+              `https://discord.com/channels/${process.env.GUILD_ID}/${channel.id}/${process.env.COMPETITION_WEEKLY_POST_ID}`,
+            )
+            .addFields(
+              {
+                name: "Table",
+                value: week.tableUrl
+                  ? `[🔗 ${week.table}](${week.tableUrl})`
+                  : week.table,
+                inline: false,
+              },
+              {
+                name: "Period",
+                value: `${week.periodStart} – ${week.periodEnd}`,
+                inline: false,
+              },
+              {
+                name: "ROM",
+                value:
+                  week.romUrl !== "N/A"
+                    ? `[🔗 Required](${week.romUrl})`
+                    : "N/A",
+                inline: true,
+              },
+              {
+                name: "B2S",
+                value:
+                  week.b2sUrl !== "N/A"
+                    ? `[🔗 Available](${week.b2sUrl})`
+                    : "N/A",
+                inline: true,
+              },
+            )
+            .setFooter({ text: "Good luck everyone!" });
+
+          await channel.send({ embeds: [weekEmbed] });
+        } else {
+          logger.error(
+            `Failed to create new competition week: ${createWeekResult.message}`,
+          );
+          await channel.send({
+            embeds: [
+              new EmbedBuilder()
+                .setColor("Red")
+                .setDescription(
+                  `❌ Failed to start the new competition week: ${createWeekResult.message}`,
+                ),
+            ],
+          });
+        }
+      } else {
+        logger.info(
+          "RAFFLE_CREATE_WEEK_ENABLED is not set, skipping week creation.",
         );
       }
     } else {
