@@ -17,7 +17,7 @@ export class CreateHighScoreTableListener extends Listener {
     try {
       const result = await createHighScoreTable(vpsId);
 
-      if (!interaction.replied) {
+      if (interaction && !interaction.replied) {
         await interaction.followUp({
           content: `**Creating new high score table:**\n${result}`,
         });

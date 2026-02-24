@@ -22,8 +22,13 @@ export class AdvancePlayoffRoundListener extends Listener {
   }
 
   async run(data) {
-    const { client, interaction, currentWeek } = data;
-    const channel = interaction.channel;
+    const { client, interaction, currentWeek, channel: channelFromData } = data;
+    const channel = channelFromData ?? interaction?.channel;
+
+    if (!channel) {
+      logger.warn("advancePlayoffRound: no channel available, skipping.");
+      return;
+    }
 
     try {
       const currentPlayoff = await findOne(

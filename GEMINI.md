@@ -9,28 +9,28 @@ The VPC Bot is a Discord bot designed for the Virtual Pinball Chat (VPC) league.
 - **Weekly Competitions:** Handling score submissions and leaderboards for ongoing competitions.
 - **High Scores:** Managing high score tables for individual pinball machines.
 - **Playoffs:** Organizing and tracking playoff brackets and standings.
-- **Team Management:** Facilitating team creation and management for team-based competitions.
+ - **Team Management:** Facilitating team creation and management for team-based competitions.
+- **Raffle Management:** Automating weekly raffle draws and new competition week creation.
 
 **Key Technologies:**
 
-- **Runtime:** Node.js (v22 specified in README, v24 in Dockerfile)
+- **Runtime:** Node.js v24
 - **Discord API Wrapper:** discord.js (v14)
 - **Command Framework:** @sapphire/framework (with @sapphire/plugin-subcommands)
 - **Database:** MongoDB (using `mongodb` driver and `mongo-dot-notation`)
 - **Configuration:** dotenv
 - **Logging:** pino, pino-pretty
-- **Scheduling:** node-cron (potentially for automated tasks, though not explicitly detailed in commands)
+- **Scheduling:** node-cron (for automated tasks like raffle draws and new week creation)
 - **Containerization:** Docker
 
 **Architecture:**
-
 The project follows a modular structure within the `src/` directory:
 
 - `commands/`: Contains various command handlers for user and admin interactions, categorized by function (e.g., `competition`, `highscores`, `teams`, `utility`).
-- `lib/`: Houses reusable logic and data handling, such as data pipelines, VPC/VPS data, and output formatting.
+- `lib/`: Houses reusable logic and data handling, such as data pipelines, VPC/VPS data, output formatting, and raffle winner selection (`raffleWinner.js`).
 - `listeners/`: Handles Discord events and custom event listeners.
 - `preconditions/`: Implements checks for command execution (e.g., channel restrictions, role requirements).
-- `services/`: Contains core business logic, like database interactions (`database.js`).
+- `services/`: Contains core business logic, like database interactions (`database.js`) and scheduled tasks (`scheduler.js`).
 - `utils/`: Provides utility functions for argument parsing, formatting, and logging.
 - `index.js`: The main entry point for the application, responsible for initializing the Discord client, database connection, and logging in.
 

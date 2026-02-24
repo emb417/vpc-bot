@@ -4,6 +4,7 @@ import { GatewayIntentBits, Partials } from "discord.js";
 import { initDatabase, closeDatabase } from "./services/database.js";
 import logger from "./utils/logger.js";
 import { SapphirePinoLogger } from "./utils/sapphire-logger.js";
+import { initScheduledJobs } from "./services/scheduler.js";
 
 // Register preconditions
 import "./preconditions/CompetitionChannel.js";
@@ -37,6 +38,12 @@ async function main() {
     // Login to Discord
     logger.info("Logging in to Discord...");
     await client.login(process.env.BOT_TOKEN);
+
+    if (process.env.WEEKLY_CRON_ENABLED === "true") {
+      client.once("clientReady", () => {
+        initScheduledJobs(client);
+      });
+    }
   } catch (error) {
     logger.error("Failed to start bot:", error);
     await closeDatabase();
