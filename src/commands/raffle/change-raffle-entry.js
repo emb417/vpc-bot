@@ -121,6 +121,7 @@ export class ChangeRaffleEntryCommand extends Command {
           name: table.name,
           url: table.url,
           vpsId: table.vpsId,
+          romUrl: table.romFiles?.[0]?.urls?.[0]?.url ?? null,
           notes: notes || null,
         };
         tableName = table.name;
