@@ -49,13 +49,17 @@ export const showRaffleRules = async (interaction) => {
       },
       {
         name: "🎟 Maximum 7 total tickets per week",
-        value:
-          "More tickets = better odds.\n\n" +
-          "Everyone that posts a score gets only one entry per week.\n" +
-          "Want to change your table? Use `/change-raffle-entry`",
+        value: "More tickets = better odds.",
+      },
+      {
+        name: "📌 Limit",
+        value: "One entry per person per week.",
       },
     )
-    .setColor("Red");
+    .setColor("Red")
+    .setFooter({
+      text: "Use /change-raffle-entry to change your entry.",
+    });
 
   return interaction.reply({ embeds: [embed], flags: 64 });
 };
