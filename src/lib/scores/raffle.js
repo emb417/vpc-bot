@@ -92,7 +92,6 @@ export const validateEntry = async (userId, table, currentWeek) => {
   const weeksCollection = await getCollection("weeks");
   const recentPlay = await weeksCollection.findOne({
     vpsId: table.vpsId,
-    "scores.userId": userId,
     periodStart: { $gte: fiftyTwoWeeksAgo.toISOString().split("T")[0] },
   });
 
