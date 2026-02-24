@@ -1,5 +1,4 @@
 import { getCollection } from "../../services/database.js";
-import logger from "../../utils/logger.js";
 
 /**
  * Calculate tickets for eligible users.
@@ -32,25 +31,29 @@ export const calculateRaffleData = (weeks, entries) => {
       const rank = userScoreIndex + 1;
 
       // Performance
-      let tickets = 1;
-      if (rank <= 10) tickets += 1; // 2 tickets
-      if (rank <= 3) tickets += 2; // 4 tickets
+      let performanceTickets = 1;
+      if (rank <= 10) performanceTickets += 1;
+      if (rank <= 3) performanceTickets += 2;
 
       // Persistence
-      const persistenceTickets = lastFourWeeks.reduce((count, week) => {
-        const played = week.scores?.some((s) => s.userId === entry.userId);
-        return played ? count + 1 : count;
-      }, 0);
-      tickets += Math.min(persistenceTickets, 3); // up to 3 more tickets
+      const persistenceTickets = Math.min(
+        lastFourWeeks.reduce((count, week) => {
+          const played = week.scores?.some((s) => s.userId === entry.userId);
+          return played ? count + 1 : count;
+        }, 0),
+        3,
+      );
 
-      // Cap at 7
-      tickets = Math.min(tickets, 7);
+      // Total capped at 7
+      const tickets = Math.min(performanceTickets + persistenceTickets, 7);
 
       return {
         userId: entry.userId,
         username: sortedScores[userScoreIndex].username,
         table: entry.table,
         tickets,
+        performanceTickets,
+        persistenceTickets,
         score: sortedScores[userScoreIndex].score,
         rank,
       };
