@@ -123,6 +123,7 @@ export class EnterRaffleCommand extends Command {
         table: {
           name: table.name,
           url: table.url,
+          vpsId: table.vpsId,
           notes: notes || null,
         },
         createdAt: new Date(),

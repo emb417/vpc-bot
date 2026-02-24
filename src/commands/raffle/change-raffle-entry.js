@@ -120,6 +120,7 @@ export class ChangeRaffleEntryCommand extends Command {
         updateData.table = {
           name: table.name,
           url: table.url,
+          vpsId: table.vpsId,
           notes: notes || null,
         };
         tableName = table.name;
