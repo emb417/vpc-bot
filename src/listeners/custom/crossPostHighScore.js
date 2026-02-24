@@ -91,7 +91,7 @@ export class CrossPostHighScoreListener extends Listener {
         );
         const isNewTopScore = topScore.score === score;
 
-        const title = isNewTopScore ? "🥇 PERSONAL BEST" : "🏆 NEW HIGH SCORE";
+        const title = isNewTopScore ? "🥇 GRAND CHAMPION" : "🏆 NEW HIGH SCORE";
 
         // Get the score ID from the saved document
         const highScoreId = newHighScore?.authors

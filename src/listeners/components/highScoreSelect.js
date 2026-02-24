@@ -81,7 +81,7 @@ export class HighScoreSelectListener extends Listener {
         `${user.username} posted high score: ${selectedJson.s} for ${selectedJson.tableName}`,
       );
 
-      const title = isNewTopScore ? "🥇 PERSONAL BEST" : "🏆 NEW HIGH SCORE";
+      const title = isNewTopScore ? "🥇 GRAND CHAMPION" : "🏆 NEW HIGH SCORE";
 
       const description =
         `**User**: ${user.username}\n` +
