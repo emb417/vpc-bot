@@ -80,9 +80,9 @@ export const showRaffleBoard = async (interaction) => {
     if (interaction.isButton()) {
       await interaction.editReply(responseOptions);
     } else if (interaction.replied || interaction.deferred) {
-      await interaction.followUp(responseOptions);
+      await interaction.followUp({ ...responseOptions, flags: 64 });
     } else {
-      await interaction.reply(responseOptions);
+      await interaction.reply({ ...responseOptions, flags: 64 });
     }
   } catch (e) {
     logger.error(e);
