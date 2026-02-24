@@ -1,13 +1,8 @@
 import "dotenv/config";
 import { Command } from "@sapphire/framework";
+import { EmbedBuilder } from "discord.js";
 import logger from "../../utils/logger.js";
-import { getVpsGameById } from "../../lib/data/vps.js";
-import {
-  findOne,
-  insertOne,
-  updateOne,
-  generateObjectId,
-} from "../../services/database.js";
+import { findTable } from "../../lib/data/tables.js";
 
 export class CreateHighScoreTableCommand extends Command {
   constructor(context, options) {
@@ -46,120 +41,60 @@ export class CreateHighScoreTableCommand extends Command {
     const vpsid = interaction.options.getString("vpsid");
 
     try {
-      const result = await createHighScoreTable(vpsid);
+      const { table, status, error } = await findTable({ vpsId: vpsid });
+
+      if (error) {
+        return interaction.reply({
+          embeds: [
+            new EmbedBuilder().setColor("Red").setDescription(`❌ ${error}`),
+          ],
+          flags: 64,
+        });
+      }
+
+      const {
+        name,
+        metadata: { authorName, versionNumber },
+      } = table;
+
+      const statusConfig = {
+        existing: { color: "Blue", icon: "📋", label: "Table Already Exists" },
+        new_author: { color: "Green", icon: "👤", label: "New Author Created" },
+        new_version: {
+          color: "Green",
+          icon: "🆕",
+          label: "New Version Created",
+        },
+        new_table: { color: "Green", icon: "✅", label: "Table Created" },
+      };
+
+      const { color, icon, label } = statusConfig[status] ?? {
+        color: "Yellow",
+        icon: "❓",
+        label: "Unknown",
+      };
+
+      const embed = new EmbedBuilder()
+        .setColor(color)
+        .setTitle(`${icon} ${label}`)
+        .addFields(
+          { name: "Table", value: name, inline: false },
+          { name: "Author", value: authorName, inline: true },
+          { name: "Version", value: versionNumber, inline: true },
+        );
+
       return interaction.reply({
-        content: result,
+        embeds: [embed],
         flags: 64,
       });
     } catch (e) {
       logger.error(e);
       return interaction.reply({
-        content: e.message,
+        embeds: [
+          new EmbedBuilder().setColor("Red").setDescription(`❌ ${e.message}`),
+        ],
         flags: 64,
       });
     }
   }
 }
-
-// Export for use by events
-export const createHighScoreTable = async (vpsid) => {
-  const vpsGame = await getVpsGameById(vpsid);
-
-  const tableFile = vpsGame?.tableFiles?.find((t) => t.id === vpsid);
-
-  if (!tableFile) {
-    return "No VPS Tables were found. Please double check your VPS Id.";
-  }
-
-  const tableName = `${vpsGame.name} (${vpsGame.manufacturer} ${vpsGame.year})`;
-
-  const comment = tableFile.comment ?? "";
-  const authorName = tableFile.authors?.join(", ") ?? "";
-  const versionNumber = tableFile.version ?? "";
-  const versionUrl = tableFile.urls?.[0]?.url ?? "";
-
-  const romName = vpsGame?.romFiles?.[0]?.version ?? "";
-
-  const table = {
-    _id: generateObjectId(),
-    tableName,
-    authors: [
-      {
-        _id: generateObjectId(),
-        authorName,
-        versions: [
-          {
-            _id: generateObjectId(),
-            versionNumber,
-            versionUrl,
-            romName,
-            scores: [],
-          },
-        ],
-        vpsId: vpsid,
-        comment,
-      },
-    ],
-  };
-
-  const existingTable = await findOne({ tableName }, "tables");
-
-  if (!existingTable) {
-    await insertOne(table, "tables");
-    return `${table.tableName}\nv${versionNumber}\n${authorName}\n\nSuccessfully created table!`;
-  }
-
-  const existingAuthor = existingTable?.authors?.find((a) => a.vpsId === vpsid);
-  const existingVersion = existingAuthor?.versions?.find(
-    (v) => v.versionNumber === versionNumber,
-  );
-
-  if (!existingAuthor) {
-    await updateOne(
-      { tableName: existingTable.tableName },
-      {
-        $push: {
-          authors: {
-            _id: generateObjectId(),
-            authorName,
-            versions: [
-              {
-                versionNumber,
-                versionUrl,
-                romName,
-                scores: [],
-              },
-            ],
-            vpsId: vpsid,
-            comment,
-          },
-        },
-      },
-      null,
-      "tables",
-    );
-    return `${existingTable.tableName}\n\nNew author and version created.`;
-  }
-
-  if (!existingVersion) {
-    await updateOne(
-      { tableName: existingTable.tableName },
-      {
-        $push: {
-          "authors.$[a].versions": {
-            _id: generateObjectId(),
-            versionNumber,
-            versionUrl,
-            romName,
-            scores: [],
-          },
-        },
-      },
-      { arrayFilters: [{ "a.vpsId": vpsid }] },
-      "tables",
-    );
-    return `${table.tableName}\n${authorName}\n\nNew version created.`;
-  }
-
-  return `${table.tableName}\nv${versionNumber}\n${authorName}\n\nTable already exists.`;
-};

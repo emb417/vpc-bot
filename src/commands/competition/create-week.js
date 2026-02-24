@@ -42,12 +42,6 @@ export class CreateWeekCommand extends Command {
               .setDescription("VPS ID for the table")
               .setRequired(true),
           )
-          .addBooleanOption((option) =>
-            option
-              .setName("romrequired")
-              .setDescription("Is ROM required?")
-              .setRequired(false),
-          )
           .addStringOption((option) =>
             option
               .setName("mode")
@@ -86,13 +80,12 @@ export class CreateWeekCommand extends Command {
 
     const vpsid = interaction.options.getString("vpsid");
     const options = {
-      romrequired: interaction.options.getBoolean("romrequired") ?? true,
       mode: interaction.options.getString("mode") ?? "default",
       startdateoverride: interaction.options.getString("startdateoverride"),
       enddateoverride: interaction.options.getString("enddateoverride"),
       b2sidoverride: interaction.options.getString("b2sidoverride"),
       notes: interaction.options.getString("notes"),
-      interaction: interaction,
+      interaction,
     };
 
     try {
@@ -115,13 +108,12 @@ export class CreateWeekCommand extends Command {
  */
 export const createWeek = async (client, channel, vpsid, options = {}) => {
   const {
-    romrequired = true,
     mode = "default",
     startdateoverride,
     enddateoverride,
     b2sidoverride,
     notes,
-    interaction, // Optional: for emitting events if called from a command
+    interaction,
   } = options;
 
   try {
@@ -134,7 +126,6 @@ export const createWeek = async (client, channel, vpsid, options = {}) => {
 
     const currentSeason = await findCurrentSeason(channel.name);
     const currentWeek = await getCurrentWeek(channel.name);
-    const errors = [];
 
     // Calculate week details
     const weekNumber = parseInt(currentWeek.weekNumber) + 1;
@@ -155,42 +146,24 @@ export const createWeek = async (client, channel, vpsid, options = {}) => {
     const versionNumber = tableFile?.version ?? "";
     const tableUrl = tableFile?.urls?.[0]?.url ?? "";
 
-    let romUrl = "";
-    let romName = "";
-    let b2sUrl = "";
+    let romUrl = "N/A";
+    let romName = "N/A";
+    let b2sUrl = "N/A";
 
     // Handle B2S
     if (b2sidoverride) {
       b2sUrl =
         vpsGame?.b2sFiles?.find((b) => b.id === b2sidoverride)?.urls?.[0]
-          ?.url ?? "";
+          ?.url ?? "N/A";
     } else if (vpsGame?.b2sFiles?.[0]?.urls?.[0]?.url) {
       b2sUrl = vpsGame.b2sFiles[0].urls[0].url;
     }
 
-    // Handle ROM
-    if (romrequired) {
-      const romFile = vpsGame?.romFiles?.[0];
-
-      if (!romFile?.urls?.[0]?.url) {
-        errors.push(
-          "Missing romUrl. Please provide at least one rom url, or remove rom files, or set romrequired to false.",
-        );
-      } else if (!romFile?.version) {
-        errors.push(
-          "Missing rom version. Please provide a rom version, or remove rom files, or set romrequired to false.",
-        );
-      } else {
-        romUrl = romFile.urls[0].url;
-        romName = romFile.version;
-      }
-    } else {
-      romUrl = "N/A";
-      romName = "N/A";
-    }
-
-    if (errors.length > 0) {
-      throw new Error(`Error creating new week: \n\n${errors.join("\n")}`);
+    // Handle ROM - derived from VPS data, no manual override needed
+    const romFile = vpsGame?.romFiles?.[0];
+    if (romFile?.urls?.[0]?.url) {
+      romUrl = romFile.urls[0].url;
+      romName = romFile.version ?? "N/A";
     }
 
     // Create new week
@@ -260,21 +233,21 @@ export const createWeek = async (client, channel, vpsid, options = {}) => {
 
       // Emit events
       client.emit("advancePlayoffRound", {
-        client: client,
+        client,
         interaction,
         channel,
         currentWeek,
       });
 
       client.emit("postBraggingRights", {
-        client: client,
+        client,
         channelId: process.env.BRAGGING_RIGHTS_CHANNEL_ID,
         channel,
         currentWeek,
       });
 
       client.emit("createHighScoreTable", {
-        client: client,
+        client,
         vpsId: newWeek.vpsId,
         interaction,
         channel,

@@ -1,6 +1,6 @@
 import { Listener } from "@sapphire/framework";
 import logger from "../../utils/logger.js";
-import { createHighScoreTable } from "../../commands/highscores/create-high-score-table.js";
+import { findTable } from "../../lib/data/tables.js";
 
 export class CreateHighScoreTableListener extends Listener {
   constructor(context, options) {
@@ -12,22 +12,12 @@ export class CreateHighScoreTableListener extends Listener {
   }
 
   async run(data) {
-    const { client, vpsId, interaction, channel } = data;
+    const { vpsId } = data;
 
     try {
-      const result = await createHighScoreTable(vpsId);
-
-      if (interaction && !interaction.replied) {
-        await interaction.followUp({
-          content: `**Creating new high score table:**\n${result}`,
-        });
-      } else {
-        await channel.send({
-          content: `**Creating new high score table:**\n${result}`,
-        });
-      }
+      await findTable({ vpsId });
     } catch (e) {
-      logger.error("Error in createHighScoreTable event:", e);
+      logger.error("Error in createHighScoreTable event:", e.message, e.stack);
     }
   }
 }
