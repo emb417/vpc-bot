@@ -1,5 +1,5 @@
 import { Listener } from "@sapphire/framework";
-import { showRaffleBoard } from "../../commands/utility/show-raffle-board.js";
+import { showRaffleBoard } from "../../commands/raffle/show-raffle-board.js";
 
 export class ShowRaffleBoardListener extends Listener {
   constructor(context, options) {
