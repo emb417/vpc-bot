@@ -63,7 +63,7 @@ export const showRaffleBoard = async (interaction) => {
         const tableUrl = user.table.url;
         const tableName = user.table.name;
         const tableLink = tableUrl ? `[${tableName}](${tableUrl})` : tableName;
-        return `${user.tickets} 🎟 (${user.probability.toFixed(1)}%) — #${user.rank} — ${user.username} — ${tableLink}`;
+        return `${user.tickets} 🎟 (${user.probability.toFixed(1)}%)  — #${user.rank}. ${user.username} (${user.performanceTickets} 🏆 ${user.persistenceTickets} 🔥) — ${tableLink}`;
       })
       .join("\n");
 
