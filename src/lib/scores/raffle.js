@@ -1,4 +1,10 @@
+import { readFileSync } from "fs";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+import { parse } from "csv-parse/sync";
 import { getCollection } from "../../services/database.js";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /**
  * Calculate tickets for eligible users.
@@ -76,6 +82,30 @@ export const calculateRaffleData = (weeks, entries) => {
     });
 };
 
+// TODO: Switch over to published csv url - remove imports too
+const loadApprovedTables = () => {
+  const csv = readFileSync(
+    join(__dirname, "../../services/curated.csv"),
+    "utf-8",
+  );
+  const rows = parse(csv, { columns: true, skip_empty_lines: true });
+  return rows.filter((row) => {
+    const confidence = row["Confidence"]?.trim() ?? "";
+    return confidence !== "Medium" && confidence !== "Low";
+  });
+};
+
+// TODO: Switch over to published csv url - update env value too
+// const loadApprovedTables = async () => {
+//   const response = await fetch(process.env.CURATED_TABLES_URL);
+//   const csv = await response.text();
+//   const rows = parse(csv, { columns: true, skip_empty_lines: true });
+//   return rows.filter((row) => {
+//     const confidence = row["Confidence"]?.trim() ?? "";
+//     return confidence !== "Medium" && confidence !== "Low";
+//   });
+// };
+
 export const validateEntry = async (userId, table, currentWeek) => {
   const score = currentWeek.scores?.find((s) => s.userId === userId);
   if (!score) {
@@ -83,6 +113,21 @@ export const validateEntry = async (userId, table, currentWeek) => {
       valid: false,
       error:
         "You must have a score posted for the current week to enter the weekly raffle.\n\nYou can post a score with `/post-score` or type `!score 12345678` and attach a photo.",
+    };
+  }
+
+  // TODO: Switch over to published csv url
+  const approvedTables = loadApprovedTables();
+  // TODO: Switch over to published csv url
+  // const approvedTables = await loadApprovedTables();
+
+  const isApproved = approvedTables.some(
+    (row) => row["VPS-ID"] === table.vpsId,
+  );
+  if (!isApproved) {
+    return {
+      valid: false,
+      error: `"${table.name}" is not on the [approved list](https://docs.google.com/spreadsheets/d/1cQoj3uVV78KGRRJqWSiJSbSZ-LLP5Kp1M2aNMCJj4X4/edit?usp=sharing) (Confidence = Full).`,
     };
   }
 
