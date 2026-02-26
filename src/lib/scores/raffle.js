@@ -82,29 +82,25 @@ export const calculateRaffleData = (weeks, entries) => {
     });
 };
 
-// TODO: Switch over to published csv url - remove imports too
-const loadApprovedTables = () => {
-  const csv = readFileSync(
-    join(__dirname, "../../services/curated.csv"),
-    "utf-8",
-  );
-  const rows = parse(csv, { columns: true, skip_empty_lines: true });
-  return rows.filter((row) => {
-    const confidence = row["Confidence"]?.trim() ?? "";
-    return confidence !== "Medium" && confidence !== "Low";
-  });
-};
+let cachedTables = null;
+let cacheExpiresAt = null;
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
-// TODO: Switch over to published csv url - update env value too
-// const loadApprovedTables = async () => {
-//   const response = await fetch(process.env.CURATED_TABLES_URL);
-//   const csv = await response.text();
-//   const rows = parse(csv, { columns: true, skip_empty_lines: true });
-//   return rows.filter((row) => {
-//     const confidence = row["Confidence"]?.trim() ?? "";
-//     return confidence !== "Medium" && confidence !== "Low";
-//   });
-// };
+const loadApprovedTables = async () => {
+  if (cachedTables && cacheExpiresAt && Date.now() < cacheExpiresAt) {
+    return cachedTables;
+  }
+
+  const response = await fetch(process.env.CURATED_TABLES_URL);
+  const csv = await response.text();
+  const rows = parse(csv, { columns: true, skip_empty_lines: true });
+  cachedTables = rows.filter((row) => {
+    const confidence = row["Confidence"]?.trim() ?? "";
+    return confidence === "Full";
+  });
+  cacheExpiresAt = Date.now() + CACHE_TTL_MS;
+  return cachedTables;
+};
 
 export const validateEntry = async (userId, table, currentWeek) => {
   const score = currentWeek.scores?.find((s) => s.userId === userId);
@@ -116,10 +112,7 @@ export const validateEntry = async (userId, table, currentWeek) => {
     };
   }
 
-  // TODO: Switch over to published csv url
-  const approvedTables = loadApprovedTables();
-  // TODO: Switch over to published csv url
-  // const approvedTables = await loadApprovedTables();
+  const approvedTables = await loadApprovedTables();
 
   const isApproved = approvedTables.some(
     (row) => row["VPS-ID"] === table.vpsId,
