@@ -125,10 +125,22 @@ export class CreateWeekCommand extends Command {
               },
               {
                 name: "ROM",
-                value:
-                  result.week.romUrl !== "N/A"
-                    ? `[🔗 Required](${result.week.romUrl})`
-                    : "N/A",
+                value: (() => {
+                  const label =
+                    result.week.romName && result.week.romName !== "N/A"
+                      ? `${result.week.romName} - Required`
+                      : "Required";
+                  const hasUrl =
+                    result.week.romUrl && result.week.romUrl !== "N/A";
+                  const hasRom =
+                    hasUrl ||
+                    (result.week.romName && result.week.romName !== "N/A");
+                  return hasRom
+                    ? hasUrl
+                      ? `[🔗 ${label}](${result.week.romUrl})`
+                      : label
+                    : "N/A";
+                })(),
                 inline: true,
               },
               {
