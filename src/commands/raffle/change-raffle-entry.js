@@ -8,6 +8,7 @@ import {
 } from "discord.js";
 import {
   updateOne,
+  find,
   findOne,
   findCurrentWeek,
 } from "../../services/database.js";
@@ -93,13 +94,9 @@ export class ChangeRaffleEntryCommand extends Command {
       let validation = null;
 
       if (vpsId || url) {
-        // Find table
         const { table, error: tableError } = await findTable({ vpsId, url });
         if (tableError) {
-          return interaction.reply({
-            content: tableError,
-            flags: 64,
-          });
+          return interaction.reply({ content: tableError, flags: 64 });
         }
         if (!table) {
           return interaction.reply({
@@ -109,13 +106,33 @@ export class ChangeRaffleEntryCommand extends Command {
           });
         }
 
-        // Validate entry rules
         validation = await validateEntry(userId, table, currentWeek);
         if (!validation.valid) {
-          return interaction.reply({
-            content: validation.error,
-            flags: 64,
-          });
+          return interaction.reply({ content: validation.error, flags: 64 });
+        }
+
+        if (validation.warning) {
+          const allEntries = await find({ weekId }, "raffles");
+          const combinedTrophies = allEntries
+            .filter((e) => e.table.vpsId === table.vpsId)
+            .reduce((sum, e) => {
+              const userScore = currentWeek.scores?.find(
+                (s) => s.userId === e.userId,
+              );
+              if (!userScore) return sum;
+              const rank =
+                [...currentWeek.scores]
+                  .sort((a, b) => b.score - a.score)
+                  .findIndex((s) => s.userId === e.userId) + 1;
+              let performanceTickets = 1;
+              if (rank <= 10) performanceTickets += 1;
+              if (rank <= 3) performanceTickets += 2;
+              return sum + performanceTickets;
+            }, 0);
+
+          if (combinedTrophies >= 3) {
+            validation.warning = null;
+          }
         }
 
         updateData.table = {

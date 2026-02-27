@@ -7,6 +7,7 @@ import {
   EmbedBuilder,
 } from "discord.js";
 import {
+  find,
   findOne,
   findCurrentWeek,
   insertOne,
@@ -132,6 +133,30 @@ export class EnterRaffleCommand extends Command {
       };
 
       await insertOne(entry, "raffles");
+
+      if (validation.warning) {
+        const allEntries = await find({ weekId }, "raffles");
+        const combinedTrophies = allEntries
+          .filter((e) => e.table.vpsId === table.vpsId)
+          .reduce((sum, e) => {
+            const userScore = currentWeek.scores?.find(
+              (s) => s.userId === e.userId,
+            );
+            if (!userScore) return sum;
+            const rank =
+              [...currentWeek.scores]
+                .sort((a, b) => b.score - a.score)
+                .findIndex((s) => s.userId === e.userId) + 1;
+            let performanceTickets = 1;
+            if (rank <= 10) performanceTickets += 1;
+            if (rank <= 3) performanceTickets += 2;
+            return sum + performanceTickets;
+          }, 0);
+
+        if (combinedTrophies >= 3) {
+          validation.warning = null;
+        }
+      }
 
       const embed = new EmbedBuilder()
         .setTitle("🎟 New Raffle Entry")
