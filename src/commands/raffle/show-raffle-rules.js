@@ -39,26 +39,31 @@ export const showRaffleRules = async (interaction) => {
       {
         name: "🏆 Performance (max 4 tickets)",
         value:
-          "+1 ticket for posting a score this week\n" +
-          "+1 ticket for finishing Top 10\n" +
-          "+2 tickets for finishing Top 3",
+          "+1 ticket for posting (1 🏆)\n" +
+          "+1 ticket for Top 10 (2 🏆 total)\n" +
+          "+2 tickets for Top 3 (4 🏆 total)",
       },
       {
         name: "🔥 Persistence (max 3 tickets)",
-        value: "+1 ticket for each of the previous 4 weeks you posted a score",
+        value: "+1 ticket for each of the previous 4 weeks you posted a score.",
       },
       {
-        name: "🎟 Maximum 7 total tickets per week",
-        value: "More tickets = better odds.",
+        name: "🎯 Entering Tables",
+        value:
+          "Tables on the [**Approved List**](https://docs.google.com/spreadsheets/d/1cQoj3uVV78KGRRJqWSiJSbSZ-LLP5Kp1M2aNMCJj4X4/edit?usp=sharing) are pre-qualified. Tables NOT on the list require a combined **3 🏆 Trophies** from players who enter it to qualify.\n" +
+          "• **Solo:** A Top 3 player (4 🏆) unlocks it alone.\n" +
+          "• **Team Up:** Combine trophies with others to hit 3 🏆.\n" +
+          "• **Track:** Check `/show-raffle-board` for the **Pending (⏳)** icon.",
       },
       {
-        name: "📌 Limit",
-        value: "One entry per person per week.",
+        name: "⚖️ The Bottom Line",
+        value:
+          "This creates a cycle of collaborative validation. If you want a new table, place higher on `/show-leaderboard` or recruit allies! Unqualified entries are discarded at week's end.",
       },
     )
     .setColor("Red")
     .setFooter({
-      text: "Use /change-raffle-entry to change your entry.",
+      text: "Limit: One entry per person. Use /change-raffle-entry to change your pick.",
     });
 
   return interaction.reply({ embeds: [embed], flags: 64 });
