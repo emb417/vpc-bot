@@ -2,7 +2,10 @@ import "dotenv/config";
 import { Command } from "@sapphire/framework";
 import { EmbedBuilder } from "discord.js";
 import { find } from "../../services/database.js";
-import { calculateRaffleData } from "../../lib/scores/raffle.js";
+import {
+  calculateRaffleDataWithStatus,
+  loadApprovedTables,
+} from "../../lib/scores/raffle.js";
 import logger from "../../utils/logger.js";
 
 export class ShowRaffleBoardCommand extends Command {
@@ -57,13 +60,22 @@ export const showRaffleBoard = async (interaction) => {
         : interaction.reply({ content: msg, flags: 64 });
     }
 
-    const raffleData = calculateRaffleData(allWeeks, entries);
+    const approvedTables = await loadApprovedTables();
+    const raffleData = calculateRaffleDataWithStatus(
+      allWeeks,
+      entries,
+      approvedTables,
+    );
+
     const description = raffleData
       .map((user) => {
         const tableUrl = user.table.url;
         const tableName = user.table.name;
         const tableLink = tableUrl ? `[${tableName}](${tableUrl})` : tableName;
-        return `${user.tickets} 🎟 (${user.probability.toFixed(1)}%)  — #${user.rank}. ${user.username} (${user.performanceTickets} 🏆 ${user.persistenceTickets} 🔥) — ${tableLink}`;
+        const statusIcon = user.tableStatus.pending
+          ? ` ⏳ (${user.tableStatus.trophies}/3 🏆)`
+          : "";
+        return `${user.tickets} 🎟 (${user.probability.toFixed(1)}%)  — #${user.rank}. ${user.username} (${user.performanceTickets} 🏆 ${user.persistenceTickets} 🔥) — ${tableLink}${statusIcon}`;
       })
       .join("\n");
 

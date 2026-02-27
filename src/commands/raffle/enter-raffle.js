@@ -133,6 +133,19 @@ export class EnterRaffleCommand extends Command {
 
       await insertOne(entry, "raffles");
 
+      const embed = new EmbedBuilder()
+        .setTitle("🎟 New Raffle Entry")
+        .setDescription(
+          `**${interaction.user.username}** entered\n[${table.name}](${table.url})${validation.warning ? `\n\n⏳ ${validation.warning}` : ""}`,
+        )
+        .setColor(validation.warning ? "Yellow" : "Green")
+        .setThumbnail(
+          interaction.user.displayAvatarURL({ dynamic: true, size: 128 }),
+        )
+        .setFooter({
+          text: "Use /change-raffle-entry to change your entry.",
+        });
+
       const raffleBoardButtons = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId("show_raffle_board")
@@ -143,19 +156,6 @@ export class EnterRaffleCommand extends Command {
           .setLabel("Show Raffle Rules")
           .setStyle(ButtonStyle.Secondary),
       );
-
-      const embed = new EmbedBuilder()
-        .setTitle("🎟 New Raffle Entry")
-        .setDescription(
-          `**${interaction.user.username}** entered\n[${table.name}](${table.url})`,
-        )
-        .setColor("Green")
-        .setThumbnail(
-          interaction.user.displayAvatarURL({ dynamic: true, size: 128 }),
-        )
-        .setFooter({
-          text: "Use /change-raffle-entry to change your entry.",
-        });
 
       return interaction.reply({
         embeds: [embed],

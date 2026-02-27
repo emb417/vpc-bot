@@ -90,6 +90,7 @@ export class ChangeRaffleEntryCommand extends Command {
 
       let updateData = { updatedAt: new Date() };
       let tableName = existingEntry.table.name;
+      let validation = null;
 
       if (vpsId || url) {
         // Find table
@@ -109,7 +110,7 @@ export class ChangeRaffleEntryCommand extends Command {
         }
 
         // Validate entry rules
-        const validation = await validateEntry(userId, table, currentWeek);
+        validation = await validateEntry(userId, table, currentWeek);
         if (!validation.valid) {
           return interaction.reply({
             content: validation.error,
@@ -134,6 +135,19 @@ export class ChangeRaffleEntryCommand extends Command {
         "raffles",
       );
 
+      const embed = new EmbedBuilder()
+        .setTitle("🎟 Changed Raffle Entry")
+        .setDescription(
+          `**${interaction.user.username}** changed to\n[${tableName}](${updateData.table?.url ?? existingEntry.table.url})${validation?.warning ? `\n\n⏳ ${validation.warning}` : ""}`,
+        )
+        .setColor(validation?.warning ? "Yellow" : "Green")
+        .setThumbnail(
+          interaction.user.displayAvatarURL({ dynamic: true, size: 128 }),
+        )
+        .setFooter({
+          text: "Use /change-raffle-entry to change your entry.",
+        });
+
       const raffleBoardButtons = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId("show_raffle_board")
@@ -144,19 +158,6 @@ export class ChangeRaffleEntryCommand extends Command {
           .setLabel("Show Raffle Rules")
           .setStyle(ButtonStyle.Secondary),
       );
-
-      const embed = new EmbedBuilder()
-        .setTitle("🎟 Changed Raffle Entry")
-        .setDescription(
-          `**${interaction.user.username}** changed to\n[${tableName}](${updateData.table?.url ?? existingEntry.table.url})`,
-        )
-        .setColor("Green")
-        .setThumbnail(
-          interaction.user.displayAvatarURL({ dynamic: true, size: 128 }),
-        )
-        .setFooter({
-          text: "Use /change-raffle-entry to change your entry.",
-        });
 
       return interaction.reply({
         embeds: [embed],

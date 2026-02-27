@@ -1,20 +1,13 @@
 import "dotenv/config";
 import { EmbedBuilder } from "discord.js";
 import { find } from "../../services/database.js";
-import { calculateRaffleData } from "./raffle.js";
+import { calculateRaffleData, loadApprovedTables } from "./raffle.js";
 import { createWeek } from "../../commands/competition/create-week.js";
 import logger from "../../utils/logger.js";
 import { showRaffleBoard } from "../../commands/raffle/show-raffle-board.js";
 
-/**
- * Picks a weighted random winner from the raffle entries.
- * @param {Array} raffleData - Array of objects with user and ticket information.
- * @returns {Object|null} The winning user object, or null if no entries.
- */
 const pickWeightedRaffleWinner = (raffleData) => {
-  if (!raffleData || raffleData.length === 0) {
-    return null;
-  }
+  if (!raffleData || raffleData.length === 0) return null;
 
   const totalTickets = raffleData.reduce(
     (sum, entry) => sum + entry.tickets,
@@ -23,19 +16,12 @@ const pickWeightedRaffleWinner = (raffleData) => {
   let randomNumber = Math.random() * totalTickets;
 
   for (const entry of raffleData) {
-    if (randomNumber < entry.tickets) {
-      return entry;
-    }
+    if (randomNumber < entry.tickets) return entry;
     randomNumber -= entry.tickets;
   }
-  return null; // Should not happen if totalTickets > 0
+  return null;
 };
 
-/**
- * Handles the entire raffle process: showing board, picking winner, and starting new week.
- * @param {Client} client - The Discord client.
- * @param {TextChannel} channel - The Discord channel to post messages in.
- */
 export const runRaffleAndCreateNextWeek = async (client, channel) => {
   try {
     logger.info("Running weekly raffle and creating next week...");
@@ -57,8 +43,6 @@ export const runRaffleAndCreateNextWeek = async (client, channel) => {
 
     // Show the final raffle board
     if (entries && entries.length > 0) {
-      // This is a workaround as showRaffleBoard expects an interaction object.
-      // We construct a minimal object that mimics the necessary parts.
       const mockInteraction = {
         channel: channel,
         replied: false,
@@ -66,11 +50,11 @@ export const runRaffleAndCreateNextWeek = async (client, channel) => {
         isButton: () => false,
         reply: async (options) => {
           await channel.send(options.content || { embeds: options.embeds });
-          return { editReply: async () => {} }; // Mock editReply
+          return { editReply: async () => {} };
         },
         followUp: async (options) => {
           await channel.send(options.content || { embeds: options.embeds });
-          return { editReply: async () => {} }; // Mock editReply
+          return { editReply: async () => {} };
         },
       };
       await showRaffleBoard(mockInteraction);
@@ -79,7 +63,8 @@ export const runRaffleAndCreateNextWeek = async (client, channel) => {
       await channel.send("No raffle entries this week. Skipping raffle draw.");
     }
 
-    const raffleData = calculateRaffleData(allWeeks, entries);
+    const approvedTables = await loadApprovedTables();
+    const raffleData = calculateRaffleData(allWeeks, entries, approvedTables);
 
     if (!raffleData || raffleData.length === 0) {
       logger.info("No eligible raffle entries for a draw.");
@@ -100,23 +85,20 @@ export const runRaffleAndCreateNextWeek = async (client, channel) => {
         .setTitle("🎉 Weekly Raffle Winner! 🎉")
         .setDescription(`And the winner is...`)
         .addFields(
-          {
-            name: "User",
-            value: `**${winner.username}**`,
-            inline: false,
-          },
+          { name: "User", value: `**${winner.username}**`, inline: false },
           {
             name: "Table",
             value: `[${winner.table.name}](${winner.table.url})`,
             inline: false,
           },
         )
-        .setColor("Red");
+        .setColor("Gold");
 
       await channel.send({
         content: `<@${winner.userId}>`,
         embeds: [winnerEmbed],
       });
+
       if (process.env.RAFFLE_CREATE_WEEK_ENABLED === "true") {
         const createWeekResult = await createWeek(
           client,
