@@ -234,6 +234,10 @@ export class PostScoreCommand extends Command {
           .setCustomId("showLeaderboard")
           .setLabel("Show Leaderboard")
           .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId("show_competition_rules")
+          .setLabel("Show Rules")
+          .setStyle(ButtonStyle.Secondary),
       );
 
       if (showPlayoffButton) {
