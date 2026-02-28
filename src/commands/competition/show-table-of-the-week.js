@@ -25,7 +25,7 @@ export class ShowTableOfTheWeekCommand extends Command {
     await interaction.deferReply({ flags: 64 });
 
     try {
-      const week = await getCurrentWeek(interaction.channel.name);
+      const week = await getCurrentWeek(process.env.COMPETITION_CHANNEL_NAME);
 
       if (!week) {
         return interaction.editReply({
