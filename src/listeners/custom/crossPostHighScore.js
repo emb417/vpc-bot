@@ -1,5 +1,10 @@
 import { Listener } from "@sapphire/framework";
-import { EmbedBuilder } from "discord.js";
+import {
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+} from "discord.js";
 import { saveHighScore } from "../../commands/highscores/post-high-score.js";
 import { searchScoreByVpsIdUsernameScorePipeline } from "../../lib/data/pipelines.js";
 import { getScoresByVpsId } from "../../lib/data/vpc.js";
@@ -121,9 +126,17 @@ export class CrossPostHighScoreListener extends Listener {
             .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 128 }))
             .setColor("Green");
 
+          const row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+              .setCustomId("show_high_score_rules")
+              .setLabel("Show Rules")
+              .setStyle(ButtonStyle.Primary),
+          );
+
           const message = await channel.send({
             content: `${user}`,
             embeds: [embed],
+            components: [row],
             files: [{ attachment: attachmentBuffer, name: "score.png" }],
             allowedMentions: {
               users: [user.id],

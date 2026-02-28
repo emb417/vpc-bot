@@ -1,5 +1,11 @@
 import { Listener } from "@sapphire/framework";
-import { InteractionType, EmbedBuilder } from "discord.js";
+import {
+  InteractionType,
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+} from "discord.js";
 import logger from "../../utils/logger.js";
 import { formatDateTime, formatNumber } from "../../utils/formatting.js";
 import {
@@ -110,8 +116,16 @@ export class HighScoreSelectListener extends Listener {
             .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 128 }))
             .setColor("Green");
 
+          const row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+              .setCustomId("show_high_score_rules")
+              .setLabel("Show Rules")
+              .setStyle(ButtonStyle.Primary),
+          );
+
           await interaction.channel.send({
             embeds: [embed],
+            components: [row],
             files: [{ attachment: buffer, name: "score.png" }],
           });
         } catch (e) {
@@ -134,10 +148,17 @@ export class HighScoreSelectListener extends Listener {
           embed.setImage(attachment.url);
         }
 
+        const row = new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setCustomId("show_high_score_rules")
+            .setLabel("Show Rules")
+            .setStyle(ButtonStyle.Primary),
+        );
+
         await interaction.update({
           content: "",
           embeds: [embed],
-          components: [],
+          components: [row],
         });
       }
 
