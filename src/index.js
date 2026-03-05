@@ -5,6 +5,7 @@ import { initDatabase, closeDatabase } from "./services/database.js";
 import logger from "./utils/logger.js";
 import { SapphirePinoLogger } from "./utils/sapphire-logger.js";
 import { initScheduledJobs } from "./services/scheduler.js";
+import { startHeartbeat, stopHeartbeat } from "./services/heartbeat.js";
 
 // Register preconditions
 import "./preconditions/CompetitionChannel.js";
@@ -39,11 +40,13 @@ async function main() {
     logger.info("Logging in to Discord...");
     await client.login(process.env.BOT_TOKEN);
 
-    if (process.env.WEEKLY_CRON_ENABLED === "true") {
-      client.once("clientReady", () => {
+    client.once("clientReady", () => {
+      startHeartbeat(client);
+
+      if (process.env.WEEKLY_CRON_ENABLED === "true") {
         initScheduledJobs(client);
-      });
-    }
+      }
+    });
   } catch (error) {
     logger.error("Failed to start bot:", error);
     await closeDatabase();
@@ -54,6 +57,7 @@ async function main() {
 // Handle graceful shutdown
 process.on("SIGINT", async () => {
   logger.info("Received SIGINT, shutting down gracefully...");
+  stopHeartbeat();
   await closeDatabase();
   client.destroy();
   process.exit(0);
@@ -61,6 +65,7 @@ process.on("SIGINT", async () => {
 
 process.on("SIGTERM", async () => {
   logger.info("Received SIGTERM, shutting down gracefully...");
+  stopHeartbeat();
   await closeDatabase();
   client.destroy();
   process.exit(0);
