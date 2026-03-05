@@ -8,6 +8,16 @@ import {
 } from "../../lib/scores/raffle.js";
 import logger from "../../utils/logger.js";
 
+/**
+ * Escape underscores in a string to prevent Discord markdown rendering
+ * (italics/bold) in embed text. Only escapes when 2+ underscores are
+ * present, since a single underscore renders fine.
+ */
+const escapeUnderscores = (str) => {
+  if (!str) return "";
+  return (str.match(/_/g)?.length ?? 0) >= 2 ? str.replace(/_/g, "\\_") : str;
+};
+
 export class ShowRaffleBoardCommand extends Command {
   constructor(context, options) {
     super(context, {
@@ -75,7 +85,8 @@ export const showRaffleBoard = async (interaction) => {
         const statusIcon = user.tableStatus.pending
           ? ` ⏳ (${user.tableStatus.trophies}/3 🏆)`
           : "";
-        return `${user.tickets} 🎟 (${user.probability.toFixed(1)}%)  — #${user.rank}. ${user.username} (${user.performanceTickets} 🏆 ${user.persistenceTickets} 🔥) — ${tableLink}${statusIcon}`;
+        const username = escapeUnderscores(user.username);
+        return `${user.tickets} 🎟 (${user.probability.toFixed(1)}%)  — #${user.rank}. ${username} (${user.performanceTickets} 🏆 ${user.persistenceTickets} 🔥) — ${tableLink}${statusIcon}`;
       })
       .join("\n");
 
