@@ -3,6 +3,14 @@ import { truncate, formatNumber } from "../../utils/formatting.js";
 import { renderTable, AlignmentEnum } from "./tableRenderer.js";
 
 /**
+ * Escape underscores in a string to protect Discord markdown rendering.
+ */
+const escapeUnderscores = (str) => {
+  if (!str) return "";
+  return (str.match(/_/g)?.length ?? 0) >= 2 ? str.replace(/_/g, "\\_") : str;
+};
+
+/**
  * ---------------------------------------------------------------------------
  *  HIGH SCORE ASCII TABLE PRINTER
  * ---------------------------------------------------------------------------
@@ -66,7 +74,9 @@ export const printHighScoreTables = (
           .slice(0, scoresToShow)
           .map((score, i) => [
             (i + 1).toString(),
-            truncate(score?.user?.username || score?.username, 11),
+            escapeUnderscores(
+              truncate(score?.user?.username || score?.username, 11),
+            ),
             formatNumber(score?.score),
           ]);
 
@@ -142,11 +152,11 @@ export const printHighScoreTables = (
  */
 export const createTableRowPlayoffMatchup = (table, game) => {
   let awayValue = `**Seed:** ${game.away?.seed}\n`;
-  awayValue += `**User:** ${game.away?.username}\n`;
+  awayValue += `**User:** ${escapeUnderscores(game.away?.username)}\n`;
   awayValue += `**Score:** ${formatNumber(game.away?.score)}\n`;
 
   let homeValue = `**Seed:** ${game.home?.seed}\n`;
-  homeValue += `**User:** ${game.home?.username}\n`;
+  homeValue += `**User:** ${escapeUnderscores(game.home?.username)}\n`;
   homeValue += `**Score:** ${formatNumber(game.home?.score)}\n`;
 
   return { awayValue, homeValue };

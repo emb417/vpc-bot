@@ -4,6 +4,14 @@ import { calculateSeasonPoints } from "../scores/points.js";
 import { renderTable, AlignmentEnum } from "./tableRenderer.js";
 
 /**
+ * Escape underscores in a string to protect Discord markdown rendering.
+ */
+const escapeUnderscores = (str) => {
+  if (!str) return "";
+  return (str.match(/_/g)?.length ?? 0) >= 2 ? str.replace(/_/g, "\\_") : str;
+};
+
+/**
  * Create a table row for weekly leaderboard.
  * Returns an array of strings representing the cells.
  */
@@ -11,8 +19,10 @@ export const createTableRow = (rank, score, expandedLayout, showScores) => {
   const rankStr = rank.toString();
 
   // Truncate name to 11 chars to ensure the score doesn't push the table
-  // past the 36-char mobile limit
-  const nameStr = truncate(score?.username?.replace(/`/g, ""), 11);
+  // past the 36-char mobile limit, then escape underscores for Discord markdown
+  const nameStr = escapeUnderscores(
+    truncate(score?.username?.replace(/`/g, ""), 11),
+  );
 
   const row = [rankStr, nameStr];
 
@@ -33,7 +43,7 @@ export const createTableRow = (rank, score, expandedLayout, showScores) => {
  */
 export const createTableRowSeason = (rank, player, expandedLayout) => {
   const row = [rank.toString()];
-  row.push(truncate(player?.username, 15));
+  row.push(escapeUnderscores(truncate(player?.username, 15)));
   row.push(formatNumber(player?.points));
 
   if (expandedLayout) {
@@ -50,7 +60,7 @@ export const createTableRowSeason = (rank, player, expandedLayout) => {
 export const createTableRowTeam = (rank, team) => {
   return [
     rank.toString(),
-    truncate(team?.name, 11),
+    escapeUnderscores(truncate(team?.name, 11)),
     formatNumber(team?.totalScore),
   ];
 };
@@ -62,7 +72,7 @@ export const createTableRowTeam = (rank, team) => {
 const createTeamMemberRow = (rank, score, expandedLayout) => {
   const row = [
     rank.toString(),
-    truncate(score?.username?.replace(/`/g, ""), 11),
+    escapeUnderscores(truncate(score?.username?.replace(/`/g, ""), 11)),
     formatNumber(score?.score),
   ];
 
