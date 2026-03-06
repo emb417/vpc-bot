@@ -289,17 +289,36 @@ export class PostScoreCommand extends Command {
       size: 128,
     });
 
-    const lastWeek = await findOne({ "scores.userId": user.id }, "weeks");
+    const lastWeek = await findOne(
+      {
+        scores: {
+          $elemMatch: {
+            $or: [{ userId: user.id }, { username: user.username }],
+          },
+        },
+      },
+      "weeks",
+    );
 
     const storedAvatarUrl = lastWeek?.scores?.find(
-      (s) => s.userId === user.id,
+      (s) => s.userId === user.id || s.username === user.username,
     )?.userAvatarUrl;
 
     if (currentAvatarUrl !== storedAvatarUrl) {
       await updateMany(
-        { "scores.userId": user.id },
+        {
+          scores: {
+            $elemMatch: {
+              $or: [{ userId: user.id }, { username: user.username }],
+            },
+          },
+        },
         { $set: { "scores.$[s].userAvatarUrl": currentAvatarUrl } },
-        { arrayFilters: [{ "s.userId": user.id }] },
+        {
+          arrayFilters: [
+            { $or: [{ "s.userId": user.id }, { "s.username": user.username }] },
+          ],
+        },
         "weeks",
       );
 
