@@ -143,80 +143,49 @@ const findOrCreateByVpsId = async (
   });
 
   if (existingByVpsId) {
-    // Update tableName if it has changed
+    // Update tableName if drifted
     if (existingByVpsId.tableName !== tableName) {
       await tablesCollection.updateOne(
         { _id: existingByVpsId._id },
         { $set: { tableName } },
       );
       existingByVpsId.tableName = tableName;
-      logger.info(`Updated tableName to '${tableName}' for vpsId '${vpsId}'.`);
     }
 
-    // Find all authors with this vpsId
-    const authorsWithVpsId = existingByVpsId.authors.filter(
-      (a) => a.vpsId === vpsId,
+    const authorWithVersion = existingByVpsId.authors.find(
+      (a) =>
+        a.vpsId === vpsId &&
+        a.versions.some((v) => v.versionNumber === versionNumber),
     );
 
-    // Look for matching version number
-    for (const author of authorsWithVpsId) {
-      const existingVersion = author.versions.find(
+    if (authorWithVersion) {
+      const existingVersion = authorWithVersion.versions.find(
         (v) => v.versionNumber === versionNumber,
       );
-
-      if (existingVersion) {
-        if (author.authorName === authorName) {
-          // Exact match - return existing
-          logger.info(
-            `Existing table '${tableName}' found for vpsId '${vpsId}'.`,
-          );
-          return buildTableResult(
-            existingByVpsId,
-            author,
-            existingVersion,
-            "existing",
-          );
-        } else {
-          // Same version, different author - create new author + version
-          await tablesCollection.updateOne(
-            { _id: existingByVpsId._id },
-            {
-              $push: {
-                authors: {
-                  _id: generateObjectId(),
-                  authorName,
-                  versions: [
-                    {
-                      _id: generateObjectId(),
-                      versionNumber,
-                      versionUrl,
-                      romName,
-                      scores: [],
-                    },
-                  ],
-                  vpsId,
-                  comment: tableFile.comment ?? "",
-                },
-              },
-            },
-          );
-          logger.info(
-            `New author '${authorName}' with version '${versionNumber}' added to '${tableName}'.`,
-          );
-          return buildTableResult(
-            existingByVpsId,
-            { vpsId, authorName },
-            { versionUrl, versionNumber },
-            "new_author",
-          );
-        }
+      // Always sync author name from VPS — it's the source of truth
+      if (authorWithVersion.authorName !== authorName) {
+        await tablesCollection.updateOne(
+          { _id: existingByVpsId._id, "authors._id": authorWithVersion._id },
+          { $set: { "authors.$.authorName": authorName } },
+        );
+        logger.info(
+          `Updated authorName from '${authorWithVersion.authorName}' to '${authorName}' for vpsId '${vpsId}'.`,
+        );
       }
+      return buildTableResult(
+        existingByVpsId,
+        { ...authorWithVersion, authorName },
+        existingVersion,
+        "existing",
+      );
     }
 
-    // No matching version found - push new version under first matching author
-    const existingAuthor = authorsWithVpsId[0];
+    // vpsId exists but this versionNumber is new — add under first matching author
+    const firstMatchingAuthor = existingByVpsId.authors.find(
+      (a) => a.vpsId === vpsId,
+    );
     await tablesCollection.updateOne(
-      { _id: existingByVpsId._id, "authors.vpsId": vpsId },
+      { _id: existingByVpsId._id, "authors._id": firstMatchingAuthor._id },
       {
         $push: {
           "authors.$.versions": {
@@ -230,11 +199,11 @@ const findOrCreateByVpsId = async (
       },
     );
     logger.info(
-      `New version '${versionNumber}' added to '${tableName}' for author '${existingAuthor.authorName}'.`,
+      `New version '${versionNumber}' added to '${tableName}' for vpsId '${vpsId}'.`,
     );
     return buildTableResult(
       existingByVpsId,
-      existingAuthor,
+      { ...firstMatchingAuthor, authorName },
       { versionUrl, versionNumber },
       "new_version",
     );
