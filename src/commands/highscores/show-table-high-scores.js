@@ -6,6 +6,7 @@ import {
   getScoresByTableAndAuthorUsingFuzzyTableSearch,
   getScoresByVpsId,
 } from "../../lib/data/vpc.js";
+import { findTable } from "../../lib/data/tables.js";
 
 export class ShowTableHighScoresCommand extends Command {
   constructor(context, options) {
@@ -31,10 +32,20 @@ export class ShowTableHighScoresCommand extends Command {
           .addStringOption((option) =>
             option
               .setName("tablesearchterm")
-              .setDescription("Search term for table name"),
+              .setDescription("Search term for table name")
+              .setRequired(false),
           )
           .addStringOption((option) =>
-            option.setName("vpsid").setDescription("VPS ID to search by"),
+            option
+              .setName("vpsid")
+              .setDescription("VPS ID of the table")
+              .setRequired(false),
+          )
+          .addStringOption((option) =>
+            option
+              .setName("url")
+              .setDescription("URL of the table")
+              .setRequired(false),
           )
           .addBooleanOption((option) =>
             option
@@ -50,31 +61,56 @@ export class ShowTableHighScoresCommand extends Command {
   async chatInputRun(interaction) {
     const tableSearchTerm = interaction.options.getString("tablesearchterm");
     const vpsId = interaction.options.getString("vpsid");
+    const url = interaction.options.getString("url");
     const isEphemeral = interaction.options.getBoolean("isephemeral") ?? true;
 
-    try {
-      const tables = vpsId
-        ? await getScoresByVpsId(vpsId)
-        : await getScoresByTableAndAuthorUsingFuzzyTableSearch(tableSearchTerm);
+    if (!tableSearchTerm && !vpsId && !url) {
+      return interaction.reply({
+        content: `Please provide a table search term, VPS ID, or URL.\n\nVPC High Score Corner\n<${process.env.HIGH_SCORES_URL}>`,
+        flags: 64,
+      });
+    }
 
-      if (!tableSearchTerm && !vpsId) {
-        return interaction.reply({
-          content: `Please provide either a table search term or VPS ID.\n\nVPC High Score Corner\n<${process.env.HIGH_SCORES_URL}>`,
-          flags: 64,
-        });
+    await interaction.deferReply({ flags: isEphemeral ? 64 : undefined });
+
+    try {
+      let resolvedVpsId = vpsId;
+
+      // Resolve vpsId from URL if needed
+      if (url && !vpsId) {
+        const { table, error: tableError } = await findTable({ url });
+        if (tableError || !table) {
+          return interaction.editReply({
+            content:
+              tableError ??
+              "Table not found by URL. Please try using a VPS ID or search term instead.",
+          });
+        }
+        resolvedVpsId = table.vpsId;
       }
 
-      await this.showHighScoreTables(
-        tables,
-        tableSearchTerm || vpsId,
-        interaction,
-        isEphemeral,
-      );
+      if (resolvedVpsId) {
+        const tables = await getScoresByVpsId(resolvedVpsId);
+        await this.showHighScoreTables(
+          tables,
+          resolvedVpsId,
+          interaction,
+          isEphemeral,
+        );
+      } else {
+        const tables =
+          await getScoresByTableAndAuthorUsingFuzzyTableSearch(tableSearchTerm);
+        await this.showHighScoreTables(
+          tables,
+          tableSearchTerm,
+          interaction,
+          isEphemeral,
+        );
+      }
     } catch (e) {
       logger.error(e);
-      return interaction.reply({
+      return interaction.editReply({
         content: e.message ?? "An unexpected error occurred.",
-        flags: 64,
       });
     }
   }
@@ -82,26 +118,16 @@ export class ShowTableHighScoresCommand extends Command {
   async showHighScoreTables(tables, searchTerm, interaction, isEphemeral) {
     const contentArray = printHighScoreTables(searchTerm, tables || [], 10, 2);
 
-    for (let post of contentArray) {
-      // If post is a string, send as content
-      if (typeof post === "string") {
-        if (!isEphemeral && interaction.channel) {
-          await interaction.channel.send({ content: post });
-        } else if (!interaction.replied) {
-          await interaction.reply({ content: post, flags: 64 });
-        } else {
-          await interaction.followUp({ content: post, flags: 64 });
-        }
-        continue;
-      }
+    for (const post of contentArray) {
+      const payload =
+        typeof post === "string" ? { content: post } : { embeds: [post] };
 
-      // If post is an embed, send as embed
       if (!isEphemeral && interaction.channel) {
-        await interaction.channel.send({ embeds: [post] });
-      } else if (!interaction.replied) {
-        await interaction.reply({ embeds: [post], flags: 64 });
+        await interaction.channel.send(payload);
+      } else if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({ ...payload, flags: 64 });
       } else {
-        await interaction.followUp({ embeds: [post], flags: 64 });
+        await interaction.followUp({ ...payload, flags: 64 });
       }
     }
   }
