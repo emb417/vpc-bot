@@ -1,24 +1,13 @@
 import { Listener } from "@sapphire/framework";
-import {
-  InteractionType,
-  EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-} from "discord.js";
+import { InteractionType } from "discord.js";
 import logger from "../../utils/logger.js";
-import { formatDateTime, formatNumber } from "../../utils/formatting.js";
-import {
-  searchTableByVpsIdPipeline,
-  searchScorePipeline,
-} from "../../lib/data/pipelines.js";
-import { printHighScoreTables } from "../../lib/output/tables.js";
-import { getScoresByVpsId } from "../../lib/data/vpc.js";
-import { aggregate } from "../../services/database.js";
 import {
   saveHighScore,
+  resolveExistingTopScore,
+  postHighScoreEmbed,
   pendingAttachments,
 } from "../../commands/highscores/post-high-score.js";
+import { findTable } from "../../lib/data/tables.js";
 
 export class HighScoreSelectListener extends Listener {
   constructor(context, options) {
@@ -34,43 +23,29 @@ export class HighScoreSelectListener extends Listener {
 
     try {
       const selectedJson = JSON.parse(interaction.values[0]);
+      const { vpsId, s: newScore } = selectedJson;
 
-      // Parse the select menu value
-      const vpsId = selectedJson.vpsId;
-      const versionNumber = selectedJson.v;
-      const newScore = selectedJson.s;
-
-      // Check if this came from a slash command via the pendingAttachments Map
       const isSlashCommand = pendingAttachments.has(interaction.user.id);
       const attachmentUrl = pendingAttachments.get(interaction.user.id);
       if (isSlashCommand) pendingAttachments.delete(interaction.user.id);
 
-      // 1. Fetch table info (to get author + table name)
-      const tablePipeline = searchTableByVpsIdPipeline(vpsId);
-      const tableResults = await aggregate(tablePipeline, "tables");
-      const table = tableResults[0];
+      // Resolve table via VPS — source of truth, handles upsert of new tables/authors/versions
+      const { table, error: tableError } = await findTable({ vpsId });
+      if (tableError || !table) {
+        return interaction.reply({
+          content:
+            (tableError ?? "Could not resolve table from VPS data.") +
+            " Please try again using `tablesearchterm` instead.",
+          components: [],
+          flags: 64,
+        });
+      }
 
-      const matchingAuthor = table?.authors?.find((a) => a.vpsId === vpsId);
-      const authorName = matchingAuthor?.authorName ?? "Unknown Author";
-
-      const tableName = table.tableName;
-
-      // 2. Fetch score info (to get existing high score + previous user)
-      const scorePipeline = searchScorePipeline(vpsId, versionNumber);
-      const scoreResults = await aggregate(scorePipeline, "tables");
-      const scoreData = scoreResults[0];
-
-      const existingScore = scoreData?.score;
-      const existingUserId = scoreData?.user?.id ?? null;
-
-      // 3. Prepare selectedJson for saveHighScore
-      selectedJson.tableName = tableName;
-      selectedJson.authorName = authorName;
-      selectedJson.v = versionNumber;
-      selectedJson.vpsId = vpsId;
-
-      const authorsArray = selectedJson.authorName.split(", ");
-      const firstAuthor = authorsArray.shift();
+      // Resolve existing top score before saving so we can detect a new grand champion
+      const { existingScore, existingUserId } = await resolveExistingTopScore(
+        table.vpsId,
+        table.metadata.versionNumber,
+      );
 
       let existingUser = null;
       if (existingUserId) {
@@ -79,124 +54,43 @@ export class HighScoreSelectListener extends Listener {
 
       const isNewTopScore = !existingScore || newScore > existingScore;
 
-      // Save the high score
-      await saveHighScore(selectedJson, interaction.user);
+      await saveHighScore(
+        {
+          tableName: table.name,
+          authorName: table.metadata.authorName,
+          vpsId: table.vpsId,
+          v: table.metadata.versionNumber,
+          s: newScore,
+        },
+        interaction.user,
+      );
 
-      const user = interaction.user;
       logger.info(
-        `${user.username} posted high score: ${selectedJson.s} for ${selectedJson.tableName}`,
+        `${interaction.user.username} posted high score: ${newScore} for ${table.name}`,
       );
 
-      const title = isNewTopScore ? "🥇 GRAND CHAMPION" : "🏆 NEW HIGH SCORE";
+      // Dismiss the select menu
+      await interaction.update({
+        content: "✅ High Score Posted Successfully",
+        components: [],
+      });
 
-      const description =
-        `**User**: ${user.username}\n` +
-        `**Table:** ${selectedJson.tableName} (${firstAuthor}... ${selectedJson.v})\n` +
-        `**VPS Id:** ${selectedJson.vpsId}\n` +
-        `**Score:** ${formatNumber(selectedJson.s)}\n` +
-        `**Posted**: ${formatDateTime(new Date())}\n`;
+      // Determine attachment: slash command uses pendingAttachments URL,
+      // message command uses the attachment on the original message
+      const resolvedAttachmentUrl = isSlashCommand
+        ? attachmentUrl
+        : (interaction.message.attachments.first()?.url ?? null);
 
-      if (isSlashCommand) {
-        // Dismiss the ephemeral select menu
-        await interaction.update({
-          content: "✅ High Score Posted Successfully",
-          components: [],
-        });
-
-        try {
-          const response = await fetch(attachmentUrl);
-          if (!response.ok)
-            throw new Error(`Failed to fetch: ${response.statusText}`);
-          const buffer = Buffer.from(await response.arrayBuffer());
-
-          const embed = new EmbedBuilder()
-            .setTitle(title)
-            .setDescription(description)
-            .setImage("attachment://score.png")
-            .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 128 }))
-            .setColor("Green");
-
-          const row = new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-              .setCustomId("show_high_score_rules")
-              .setLabel("Show Rules")
-              .setStyle(ButtonStyle.Primary),
-          );
-
-          await interaction.channel.send({
-            embeds: [embed],
-            components: [row],
-            files: [{ attachment: buffer, name: "score.png" }],
-          });
-        } catch (e) {
-          logger.error(
-            "Failed to fetch attachment for slash command high score:",
-            e,
-          );
-        }
-      } else {
-        // Message command flow - update the existing message with the embed
-        const attachment = interaction.message.attachments.first();
-
-        const embed = new EmbedBuilder()
-          .setTitle(title)
-          .setDescription(description)
-          .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 128 }))
-          .setColor("Green");
-
-        if (attachment) {
-          embed.setImage(attachment.url);
-        }
-
-        const row = new ActionRowBuilder().addComponents(
-          new ButtonBuilder()
-            .setCustomId("show_high_score_rules")
-            .setLabel("Show Rules")
-            .setStyle(ButtonStyle.Primary),
-        );
-
-        await interaction.update({
-          content: "",
-          embeds: [embed],
-          components: [row],
-        });
-      }
-
-      // Show high scores for the table
-      const tables = await getScoresByVpsId(selectedJson.vpsId);
-
-      const contentArray = printHighScoreTables(
-        selectedJson.tableName,
-        tables || [],
-        10,
-        2,
-      );
-
-      for (const embed of contentArray) {
-        await interaction.channel.send({ embeds: [embed] });
-      }
-
-      // DM previous high score holder if someone beat their score
-      if (
-        isNewTopScore &&
-        existingUser &&
-        existingUser.username !== user.username
-      ) {
-        const content =
-          `**${user?.username}** just topped your high score for:\n` +
-          `**${selectedJson?.tableName} (${firstAuthor}... ${selectedJson?.v})**\n` +
-          `**Score:** ${formatNumber(selectedJson?.s)}\n` +
-          `**Posted:** ${formatDateTime(new Date())}\n\n` +
-          `🔗 ${interaction?.message?.url}`;
-
-        logger.info(
-          `high score beaten DM sent to ${user?.username}: ${selectedJson?.s} for ${selectedJson?.tableName}`,
-        );
-
-        await existingUser.send(content).catch(() => {
-          logger.error(`high score beaten DM failed to ${user?.username}`);
-        });
-      }
+      await postHighScoreEmbed({
+        channel: interaction.channel,
+        user: interaction.user,
+        table,
+        scoreValue: newScore,
+        isNewTopScore,
+        attachmentUrl: resolvedAttachmentUrl,
+        existingUser,
+        messageUrl: interaction.message?.url ?? null,
+      });
     } catch (e) {
       logger.error(e);
       if (!interaction.replied) {

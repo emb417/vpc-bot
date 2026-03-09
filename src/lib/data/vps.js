@@ -41,7 +41,30 @@ export const getVpsGameByUrl = async (url) => {
   }
 };
 
+/**
+ * Search VPS games by name. Returns an array of matching games,
+ * each with the same shape as getVpsGameById (including tableFiles).
+ */
+export const getVpsGameByName = async (name) => {
+  try {
+    const response = await fetch(
+      `${baseApiUrl}/games/${encodeURIComponent(name)}`,
+    );
+    if (!response.ok) {
+      logger.error(`VPS API error for name "${name}": ${response.statusText}`);
+      throw new Error(`Failed to fetch VPS game data: ${response.statusText}`);
+    }
+    return response.json();
+  } catch (error) {
+    logger.error(`Error fetching VPS game data for name "${name}":`, error);
+    throw new Error(
+      "Could not retrieve VPS game data. Please try again later.",
+    );
+  }
+};
+
 export default {
   getVpsGameById,
   getVpsGameByUrl,
+  getVpsGameByName,
 };

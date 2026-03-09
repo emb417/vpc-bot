@@ -1,4 +1,4 @@
-import { getVpsGameById, getVpsGameByUrl } from "./vps.js";
+import { getVpsGameById, getVpsGameByUrl, getVpsGameByName } from "./vps.js";
 import {
   getCollection,
   insertOne,
@@ -105,6 +105,51 @@ export const findTable = async ({ url, vpsId }) => {
       table: null,
       status: null,
       error: "You must provide either a `vpsid` or a `url`.",
+    };
+  }
+};
+
+/**
+ * Search VPS by name and return up to maxResults table option objects for
+ * building a select menu. Does NOT write anything to the local tables collection
+ * — upsert happens later via findTable({ vpsId }) once the user confirms.
+ *
+ * Each result: { vpsId, name, authorName, versionNumber }
+ */
+export const findTablesByName = async (name, maxResults = 10) => {
+  try {
+    const vpsGames = await getVpsGameByName(name);
+
+    if (!vpsGames || vpsGames.length === 0) {
+      return { tables: [], error: null };
+    }
+
+    const results = [];
+
+    for (const vpsGame of vpsGames) {
+      if (results.length >= maxResults) break;
+
+      for (const tableFile of vpsGame.tableFiles ?? []) {
+        if (results.length >= maxResults) break;
+
+        const vpsId = tableFile.id;
+        if (!vpsId) continue;
+
+        results.push({
+          vpsId,
+          name: `${vpsGame.name} (${vpsGame.manufacturer} ${vpsGame.year})`,
+          authorName: tableFile.authors?.join(", ") ?? "Unknown Author",
+          versionNumber: tableFile.version ?? "",
+        });
+      }
+    }
+
+    return { tables: results, error: null };
+  } catch (error) {
+    logger.error(`Error in findTablesByName for "${name}":`, error);
+    return {
+      tables: [],
+      error: `Failed to search VPS game data. ${error.message}`,
     };
   }
 };
