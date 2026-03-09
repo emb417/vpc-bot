@@ -14,6 +14,8 @@ COPY src/ ./src/
 # Stage 2: Create the final, minimal image
 FROM node:24-alpine
 
+RUN apk add --no-cache tzdata
+
 ENV TZ=America/Los_Angeles
 
 WORKDIR /app
