@@ -16,15 +16,15 @@ export class ShowLeaderboardButtonListener extends Listener {
     if (interaction.customId !== "showLeaderboard") return;
 
     try {
+      await interaction.deferReply({ flags: 64 });
       await getLeaderboard(interaction, interaction.channel);
     } catch (e) {
       logger.error(e);
-      if (!interaction.replied) {
-        await interaction.reply({
-          content: e.message,
-          flags: 64,
-        });
-      }
+      const replyMethod = interaction.deferred ? "editReply" : "reply";
+      await interaction[replyMethod]({
+        content: e.message,
+        flags: 64,
+      });
     }
   }
 }

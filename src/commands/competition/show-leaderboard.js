@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { Command } from "@sapphire/framework";
+import { EmbedBuilder, AttachmentBuilder } from "discord.js";
 import logger from "../../utils/logger.js";
-import { printCombinedLeaderboard } from "../../lib/output/leaderboard.js";
 import { findCurrentWeek } from "../../services/database.js";
 
 export class ShowLeaderboardCommand extends Command {
@@ -21,11 +21,8 @@ export class ShowLeaderboardCommand extends Command {
     }
 
     registry.registerChatInputCommand(
-      (builder) =>
-        builder.setName(this.name).setDescription(this.description),
-      {
-        guildIds: [guildId],
-      },
+      (builder) => builder.setName(this.name).setDescription(this.description),
+      { guildIds: [guildId] },
     );
   }
 
@@ -41,36 +38,61 @@ export class ShowLeaderboardCommand extends Command {
         });
       }
 
-      await this.showLeaderboard(
-        currentWeek.scores || [],
-        currentWeek.teams || [],
-        interaction,
-      );
+      await interaction.deferReply({ flags: 64 });
+      await this.showLeaderboard(currentWeek, interaction);
     } catch (e) {
       logger.error(e);
-      return interaction.reply({
+      const replyMethod = interaction.deferred ? "editReply" : "reply";
+      return interaction[replyMethod]({
         content: e.message,
         flags: 64,
       });
     }
   }
 
-  async showLeaderboard(scores, teams, interaction) {
-    const embeds = printCombinedLeaderboard(scores, null, teams, false, false);
+  async showLeaderboard(currentWeek, interaction) {
+    const { vpsId, table, versionNumber, scores = [] } = currentWeek;
 
-    for (const embed of embeds) {
-      if (!interaction.replied) {
-        await interaction.reply({
-          embeds: [embed],
-          flags: 64,
-        });
-      } else {
-        await interaction.followUp({
-          embeds: [embed],
-          flags: 64,
-        });
-      }
+    // Fetch the leaderboard image from the data service
+    const apiUrl = `${process.env.VPC_DATA_SERVICE_API_URI}/generateWeeklyLeaderboard`;
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        channelName: currentWeek.channelName,
+        layout: "portrait",
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch leaderboard image: ${response.status}`);
     }
+
+    const imageBuffer = Buffer.from(await response.arrayBuffer());
+    const attachment = new AttachmentBuilder(imageBuffer, {
+      name: "leaderboard.png",
+    });
+
+    const scoreCount = scores.length;
+    const embed = new EmbedBuilder()
+      .setTitle("🏆  Weekly Leaderboard")
+      .setColor("#0099ff")
+      .setDescription(
+        scoreCount === 0
+          ? "NO SCORES CURRENTLY POSTED"
+          : `**${table}** v${versionNumber}\nVPS ID: \`${vpsId}\` - ${scoreCount} score${scoreCount !== 1 ? "s" : ""} posted`,
+      )
+      .setImage("attachment://leaderboard.png")
+      .addFields({
+        name: "🌟  VPC Competition Corner",
+        value: `<${process.env.COMPETITIONS_URL}>`,
+      })
+      .setFooter({ text: "📌  How to Post: /post-score" });
+
+    await interaction.editReply({
+      embeds: [embed],
+      files: [attachment],
+    });
   }
 }
 
@@ -78,31 +100,9 @@ export class ShowLeaderboardCommand extends Command {
 export const getLeaderboard = async (interaction, channel) => {
   const currentWeek = await findCurrentWeek(channel.name);
   if (!currentWeek) {
-    return interaction.reply({
-      content: "No active week found.",
-      flags: 64,
-    });
+    return interaction.editReply({ content: "No active week found." });
   }
 
-  const embeds = printCombinedLeaderboard(
-    currentWeek.scores || [],
-    null,
-    currentWeek.teams || [],
-    false,
-    false,
-  );
-
-  for (const embed of embeds) {
-    if (!interaction.replied) {
-      await interaction.reply({
-        embeds: [embed],
-        flags: 64,
-      });
-    } else {
-      await interaction.followUp({
-        embeds: [embed],
-        flags: 64,
-      });
-    }
-  }
+  const command = new ShowLeaderboardCommand({ name: "show-leaderboard" }, {});
+  await command.showLeaderboard(currentWeek, interaction);
 };
