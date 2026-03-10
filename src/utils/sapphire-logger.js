@@ -27,11 +27,23 @@ export class SapphirePinoLogger {
     if (this.has(LogLevel.Warn)) logger.warn(message);
   }
 
-  error(message) {
-    if (this.has(LogLevel.Error)) logger.error(message);
+  error(value, ...rest) {
+    if (this.has(LogLevel.Error)) {
+      if (value instanceof Error) {
+        logger.error({ err: value }, value.message);
+      } else {
+        logger.error(value, ...rest);
+      }
+    }
   }
 
-  fatal(message) {
-    if (this.has(LogLevel.Fatal)) logger.error(message);
+  fatal(value, ...rest) {
+    if (this.has(LogLevel.Fatal)) {
+      if (value instanceof Error) {
+        logger.error({ err: value }, value.message);
+      } else {
+        logger.error(value, ...rest);
+      }
+    }
   }
 }

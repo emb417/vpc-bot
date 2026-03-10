@@ -40,6 +40,13 @@ async function main() {
     logger.info("Logging in to Discord...");
     await client.login(process.env.BOT_TOKEN);
 
+    client.on("chatInputCommandError", (error, context) => {
+      logger.error(
+        { err: error },
+        `[chatInputCommandError] ${context.command.name}: ${error.message}`,
+      );
+    });
+
     client.once("clientReady", () => {
       startHeartbeat(client);
 
