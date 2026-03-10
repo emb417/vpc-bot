@@ -254,11 +254,20 @@ const findOrCreateByVpsId = async (
     );
   }
 
-  // 2. Find by tableName - same game, new vpsId
-  const existingByName = await tablesCollection.findOne({ tableName });
-  if (existingByName) {
+  // 2. Find by sibling vpsId — same game, different author/version
+  const siblingVpsIds =
+    vpsGame.tableFiles?.map((t) => t.id).filter((id) => id && id !== vpsId) ??
+    [];
+
+  const existingBysibling = siblingVpsIds.length
+    ? await tablesCollection.findOne({
+        "authors.vpsId": { $in: siblingVpsIds },
+      })
+    : null;
+
+  if (existingBysibling) {
     await tablesCollection.updateOne(
-      { tableName },
+      { _id: existingBysibling._id },
       {
         $push: {
           authors: {
@@ -280,17 +289,25 @@ const findOrCreateByVpsId = async (
       },
     );
     logger.info(
-      `New author '${authorName}' (vpsId: ${vpsId}) added to existing table '${tableName}'.`,
+      `New author '${authorName}' (vpsId: ${vpsId}) added to existing table '${existingBysibling.tableName}' via sibling vpsId.`,
     );
+    // Update tableName if drifted
+    if (existingBysibling.tableName !== tableName) {
+      await tablesCollection.updateOne(
+        { _id: existingBysibling._id },
+        { $set: { tableName } },
+      );
+      existingBysibling.tableName = tableName;
+    }
     return buildTableResult(
-      existingByName,
+      existingBysibling,
       { vpsId, authorName },
       { versionUrl, versionNumber },
       "new_author",
     );
   }
 
-  // 3. Brand new table
+  // 3. Brand new table — no existing document found by vpsId or sibling
   const record = buildTableRecord(vpsGame, tableFile, vpsId);
   await insertOne(record, "tables");
   logger.info(`New table '${record.tableName}' added via vpsId '${vpsId}'.`);
