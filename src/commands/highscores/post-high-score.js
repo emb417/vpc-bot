@@ -118,7 +118,7 @@ export class PostHighScoreCommand extends Command {
         });
       }
 
-      await interaction.deferReply();
+      await interaction.deferReply({ flags: 64 });
 
       try {
         const { existingScore, existingUserId } = await resolveExistingTopScore(
