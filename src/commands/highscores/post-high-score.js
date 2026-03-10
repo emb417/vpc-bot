@@ -107,6 +107,8 @@ export class PostHighScoreCommand extends Command {
 
     // --- Direct path: vpsid or url — resolve, save, and post inline, no select menu ---
     if (vpsId || url) {
+      await interaction.deferReply({ flags: 64 });
+
       const { table, error: tableError } = await findTable({ vpsId, url });
 
       if (tableError || !table) {
@@ -117,8 +119,6 @@ export class PostHighScoreCommand extends Command {
           flags: 64,
         });
       }
-
-      await interaction.deferReply({ flags: 64 });
 
       try {
         const { existingScore, existingUserId } = await resolveExistingTopScore(
