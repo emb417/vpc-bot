@@ -112,7 +112,7 @@ export class PostHighScoreCommand extends Command {
       const { table, error: tableError } = await findTable({ vpsId, url });
 
       if (tableError || !table) {
-        return interaction.reply({
+        return interaction.editReply({
           content:
             (tableError ?? "Table not found in VPS data.") +
             " Please try again using `tablesearchterm` instead.",
@@ -375,7 +375,10 @@ export const postHighScoreEmbed = async ({
         files: [{ attachment: buffer, name: "score.png" }],
       });
     } catch (e) {
-      logger.error("Failed to fetch attachment for high score embed:", e);
+      logger.error(
+        { err: e },
+        `Failed to fetch attachment for high score embed: ${e?.message ?? String(e)}`,
+      );
       await channel.send({ embeds: [embed], components: [row] });
     }
   } else {
