@@ -69,17 +69,28 @@ export class HighScoreSelectListener extends Listener {
         `${interaction.user.username} posted high score: ${newScore} for ${table.name}`,
       );
 
-      // Dismiss the select menu
-      await interaction.update({
-        content: "✅ High Score Posted Successfully",
-        components: [],
-      });
-
-      // Determine attachment: slash command uses pendingAttachments URL,
-      // message command uses the attachment on the original message
       const resolvedAttachmentUrl = isSlashCommand
         ? attachmentUrl
         : (interaction.message.attachments.first()?.url ?? null);
+
+      let attachmentBuffer = null;
+      if (!isSlashCommand && resolvedAttachmentUrl) {
+        try {
+          const res = await fetch(resolvedAttachmentUrl);
+          if (res.ok) attachmentBuffer = Buffer.from(await res.arrayBuffer());
+        } catch (e) {
+          logger.error("Failed to pre-fetch attachment buffer:", e);
+        }
+      }
+
+      await interaction.deferUpdate();
+
+      if (isSlashCommand) {
+        await interaction.editReply({
+          content: "✅ High Score Posted Successfully",
+          components: [],
+        });
+      }
 
       await postHighScoreEmbed({
         channel: interaction.channel,
@@ -91,6 +102,8 @@ export class HighScoreSelectListener extends Listener {
         existingUser,
         messageUrl: interaction.message?.url ?? null,
       });
+
+      await interaction.message.delete().catch(() => {});
     } catch (e) {
       logger.error(e);
       if (!interaction.replied) {
