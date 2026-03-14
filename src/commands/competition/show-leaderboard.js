@@ -69,21 +69,18 @@ const showLeaderboard = async (currentWeek, interaction) => {
 
       if (index === 0) {
         embed
-          .setTitle("🏆  Weekly Leaderboard")
+          .setTitle("🏆  Weekly Competition Leaderboard")
           .setDescription(
             scoreCount === 0
               ? "NO SCORES CURRENTLY POSTED"
-              : `**${table}** v${versionNumber}\nVPS ID: \`${vpsId}\` - ${scoreCount} score${scoreCount !== 1 ? "s" : ""} posted`,
+              : `**${table}** v${versionNumber}\n` +
+                  `VPS ID: \`${vpsId}\` - ${scoreCount} score${scoreCount !== 1 ? "s" : ""} posted\n` +
+                  `<${process.env.COMPETITIONS_URL}>`,
           );
       }
 
       if (index === images.length - 1) {
-        embed
-          .addFields({
-            name: "🌟  VPC Competition Corner",
-            value: `<${process.env.COMPETITIONS_URL}>`,
-          })
-          .setFooter({ text: "📌  How to Post: /post-score" });
+        embed.setFooter({ text: "📌  How to Post: /post-score" });
       }
 
       paginatedMessage.addPage({
@@ -99,18 +96,16 @@ const showLeaderboard = async (currentWeek, interaction) => {
     });
 
     const embed = new EmbedBuilder()
-      .setTitle("🏆  Weekly Leaderboard")
+      .setTitle("🏆  Weekly Competition Leaderboard")
       .setColor("#0099ff")
       .setDescription(
         scoreCount === 0
           ? "NO SCORES CURRENTLY POSTED"
-          : `**${table}** v${versionNumber}\nVPS ID: \`${vpsId}\` - ${scoreCount} score${scoreCount !== 1 ? "s" : ""} posted`,
+          : `**${table}** v${versionNumber}\n` +
+              `VPS ID: \`${vpsId}\` - ${scoreCount} score${scoreCount !== 1 ? "s" : ""} posted\n` +
+              `<${process.env.COMPETITIONS_URL}>`,
       )
       .setImage("attachment://leaderboard.png")
-      .addFields({
-        name: "🌟  VPC Competition Corner",
-        value: `<${process.env.COMPETITIONS_URL}>`,
-      })
       .setFooter({ text: "📌  How to Post: /post-score" });
 
     paginatedMessage.addPage({

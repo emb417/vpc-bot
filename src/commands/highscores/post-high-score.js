@@ -17,7 +17,11 @@ import {
 } from "../../services/database.js";
 import { findTable, findTablesByName } from "../../lib/data/tables.js";
 import { getScoresByVpsId } from "../../lib/data/vpc.js";
-import { printHighScoreTables } from "../../lib/output/tables.js";
+import {
+  pickHighestVersion,
+  fetchHighScoresImage,
+  buildHighScoresPage,
+} from "../../lib/output/highScoreEmbed.js";
 
 global.pendingAttachments = global.pendingAttachments ?? new Map();
 export const pendingAttachments = global.pendingAttachments;
@@ -386,15 +390,12 @@ export const postHighScoreEmbed = async ({
   }
 
   // Leaderboard
-  const leaderboardData = await getScoresByVpsId(table.vpsId);
-  const contentArray = printHighScoreTables(
-    table.name,
-    leaderboardData || [],
-    10,
-    2,
-  );
-  for (const leaderboardEmbed of contentArray) {
-    await channel.send({ embeds: [leaderboardEmbed] });
+  const versions = await getScoresByVpsId(table.vpsId);
+  if (versions?.length > 0) {
+    const version = pickHighestVersion(versions);
+    const imageBuffer = await fetchHighScoresImage(version.vpsId);
+    const { embed, attachment } = buildHighScoresPage(version, imageBuffer);
+    await channel.send({ embeds: [embed], files: [attachment] });
   }
 
   // DM the displaced top scorer

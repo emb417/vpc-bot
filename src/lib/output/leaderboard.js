@@ -112,7 +112,7 @@ export const printWeeklyLeaderboard = (
   if (!scores || scores.length === 0) {
     return [
       new EmbedBuilder()
-        .setTitle("🏆  Weekly Leaderboard")
+        .setTitle("🏆  Weekly Competition Leaderboard")
         .setDescription("NO SCORES POSTED")
         .setColor("#ff0000")
         .addFields({
@@ -140,7 +140,7 @@ export const printWeeklyLeaderboard = (
     .map((s, i) => createTableRow(i + 1, s, expandedLayout, showScores));
 
   const embed = new EmbedBuilder()
-    .setTitle("🏆  Weekly Leaderboard")
+    .setTitle("🏆  Weekly Competition Leaderboard")
     .setColor("#0099ff")
     .setDescription(
       renderTable(headers, rows, {
@@ -306,7 +306,7 @@ export const printCombinedLeaderboard = (
   if (!scores || scores.length === 0) {
     return [
       new EmbedBuilder()
-        .setTitle("🏆  Weekly Leaderboard")
+        .setTitle("🏆  Weekly Competition Leaderboard")
         .setDescription("NO SCORES CURRENTLY POSTED")
         .setColor("#ff0000")
         .addFields({

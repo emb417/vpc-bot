@@ -8,7 +8,11 @@ import {
 import { saveHighScore } from "../../commands/highscores/post-high-score.js";
 import { searchScoreByVpsIdUsernameScorePipeline } from "../../lib/data/pipelines.js";
 import { getScoresByVpsId } from "../../lib/data/vpc.js";
-import { printHighScoreTables } from "../../lib/output/tables.js";
+import {
+  pickHighestVersion,
+  fetchHighScoresImage,
+  buildHighScoresPage,
+} from "../../lib/output/highScoreEmbed.js";
 import { aggregate, findOneAndUpdate } from "../../services/database.js";
 import { formatDateTime, formatNumber } from "../../utils/formatting.js";
 
@@ -83,6 +87,7 @@ export class CrossPostHighScoreListener extends Listener {
       if (!exists) {
         const newHighScore = await saveHighScore(highScoreData, user);
 
+        // Check if this score lands in the top 10
         const allScores =
           newHighScore?.authors
             ?.find((a) => a.vpsId === highScoreData.vpsId)
@@ -90,24 +95,21 @@ export class CrossPostHighScoreListener extends Listener {
               (v) => v.versionNumber === highScoreData.versionNumber,
             )?.scores ?? [];
 
-        const topScore = allScores.reduce(
-          (a, b) => (a.score > b.score ? a : b),
-          { score: 0 },
+        const topScores = [...allScores]
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 10);
+
+        const isInTopTen = topScores.some(
+          (s) =>
+            (s.user?.id === user.id || s.username === highScoreData.u) &&
+            s.score === highScoreData.s,
         );
-        const isNewTopScore = topScore.score === score;
 
-        const title = isNewTopScore ? "🥇 GRAND CHAMPION" : "🏆 NEW HIGH SCORE";
-
-        // Get the score ID from the saved document
-        const highScoreId = newHighScore?.authors
-          ?.find((a) => a.vpsId === highScoreData.vpsId)
-          ?.versions?.find(
-            (v) => v.versionNumber === highScoreData.versionNumber,
-          )
-          ?.scores?.reduce((a, b) => (a.score > b.score ? a : b))
-          ?._id?.toString();
-
-        if (doPost) {
+        if (isInTopTen) {
+          const isNewTopScore = topScores[0].score === highScoreData.s;
+          const title = isNewTopScore
+            ? "🥇 GRAND CHAMPION"
+            : "🏆 NEW HIGH SCORE";
           const mode = highScoreData.mode ?? "default";
 
           const description =
@@ -138,37 +140,36 @@ export class CrossPostHighScoreListener extends Listener {
             embeds: [embed],
             components: [row],
             files: [{ attachment: attachmentBuffer, name: "score.png" }],
-            allowedMentions: {
-              users: [user.id],
-            },
+            allowedMentions: { users: [user.id] },
           });
 
           // Update the high score with the post URL
+          const highScoreId = allScores
+            .find(
+              (s) =>
+                (s.user?.id === user.id || s.username === highScoreData.u) &&
+                s.score === highScoreData.s,
+            )
+            ?._id?.toString();
+
           if (highScoreId) {
             highScoreData.scoreId = highScoreId;
             await updateHighScore(highScoreData, message.url);
           }
 
-          // Show table high scores
-          const tableScores = await getScoresByVpsId(highScoreData.vpsId);
-          const contentArray = printHighScoreTables(
-            highScoreData.tableName,
-            tableScores || [],
-            10,
-            2,
-          );
-
-          if (!Array.isArray(contentArray) || contentArray.length === 0) {
-            await channel.send("No results found for that VPS ID or table.");
-            return;
-          }
-
-          for (const post of contentArray) {
-            if (typeof post === "string") {
-              await channel.send({ content: post });
-            } else {
-              await channel.send({ embeds: [post] });
-            }
+          // Post leaderboard image
+          const versions = await getScoresByVpsId(highScoreData.vpsId);
+          if (versions?.length > 0) {
+            const version = pickHighestVersion(versions);
+            const imageBuffer = await fetchHighScoresImage(version.vpsId);
+            const { embed: leaderboardEmbed, attachment } = buildHighScoresPage(
+              version,
+              imageBuffer,
+            );
+            await channel.send({
+              embeds: [leaderboardEmbed],
+              files: [attachment],
+            });
           }
         }
       }

@@ -147,7 +147,7 @@ export class EditCurrentWeekCommand extends Command {
           week.teams,
         );
         return interaction.reply({
-          content: "Weekly Leaderboard pinned message updated successfully.",
+          content: "Competition Corner pinned message updated successfully.",
           flags: 64,
         });
       } else {

@@ -1,12 +1,41 @@
 import "dotenv/config";
 import { Command } from "@sapphire/framework";
+import { PaginatedMessage } from "@sapphire/discord.js-utilities";
+import { ButtonStyle, ComponentType } from "discord.js";
 import logger from "../../utils/logger.js";
-import { printHighScoreTables } from "../../lib/output/tables.js";
 import {
-  getScoresByTableAndAuthorUsingFuzzyTableSearch,
   getScoresByVpsId,
+  getScoresByTableAndAuthorUsingFuzzyTableSearch,
 } from "../../lib/data/vpc.js";
 import { findTable } from "../../lib/data/tables.js";
+import {
+  pickHighestVersion,
+  fetchHighScoresImage,
+  buildHighScoresPage,
+} from "../../lib/output/highScoreEmbed.js";
+
+const paginationActions = [
+  {
+    customId: "@sapphire/paginated-messages.previousPage",
+    style: ButtonStyle.Secondary,
+    emoji: "◀️",
+    label: "Previous",
+    type: ComponentType.Button,
+    run: ({ handler }) => {
+      if (handler.index > 0) handler.index--;
+    },
+  },
+  {
+    customId: "@sapphire/paginated-messages.nextPage",
+    style: ButtonStyle.Secondary,
+    emoji: "▶️",
+    label: "Next Page",
+    type: ComponentType.Button,
+    run: ({ handler }) => {
+      if (handler.index < handler.pages.length - 1) handler.index++;
+    },
+  },
+];
 
 export class ShowTableHighScoresCommand extends Command {
   constructor(context, options) {
@@ -52,9 +81,7 @@ export class ShowTableHighScoresCommand extends Command {
               .setName("isephemeral")
               .setDescription("Show results only to you"),
           ),
-      {
-        guildIds: [guildId],
-      },
+      { guildIds: [guildId] },
     );
   }
 
@@ -76,7 +103,6 @@ export class ShowTableHighScoresCommand extends Command {
     try {
       let resolvedVpsId = vpsId;
 
-      // Resolve vpsId from URL if needed
       if (url && !vpsId) {
         const { table, error: tableError } = await findTable({ url });
         if (tableError || !table) {
@@ -90,45 +116,74 @@ export class ShowTableHighScoresCommand extends Command {
       }
 
       if (resolvedVpsId) {
-        const tables = await getScoresByVpsId(resolvedVpsId);
-        await this.showHighScoreTables(
-          tables,
-          resolvedVpsId,
-          interaction,
-          isEphemeral,
-        );
-      } else {
-        const tables =
-          await getScoresByTableAndAuthorUsingFuzzyTableSearch(tableSearchTerm);
-        await this.showHighScoreTables(
-          tables,
-          tableSearchTerm,
-          interaction,
-          isEphemeral,
-        );
+        // Single table — one image, no pagination needed
+        const versions = await getScoresByVpsId(resolvedVpsId);
+        if (!versions || versions.length === 0) {
+          return interaction.editReply({ content: "No results found." });
+        }
+
+        const version = pickHighestVersion(versions);
+        const imageBuffer = await fetchHighScoresImage(version.vpsId);
+        const { embed, attachment } = buildHighScoresPage(version, imageBuffer);
+
+        return interaction.editReply({ embeds: [embed], files: [attachment] });
       }
+
+      // Search term path — one image per matching table, paginated
+      const results =
+        await getScoresByTableAndAuthorUsingFuzzyTableSearch(tableSearchTerm);
+
+      if (!results || results.length === 0) {
+        return interaction.editReply({
+          content: `No tables found matching "${tableSearchTerm}".`,
+        });
+      }
+
+      // Group by vpsId, pick highest version per group
+      const grouped = results.reduce((acc, v) => {
+        if (!acc[v.vpsId]) acc[v.vpsId] = [];
+        acc[v.vpsId].push(v);
+        return acc;
+      }, {});
+      const versions = Object.values(grouped).map(pickHighestVersion);
+
+      // Fetch all images in parallel
+      const settled = await Promise.allSettled(
+        versions.map(async (version) => {
+          const imageBuffer = await fetchHighScoresImage(version.vpsId);
+          return buildHighScoresPage(version, imageBuffer);
+        }),
+      );
+
+      const pages = settled
+        .filter((r) => r.status === "fulfilled")
+        .map((r) => r.value);
+
+      if (pages.length === 0) {
+        return interaction.editReply({
+          content: "Failed to generate leaderboard images.",
+        });
+      }
+
+      if (pages.length === 1) {
+        // Single result — skip pagination
+        const { embed, attachment } = pages[0];
+        return interaction.editReply({ embeds: [embed], files: [attachment] });
+      }
+
+      const paginatedMessage = new PaginatedMessage({
+        actions: paginationActions,
+      });
+      pages.forEach(({ embed, attachment }) => {
+        paginatedMessage.addPage({ embeds: [embed], files: [attachment] });
+      });
+
+      return paginatedMessage.run(interaction, interaction.user);
     } catch (e) {
-      logger.error(e);
+      logger.error({ err: e }, e.message);
       return interaction.editReply({
         content: e.message ?? "An unexpected error occurred.",
       });
-    }
-  }
-
-  async showHighScoreTables(tables, searchTerm, interaction, isEphemeral) {
-    const contentArray = printHighScoreTables(searchTerm, tables || [], 10, 2);
-
-    for (const post of contentArray) {
-      const payload =
-        typeof post === "string" ? { content: post } : { embeds: [post] };
-
-      if (!isEphemeral && interaction.channel) {
-        await interaction.channel.send(payload);
-      } else if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply({ ...payload, flags: 64 });
-      } else {
-        await interaction.followUp({ ...payload, flags: 64 });
-      }
     }
   }
 }
