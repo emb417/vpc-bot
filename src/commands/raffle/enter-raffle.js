@@ -12,7 +12,12 @@ import {
   findCurrentWeek,
   insertOne,
 } from "../../services/database.js";
-import { validateEntry } from "../../lib/scores/raffle.js";
+import {
+  validateEntry,
+  isEntryQualified,
+  loadApprovedTables,
+  notifyQualificationChange,
+} from "../../lib/raffle/raffle.js";
 import { findTable } from "../../lib/data/tables.js";
 import logger from "../../utils/logger.js";
 
@@ -132,31 +137,39 @@ export class EnterRaffleCommand extends Command {
         updatedAt: new Date(),
       };
 
+      // Pre-insert qualification state (before this entry is counted)
+      const weekEntriesBefore = await find({ weekId }, "raffles");
+      const approvedTables = await loadApprovedTables();
+      const wasQualified = isEntryQualified(
+        table.vpsId,
+        weekEntriesBefore,
+        currentWeek.scores ?? [],
+        approvedTables,
+      );
+
       await insertOne(entry, "raffles");
 
-      if (validation.warning) {
-        const allEntries = await find({ weekId }, "raffles");
-        const combinedTrophies = allEntries
-          .filter((e) => e.table.vpsId === table.vpsId)
-          .reduce((sum, e) => {
-            const userScore = currentWeek.scores?.find(
-              (s) => s.userId === e.userId,
-            );
-            if (!userScore) return sum;
-            const rank =
-              [...currentWeek.scores]
-                .sort((a, b) => b.score - a.score)
-                .findIndex((s) => s.userId === e.userId) + 1;
-            let performanceTickets = 1;
-            if (rank <= 10) performanceTickets += 1;
-            if (rank <= 3) performanceTickets += 2;
-            return sum + performanceTickets;
-          }, 0);
+      // Post-insert qualification state (this entry's trophies now included)
+      const weekEntriesAfter = await find({ weekId }, "raffles");
+      const nowQualified = isEntryQualified(
+        table.vpsId,
+        weekEntriesAfter,
+        currentWeek.scores ?? [],
+        approvedTables,
+      );
 
-        if (combinedTrophies >= 3) {
-          validation.warning = null;
-        }
+      if (nowQualified) {
+        validation.warning = null;
       }
+
+      notifyQualificationChange(
+        interaction.client,
+        process.env.COMPETITION_CHANNEL_ID,
+        entry.table,
+        weekEntriesAfter.filter((e) => e.table.vpsId === table.vpsId),
+        wasQualified,
+        nowQualified,
+      ).catch((e) => logger.error("notifyQualificationChange error:", e));
 
       const embed = new EmbedBuilder()
         .setTitle("🎟 New Raffle Entry")

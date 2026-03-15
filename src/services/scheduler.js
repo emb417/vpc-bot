@@ -1,6 +1,6 @@
 import cron from "node-cron";
 import logger from "../utils/logger.js";
-import { runRaffleAndCreateNextWeek } from "../lib/scores/raffleWinner.js";
+import { runRaffleAndCreateNextWeek } from "../lib/raffle/raffleWinner.js";
 
 const COMPETITION_CHANNEL_ID = process.env.COMPETITION_CHANNEL_ID;
 const GUILD_ID = process.env.GUILD_ID;

@@ -12,7 +12,12 @@ import {
   findOne,
   findCurrentWeek,
 } from "../../services/database.js";
-import { validateEntry } from "../../lib/scores/raffle.js";
+import {
+  validateEntry,
+  isEntryQualified,
+  loadApprovedTables,
+  notifyQualificationChange,
+} from "../../lib/raffle/raffle.js";
 import { findTable } from "../../lib/data/tables.js";
 import logger from "../../utils/logger.js";
 
@@ -111,30 +116,6 @@ export class ChangeRaffleEntryCommand extends Command {
           return interaction.reply({ content: validation.error, flags: 64 });
         }
 
-        if (validation.warning) {
-          const allEntries = await find({ weekId }, "raffles");
-          const combinedTrophies = allEntries
-            .filter((e) => e.table.vpsId === table.vpsId)
-            .reduce((sum, e) => {
-              const userScore = currentWeek.scores?.find(
-                (s) => s.userId === e.userId,
-              );
-              if (!userScore) return sum;
-              const rank =
-                [...currentWeek.scores]
-                  .sort((a, b) => b.score - a.score)
-                  .findIndex((s) => s.userId === e.userId) + 1;
-              let performanceTickets = 1;
-              if (rank <= 10) performanceTickets += 1;
-              if (rank <= 3) performanceTickets += 2;
-              return sum + performanceTickets;
-            }, 0);
-
-          if (combinedTrophies >= 3) {
-            validation.warning = null;
-          }
-        }
-
         updateData.table = {
           name: table.name,
           url: table.url,
@@ -145,12 +126,88 @@ export class ChangeRaffleEntryCommand extends Command {
         tableName = table.name;
       }
 
+      // Pre-change qualification state
+      const tableIsChanging = !!(
+        updateData.table && updateData.table.vpsId !== existingEntry.table.vpsId
+      );
+      let approvedTables = null;
+      let oldWasQualified = null;
+      let newWasQualified = null;
+
+      if (tableIsChanging) {
+        approvedTables = await loadApprovedTables();
+        const weekEntriesBefore = await find({ weekId }, "raffles");
+
+        oldWasQualified = isEntryQualified(
+          existingEntry.table.vpsId,
+          weekEntriesBefore,
+          currentWeek.scores ?? [],
+          approvedTables,
+        );
+
+        newWasQualified = isEntryQualified(
+          updateData.table.vpsId,
+          weekEntriesBefore,
+          currentWeek.scores ?? [],
+          approvedTables,
+        );
+      }
+
       await updateOne(
         { userId, weekId },
         { $set: updateData },
         null,
         "raffles",
       );
+
+      if (tableIsChanging) {
+        // Fetch fresh entries post-update so the moved entry is on the correct table
+        const weekEntriesAfter = await find({ weekId }, "raffles");
+
+        const oldNowQualified = isEntryQualified(
+          existingEntry.table.vpsId,
+          weekEntriesAfter,
+          currentWeek.scores ?? [],
+          approvedTables,
+        );
+
+        const newNowQualified = isEntryQualified(
+          updateData.table.vpsId,
+          weekEntriesAfter,
+          currentWeek.scores ?? [],
+          approvedTables,
+        );
+
+        if (newNowQualified) {
+          validation.warning = null;
+        }
+
+        notifyQualificationChange(
+          this.container.client,
+          process.env.COMPETITION_CHANNEL_ID,
+          existingEntry.table,
+          weekEntriesAfter.filter(
+            (e) => e.table.vpsId === existingEntry.table.vpsId,
+          ),
+          oldWasQualified,
+          oldNowQualified,
+        ).catch((e) =>
+          logger.error("notifyQualificationChange (old table) error:", e),
+        );
+
+        notifyQualificationChange(
+          this.container.client,
+          process.env.COMPETITION_CHANNEL_ID,
+          updateData.table,
+          weekEntriesAfter.filter(
+            (e) => e.table.vpsId === updateData.table.vpsId,
+          ),
+          newWasQualified,
+          newNowQualified,
+        ).catch((e) =>
+          logger.error("notifyQualificationChange (new table) error:", e),
+        );
+      }
 
       const embed = new EmbedBuilder()
         .setTitle("🎟 Changed Raffle Entry")

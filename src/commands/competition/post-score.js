@@ -8,14 +8,20 @@ import {
 } from "discord.js";
 import logger from "../../utils/logger.js";
 import { formatNumber } from "../../utils/formatting.js";
+import {
+  isEntryQualified,
+  loadApprovedTables,
+  notifyQualificationChange,
+} from "../../lib/raffle/raffle.js";
 import { processScore, validateScore } from "../../lib/scores/scoring.js";
 import { editWeeklyCompetitionCornerMessage } from "../../lib/output/messages.js";
 import {
+  find,
   findCurrentWeek,
   findCurrentPlayoff,
+  findOne,
   updateOne,
   updateMany,
-  findOne,
 } from "../../services/database.js";
 
 export class PostScoreCommand extends Command {
@@ -179,6 +185,27 @@ export class PostScoreCommand extends Command {
         logger.error("Error updating historical avatars:", e),
       );
 
+      // Pre-score raffle qualification state
+      const weekId = currentWeek._id.toString();
+      const userRaffleEntry = await findOne(
+        { weekId, userId: user.id },
+        "raffles",
+      );
+      let wasQualified = null;
+      let approvedTables = null;
+      let weekEntries = null;
+
+      if (userRaffleEntry) {
+        approvedTables = await loadApprovedTables();
+        weekEntries = await find({ weekId }, "raffles");
+        wasQualified = isEntryQualified(
+          userRaffleEntry.table.vpsId,
+          weekEntries,
+          currentWeek.scores ?? [],
+          approvedTables,
+        );
+      }
+
       // Save to database
       await updateOne(
         { channelName: channel.name, isArchived: false },
@@ -271,6 +298,27 @@ export class PostScoreCommand extends Command {
         postSubscript: `🔗 <#${channel.id}>`,
         doPost: shouldPost,
       });
+
+      // Post-score raffle qualification check
+      if (userRaffleEntry) {
+        const nowQualified = isEntryQualified(
+          userRaffleEntry.table.vpsId,
+          weekEntries,
+          result.scores,
+          approvedTables,
+        );
+
+        notifyQualificationChange(
+          this.container.client,
+          process.env.COMPETITION_CHANNEL_ID,
+          userRaffleEntry.table,
+          weekEntries.filter(
+            (e) => e.table.vpsId === userRaffleEntry.table.vpsId,
+          ),
+          wasQualified,
+          nowQualified,
+        ).catch((e) => logger.error("notifyQualificationChange error:", e));
+      }
 
       await message.delete().catch(() => {});
     } catch (e) {

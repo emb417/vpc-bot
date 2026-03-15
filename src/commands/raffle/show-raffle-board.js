@@ -5,7 +5,7 @@ import { find } from "../../services/database.js";
 import {
   calculateRaffleDataWithStatus,
   loadApprovedTables,
-} from "../../lib/scores/raffle.js";
+} from "../../lib/raffle/raffle.js";
 import logger from "../../utils/logger.js";
 
 /**

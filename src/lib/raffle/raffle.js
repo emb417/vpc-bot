@@ -1,12 +1,12 @@
 import { parse } from "csv-parse/sync";
+import { EmbedBuilder } from "discord.js";
 import { getCollection } from "../../services/database.js";
+import logger from "../../utils/logger.js";
 
-/**
- * Calculate tickets for eligible users.
- * @param {Array} weeks - Scores for the weeks
- * @param {Array} entries - entries for the week
- * @returns {Array} List of eligible users with ticket counts
- */
+let cachedTables = null;
+let cacheExpiresAt = null;
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+
 export const calculateRaffleData = (weeks, entries, approvedTables) => {
   if (!weeks || !entries || entries.length === 0) return [];
 
@@ -97,7 +97,6 @@ export const calculateRaffleData = (weeks, entries, approvedTables) => {
     });
 };
 
-// Separate function for show-raffle-board which needs pending status too
 export const calculateRaffleDataWithStatus = (
   weeks,
   entries,
@@ -182,10 +181,6 @@ export const calculateRaffleDataWithStatus = (
     });
 };
 
-let cachedTables = null;
-let cacheExpiresAt = null;
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
-
 export const loadApprovedTables = async () => {
   if (cachedTables && cacheExpiresAt && Date.now() < cacheExpiresAt) {
     return cachedTables;
@@ -244,9 +239,89 @@ export const validateEntry = async (userId, table, currentWeek) => {
   return { valid: true };
 };
 
+export const isEntryQualified = (
+  vpsId,
+  weekEntries,
+  scores,
+  approvedTables,
+) => {
+  if (approvedTables.some((row) => row["VPS-ID"] === vpsId)) return true;
+
+  const sortedScores = [...scores].sort((a, b) => b.score - a.score);
+
+  const trophies = weekEntries
+    .filter((e) => e.table.vpsId === vpsId)
+    .reduce((sum, entry) => {
+      const idx = sortedScores.findIndex((s) => s.userId === entry.userId);
+      if (idx === -1) return sum;
+      const rank = idx + 1;
+      let performanceTickets = 1;
+      if (rank <= 10) performanceTickets += 1;
+      if (rank <= 3) performanceTickets += 2;
+      return sum + performanceTickets;
+    }, 0);
+
+  return trophies >= 3;
+};
+
+export const notifyQualificationChange = async (
+  client,
+  notificationChannelId,
+  table,
+  affectedEntries,
+  wasQualified,
+  nowQualified,
+) => {
+  if (wasQualified === nowQualified) return;
+
+  const channel = await client.channels
+    .fetch(notificationChannelId)
+    .catch(() => null);
+  if (!channel) {
+    logger.error(
+      `notifyQualificationChange: could not fetch channel ${notificationChannelId}`,
+    );
+    return;
+  }
+
+  const mentions = affectedEntries.map((e) => `<@${e.userId}>`).join(" ");
+
+  if (nowQualified) {
+    await channel.send({
+      content: `${mentions}`,
+      embeds: [
+        new EmbedBuilder()
+          .setTitle("🏆 Raffle Entry Qualified!")
+          .setDescription(
+            `[${table.name}](${table.url}) has reached 3 🏆 and is now fully qualified in the raffle!`,
+          )
+          .setColor("Green"),
+      ],
+    });
+  } else {
+    await channel.send({
+      content: `${mentions}`,
+      embeds: [
+        new EmbedBuilder()
+          .setTitle("⏳ Raffle Entry Disqualified")
+          .setDescription(
+            `[${table.name}](${table.url}) has dropped below 3 🏆 and is no longer qualified for the raffle.`,
+          )
+          .setColor("Yellow"),
+      ],
+    });
+  }
+
+  logger.info(
+    `Raffle qualification changed for ${table.name} (${table.vpsId}): ${wasQualified ? "qualified → disqualified" : "disqualified → qualified"}`,
+  );
+};
+
 export default {
   calculateRaffleData,
   calculateRaffleDataWithStatus,
+  isEntryQualified,
   loadApprovedTables,
+  notifyQualificationChange,
   validateEntry,
 };
