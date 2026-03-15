@@ -3,13 +3,9 @@ import { Command } from "@sapphire/framework";
 import { PaginatedMessage } from "@sapphire/discord.js-utilities";
 import { ButtonStyle, ComponentType } from "discord.js";
 import logger from "../../utils/logger.js";
-import {
-  getScoresByVpsId,
-  getScoresByTableAndAuthorUsingFuzzyTableSearch,
-} from "../../lib/data/vpc.js";
+import { getScoresByTableAndAuthorUsingFuzzyTableSearch } from "../../lib/data/vpc.js";
 import { findTable } from "../../lib/data/tables.js";
 import {
-  pickHighestVersion,
   fetchHighScoresImage,
   buildHighScoresPage,
 } from "../../lib/output/highScoreEmbed.js";
@@ -116,20 +112,24 @@ export class ShowTableHighScoresCommand extends Command {
       }
 
       if (resolvedVpsId) {
-        // Single table — one image, no pagination needed
-        const versions = await getScoresByVpsId(resolvedVpsId);
-        if (!versions || versions.length === 0) {
-          return interaction.editReply({ content: "No results found." });
+        const { table, error: tableError } = await findTable({
+          vpsId: resolvedVpsId,
+        });
+        if (tableError || !table) {
+          return interaction.editReply({
+            content: `No table found for VPS ID \`${resolvedVpsId}\`. Please check the ID and try again.`,
+          });
         }
 
-        const version = pickHighestVersion(versions);
-        const imageBuffer = await fetchHighScoresImage(version.vpsId);
-        const { embed, attachment } = buildHighScoresPage(version, imageBuffer);
-
+        const imageBuffer = await fetchHighScoresImage(resolvedVpsId);
+        const { embed, attachment } = buildHighScoresPage(
+          { vpsId: resolvedVpsId },
+          imageBuffer,
+        );
         return interaction.editReply({ embeds: [embed], files: [attachment] });
       }
 
-      // Search term path — one image per matching table, paginated
+      // Search term path — one image per unique vpsId, paginated
       const results =
         await getScoresByTableAndAuthorUsingFuzzyTableSearch(tableSearchTerm);
 
@@ -139,19 +139,12 @@ export class ShowTableHighScoresCommand extends Command {
         });
       }
 
-      // Group by vpsId, pick highest version per group
-      const grouped = results.reduce((acc, v) => {
-        if (!acc[v.vpsId]) acc[v.vpsId] = [];
-        acc[v.vpsId].push(v);
-        return acc;
-      }, {});
-      const versions = Object.values(grouped).map(pickHighestVersion);
+      const uniqueVpsIds = [...new Set(results.map((r) => r.vpsId))];
 
-      // Fetch all images in parallel
       const settled = await Promise.allSettled(
-        versions.map(async (version) => {
-          const imageBuffer = await fetchHighScoresImage(version.vpsId);
-          return buildHighScoresPage(version, imageBuffer);
+        uniqueVpsIds.map(async (id) => {
+          const imageBuffer = await fetchHighScoresImage(id);
+          return buildHighScoresPage({ vpsId: id }, imageBuffer);
         }),
       );
 
@@ -166,7 +159,6 @@ export class ShowTableHighScoresCommand extends Command {
       }
 
       if (pages.length === 1) {
-        // Single result — skip pagination
         const { embed, attachment } = pages[0];
         return interaction.editReply({ embeds: [embed], files: [attachment] });
       }

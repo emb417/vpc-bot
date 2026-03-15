@@ -7,15 +7,12 @@ import {
 } from "discord.js";
 import { saveHighScore } from "../../commands/highscores/post-high-score.js";
 import { searchScoreByVpsIdUsernameScorePipeline } from "../../lib/data/pipelines.js";
-import { getScoresByVpsId } from "../../lib/data/vpc.js";
 import {
-  pickHighestVersion,
   fetchHighScoresImage,
   buildHighScoresPage,
 } from "../../lib/output/highScoreEmbed.js";
 import { aggregate, findOneAndUpdate } from "../../services/database.js";
 import { formatDateTime, formatNumber } from "../../utils/formatting.js";
-
 import logger from "../../utils/logger.js";
 
 export const highScoreExists = async (data) => {
@@ -62,7 +59,6 @@ export class CrossPostHighScoreListener extends Listener {
       currentWeek,
       channelId,
       postSubscript,
-      doPost,
     } = data;
 
     const channel = this.container.client.channels.cache.get(channelId);
@@ -87,7 +83,6 @@ export class CrossPostHighScoreListener extends Listener {
       if (!exists) {
         const newHighScore = await saveHighScore(highScoreData, user);
 
-        // Check if this score lands in the top 10
         const allScores =
           newHighScore?.authors
             ?.find((a) => a.vpsId === highScoreData.vpsId)
@@ -143,7 +138,6 @@ export class CrossPostHighScoreListener extends Listener {
             allowedMentions: { users: [user.id] },
           });
 
-          // Update the high score with the post URL
           const highScoreId = allScores
             .find(
               (s) =>
@@ -158,23 +152,19 @@ export class CrossPostHighScoreListener extends Listener {
           }
 
           // Post leaderboard image
-          const versions = await getScoresByVpsId(highScoreData.vpsId);
-          if (versions?.length > 0) {
-            const version = pickHighestVersion(versions);
-            const imageBuffer = await fetchHighScoresImage(version.vpsId);
-            const { embed: leaderboardEmbed, attachment } = buildHighScoresPage(
-              version,
-              imageBuffer,
-            );
-            await channel.send({
-              embeds: [leaderboardEmbed],
-              files: [attachment],
-            });
-          }
+          const imageBuffer = await fetchHighScoresImage(highScoreData.vpsId);
+          const { embed: leaderboardEmbed, attachment } = buildHighScoresPage(
+            { vpsId: highScoreData.vpsId },
+            imageBuffer,
+          );
+          await channel.send({
+            embeds: [leaderboardEmbed],
+            files: [attachment],
+          });
         }
       }
     } catch (e) {
-      logger.error("Error in crossPostHighScore:", e);
+      logger.error({ err: e }, "Error in crossPostHighScore");
     }
   }
 }

@@ -16,9 +16,7 @@ import {
   generateObjectId,
 } from "../../services/database.js";
 import { findTable, findTablesByName } from "../../lib/data/tables.js";
-import { getScoresByVpsId } from "../../lib/data/vpc.js";
 import {
-  pickHighestVersion,
   fetchHighScoresImage,
   buildHighScoresPage,
 } from "../../lib/output/highScoreEmbed.js";
@@ -390,13 +388,12 @@ export const postHighScoreEmbed = async ({
   }
 
   // Leaderboard
-  const versions = await getScoresByVpsId(table.vpsId);
-  if (versions?.length > 0) {
-    const version = pickHighestVersion(versions);
-    const imageBuffer = await fetchHighScoresImage(version.vpsId);
-    const { embed, attachment } = buildHighScoresPage(version, imageBuffer);
-    await channel.send({ embeds: [embed], files: [attachment] });
-  }
+  const imageBuffer = await fetchHighScoresImage(table.vpsId);
+  const { embed: leaderboardEmbed, attachment } = buildHighScoresPage(
+    { vpsId: table.vpsId },
+    imageBuffer,
+  );
+  await channel.send({ embeds: [leaderboardEmbed], files: [attachment] });
 
   // DM the displaced top scorer
   if (

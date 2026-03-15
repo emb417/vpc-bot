@@ -1,12 +1,5 @@
 import { EmbedBuilder, AttachmentBuilder } from "discord.js";
 
-export const pickHighestVersion = (versions) =>
-  [...versions].sort((a, b) =>
-    b.versionNumber.localeCompare(a.versionNumber, undefined, {
-      numeric: true,
-    }),
-  )[0];
-
 export const fetchHighScoresImage = async (vpsId) => {
   const apiUrl = `${process.env.VPC_DATA_SERVICE_API_URI}/generateHighScoresLeaderboard`;
   const response = await fetch(apiUrl, {
