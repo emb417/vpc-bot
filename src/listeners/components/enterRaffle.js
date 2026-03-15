@@ -1,62 +1,26 @@
 import "dotenv/config";
-import { Command } from "@sapphire/framework";
-import { findOne, findCurrentWeek } from "../../services/database.js";
+import { Listener } from "@sapphire/framework";
+import { InteractionType } from "discord.js";
+import { findCurrentWeek } from "../../services/database.js";
 import { processRaffleEntry } from "../../lib/raffle/entryHandler.js";
 import { validateEntry } from "../../lib/raffle/raffle.js";
 import { findTable } from "../../lib/data/tables.js";
 import logger from "../../utils/logger.js";
 
-export class EnterRaffleCommand extends Command {
+export class EnterRaffleListener extends Listener {
   constructor(context, options) {
     super(context, {
       ...options,
-      name: "enter-raffle",
-      description: "Enter a table for the weekly raffle.",
+      event: "interactionCreate",
     });
   }
 
-  registerApplicationCommands(registry) {
-    const guildId = process.env.GUILD_ID;
-    registry.registerChatInputCommand(
-      (builder) =>
-        builder
-          .setName(this.name)
-          .setDescription(this.description)
-          .addStringOption((option) =>
-            option
-              .setName("vpsid")
-              .setDescription("VPS ID of the table")
-              .setRequired(false),
-          )
-          .addStringOption((option) =>
-            option
-              .setName("url")
-              .setDescription("URL of the table")
-              .setRequired(false),
-          )
-          .addStringOption((option) =>
-            option
-              .setName("notes")
-              .setDescription("Optional notes")
-              .setRequired(false),
-          ),
-      {
-        guildIds: [guildId],
-      },
-    );
-  }
+  async run(interaction) {
+    if (interaction.type !== InteractionType.MessageComponent) return;
+    if (!interaction.customId.startsWith("raffle-enter:")) return;
 
-  async chatInputRun(interaction) {
-    const vpsId = interaction.options.getString("vpsid");
-    const url = interaction.options.getString("url");
-    const notes = interaction.options.getString("notes");
-
-    if (!vpsId && !url) {
-      return interaction.reply({
-        content: "You must provide either a `vpsid` or a `url`.",
-        flags: 64,
-      });
-    }
+    const vpsId = interaction.customId.slice("raffle-enter:".length);
+    const userId = interaction.user.id;
 
     // All validation before deferReply so errors can be ephemeral
     let currentWeek, table, validation;
@@ -69,21 +33,9 @@ export class EnterRaffleCommand extends Command {
         });
       }
 
-      const weekId = currentWeek._id.toString();
-      const userId = interaction.user.id;
-
-      const existingEntry = await findOne({ userId, weekId }, "raffles");
-      if (existingEntry) {
-        return interaction.reply({
-          content:
-            "You have already entered a table for this week. Use `/change-raffle-entry` to update it.",
-          flags: 64,
-        });
-      }
-
       const { table: foundTable, error: tableError } = await findTable({
         vpsId,
-        url,
+        url: null,
       });
       if (tableError) {
         return interaction.reply({ content: tableError, flags: 64 });
@@ -99,7 +51,7 @@ export class EnterRaffleCommand extends Command {
 
       table = foundTable;
     } catch (e) {
-      logger.error({ err: e });
+      logger.error({ err: e }, "Failed to validate entry:");
       return interaction.reply({
         content: "An error occurred while processing your entry.",
         flags: 64,
@@ -111,10 +63,10 @@ export class EnterRaffleCommand extends Command {
 
     try {
       const payload = await processRaffleEntry({
-        userId: interaction.user.id,
+        userId,
         table,
         validation,
-        notes,
+        notes: null,
         username: interaction.user.username,
         avatarURL: interaction.user.displayAvatarURL({
           dynamic: true,
@@ -126,7 +78,7 @@ export class EnterRaffleCommand extends Command {
 
       return interaction.editReply(payload);
     } catch (e) {
-      logger.error({ err: e });
+      logger.error({ err: e }, "Failed to process entry:");
       return interaction.editReply({
         content: "An error occurred while processing your entry.",
       });

@@ -1,23 +1,8 @@
 import "dotenv/config";
 import { Command } from "@sapphire/framework";
-import {
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  EmbedBuilder,
-} from "discord.js";
-import {
-  updateOne,
-  find,
-  findOne,
-  findCurrentWeek,
-} from "../../services/database.js";
-import {
-  validateEntry,
-  isEntryQualified,
-  loadApprovedTables,
-  notifyQualificationChange,
-} from "../../lib/raffle/raffle.js";
+import { findOne, findCurrentWeek } from "../../services/database.js";
+import { processRaffleEntry } from "../../lib/raffle/entryHandler.js";
+import { validateEntry } from "../../lib/raffle/raffle.js";
 import { findTable } from "../../lib/data/tables.js";
 import logger from "../../utils/logger.js";
 
@@ -70,10 +55,10 @@ export class ChangeRaffleEntryCommand extends Command {
       });
     }
 
+    // All validation before deferReply so errors can be ephemeral
+    let currentWeek, table, validation;
     try {
-      const currentWeek = await findCurrentWeek(
-        process.env.COMPETITION_CHANNEL_NAME,
-      );
+      currentWeek = await findCurrentWeek(process.env.COMPETITION_CHANNEL_NAME);
       if (!currentWeek) {
         return interaction.reply({
           content: "No active competition week found.",
@@ -84,7 +69,6 @@ export class ChangeRaffleEntryCommand extends Command {
       const weekId = currentWeek._id.toString();
       const userId = interaction.user.id;
 
-      // Check if entry exists
       const existingEntry = await findOne({ userId, weekId }, "raffles");
       if (!existingEntry) {
         return interaction.reply({
@@ -94,154 +78,65 @@ export class ChangeRaffleEntryCommand extends Command {
         });
       }
 
-      let updateData = { updatedAt: new Date() };
-      let tableName = existingEntry.table.name;
-      let validation = null;
-
       if (vpsId || url) {
-        const { table, error: tableError } = await findTable({ vpsId, url });
+        const { table: foundTable, error: tableError } = await findTable({
+          vpsId,
+          url,
+        });
         if (tableError) {
           return interaction.reply({ content: tableError, flags: 64 });
         }
-        if (!table) {
-          return interaction.reply({
-            content:
-              "Table not found. This should have been caught by specific errors.",
-            flags: 64,
-          });
+        if (!foundTable) {
+          return interaction.reply({ content: "Table not found.", flags: 64 });
         }
 
-        validation = await validateEntry(userId, table, currentWeek);
+        validation = await validateEntry(userId, foundTable, currentWeek);
         if (!validation.valid) {
           return interaction.reply({ content: validation.error, flags: 64 });
         }
 
-        updateData.table = {
-          name: table.name,
-          url: table.url,
-          vpsId: table.vpsId,
-          romUrl: table.romUrl,
-          notes: notes || null,
+        table = foundTable;
+      } else {
+        // Notes-only update — use existing table, no validation needed
+        table = {
+          name: existingEntry.table.name,
+          url: existingEntry.table.url,
+          vpsId: existingEntry.table.vpsId,
+          romUrl: existingEntry.table.romUrl,
         };
-        tableName = table.name;
+        validation = { valid: true, warning: null };
       }
-
-      // Pre-change qualification state
-      const tableIsChanging = !!(
-        updateData.table && updateData.table.vpsId !== existingEntry.table.vpsId
-      );
-      let approvedTables = null;
-      let oldWasQualified = null;
-      let newWasQualified = null;
-
-      if (tableIsChanging) {
-        approvedTables = await loadApprovedTables();
-        const weekEntriesBefore = await find({ weekId }, "raffles");
-
-        oldWasQualified = isEntryQualified(
-          existingEntry.table.vpsId,
-          weekEntriesBefore,
-          currentWeek.scores ?? [],
-          approvedTables,
-        );
-
-        newWasQualified = isEntryQualified(
-          updateData.table.vpsId,
-          weekEntriesBefore,
-          currentWeek.scores ?? [],
-          approvedTables,
-        );
-      }
-
-      await updateOne(
-        { userId, weekId },
-        { $set: updateData },
-        null,
-        "raffles",
-      );
-
-      if (tableIsChanging) {
-        // Fetch fresh entries post-update so the moved entry is on the correct table
-        const weekEntriesAfter = await find({ weekId }, "raffles");
-
-        const oldNowQualified = isEntryQualified(
-          existingEntry.table.vpsId,
-          weekEntriesAfter,
-          currentWeek.scores ?? [],
-          approvedTables,
-        );
-
-        const newNowQualified = isEntryQualified(
-          updateData.table.vpsId,
-          weekEntriesAfter,
-          currentWeek.scores ?? [],
-          approvedTables,
-        );
-
-        if (newNowQualified) {
-          validation.warning = null;
-        }
-
-        notifyQualificationChange(
-          this.container.client,
-          process.env.COMPETITION_CHANNEL_ID,
-          existingEntry.table,
-          weekEntriesAfter.filter(
-            (e) => e.table.vpsId === existingEntry.table.vpsId,
-          ),
-          oldWasQualified,
-          oldNowQualified,
-        ).catch((e) =>
-          logger.error("notifyQualificationChange (old table) error:", e),
-        );
-
-        notifyQualificationChange(
-          this.container.client,
-          process.env.COMPETITION_CHANNEL_ID,
-          updateData.table,
-          weekEntriesAfter.filter(
-            (e) => e.table.vpsId === updateData.table.vpsId,
-          ),
-          newWasQualified,
-          newNowQualified,
-        ).catch((e) =>
-          logger.error("notifyQualificationChange (new table) error:", e),
-        );
-      }
-
-      const embed = new EmbedBuilder()
-        .setTitle("🎟 Changed Raffle Entry")
-        .setDescription(
-          `**${interaction.user.username}** changed to\n[${tableName}](${updateData.table?.url ?? existingEntry.table.url})${validation?.warning ? `\n\n⏳ ${validation.warning}` : ""}`,
-        )
-        .setColor(validation?.warning ? "Yellow" : "Green")
-        .setThumbnail(
-          interaction.user.displayAvatarURL({ dynamic: true, size: 128 }),
-        )
-        .setFooter({
-          text: "Use /change-raffle-entry to change your entry.",
-        });
-
-      const raffleBoardButtons = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId("show_raffle_board")
-          .setLabel("Show Raffle Board")
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId("show_raffle_rules")
-          .setLabel("Show Raffle Rules")
-          .setStyle(ButtonStyle.Secondary),
-      );
-
-      return interaction.reply({
-        embeds: [embed],
-        components: [raffleBoardButtons],
-      });
     } catch (e) {
-      logger.error(e);
+      logger.error({ err: e });
       return interaction.reply({
         content: "An error occurred while updating your entry.",
         flags: 64,
+      });
+    }
+
+    // Slow work — defer before DB writes and qualification checks
+    await interaction.deferReply();
+
+    try {
+      const payload = await processRaffleEntry({
+        userId: interaction.user.id,
+        table,
+        validation,
+        notes,
+        username: interaction.user.username,
+        avatarURL: interaction.user.displayAvatarURL({
+          dynamic: true,
+          size: 128,
+        }),
+        currentWeek,
+        client: interaction.client,
+      });
+
+      return interaction.editReply(payload);
+    } catch (e) {
+      logger.error({ err: e });
+      return interaction.editReply({
+        content: "An error occurred while updating your entry.",
       });
     }
   }

@@ -32,7 +32,7 @@ export const showRaffleRules = async (interaction) => {
     )
     .addFields(
       {
-        name: "📋 How to Enter",
+        name: "📜 How to Enter",
         value:
           "After you've posted a score for the week, use `/enter-raffle` with a [vpsId](https://virtualpinballspreadsheet.github.io/) or [url](https://vpuniverse.com/files/category/82-vpx-pinball-tables/) of a table.",
       },
