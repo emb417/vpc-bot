@@ -57,12 +57,6 @@ export class PostScoreCommand extends Command {
               .setName("image")
               .setDescription("Screenshot of full playfield and score")
               .setRequired(true),
-          )
-          .addStringOption((option) =>
-            option
-              .setName("posttohighscorechannel")
-              .setDescription("Post to high score channel (y/n)")
-              .setRequired(false),
           ),
       {
         guildIds: [guildId],
