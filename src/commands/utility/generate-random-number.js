@@ -52,7 +52,7 @@ export class GenerateRandomNumberCommand extends Command {
         content: `**${randomNumber}** (1 - ${max})`,
       });
     } catch (e) {
-      logger.error(e);
+      logger.error({ err: e }, "Failed to generate random number:");
       return interaction.reply({
         content: e.message,
         flags: 64,

@@ -22,7 +22,7 @@ export class ShowLeaderboardButtonListener extends Listener {
         (await interaction.client.channels.fetch(interaction.channelId));
       await getLeaderboard(interaction, channel);
     } catch (e) {
-      logger.error(e);
+      logger.error({ err: e }, "Failed to show leaderboard:");
       const replyMethod = interaction.deferred ? "editReply" : "reply";
       await interaction[replyMethod]({
         content: e.message,

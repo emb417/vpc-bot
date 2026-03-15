@@ -97,7 +97,7 @@ export class CreateTeamCommand extends Command {
         flags: 64,
       });
     } catch (e) {
-      logger.error(e);
+      logger.error({ err: e }, "Failed to create team:");
       return interaction.reply({
         content: e.message,
         flags: 64,

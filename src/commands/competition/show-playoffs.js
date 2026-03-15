@@ -28,8 +28,7 @@ export class ShowPlayoffsCommand extends Command {
     }
 
     registry.registerChatInputCommand(
-      (builder) =>
-        builder.setName(this.name).setDescription(this.description),
+      (builder) => builder.setName(this.name).setDescription(this.description),
       {
         guildIds: [guildId],
       },
@@ -59,7 +58,7 @@ export class ShowPlayoffsCommand extends Command {
 
       await this.showPlayoffMatchups(interaction, channel);
     } catch (e) {
-      logger.error(e);
+      logger.error({ err: e }, "Failed to show playoffs:");
       return interaction.reply({
         content: e.message,
         flags: 64,

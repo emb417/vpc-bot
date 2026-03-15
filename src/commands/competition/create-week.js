@@ -156,7 +156,7 @@ export class CreateWeekCommand extends Command {
         ],
       });
     } catch (e) {
-      logger.error(e);
+      logger.error({ err: e }, "Failed to create week:");
       return interaction.editReply({
         embeds: [
           new EmbedBuilder().setColor("Red").setDescription(`❌ ${e.message}`),
@@ -321,7 +321,7 @@ export const createWeek = async (client, channel, vpsid, options = {}) => {
 
     return { success: true, message: resultMessage, week: newWeek };
   } catch (e) {
-    logger.error(e);
+    logger.error({ err: e }, "Failed to create week:");
     throw e;
   }
 };

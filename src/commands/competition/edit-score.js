@@ -34,7 +34,10 @@ export class EditScoreCommand extends Command {
               .setRequired(true),
           )
           .addStringOption((option) =>
-            option.setName("score").setDescription("New score").setRequired(true),
+            option
+              .setName("score")
+              .setDescription("New score")
+              .setRequired(true),
           ),
       {
         guildIds: [guildId],
@@ -101,7 +104,7 @@ export class EditScoreCommand extends Command {
         flags: 64,
       });
     } catch (e) {
-      logger.error(e);
+      logger.error({ err: e }, "Failed to edit score:");
       return interaction.reply({
         content: e.message,
         flags: 64,

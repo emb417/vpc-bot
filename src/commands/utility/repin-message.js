@@ -53,7 +53,7 @@ export class RepinMessageCommand extends Command {
         flags: 64,
       });
     } catch (e) {
-      logger.error(e);
+      logger.error({ err: e }, "Failed to repin message:");
       return interaction.reply({
         content: e.message,
         flags: 64,

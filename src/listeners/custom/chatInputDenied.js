@@ -28,7 +28,7 @@ export class ChatInputDeniedListener extends Listener {
         });
       }
     } catch (e) {
-      logger.error("Error in ChatInputDeniedListener:", e);
+      logger.error({ err: e }, "Error in ChatInputDeniedListener:");
     }
   }
 }

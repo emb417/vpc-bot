@@ -163,7 +163,7 @@ export class PostHighScoreCommand extends Command {
 
         await interaction.editReply({ content: "✅ High score posted!" });
       } catch (e) {
-        logger.error(e);
+        logger.error({ err: e }, "Failed to post high score");
         await interaction.editReply({
           content: "An error occurred while saving your high score.",
         });
@@ -218,7 +218,7 @@ export class PostHighScoreCommand extends Command {
         });
       }
     } catch (e) {
-      logger.error(e);
+      logger.error({ err: e }, "Failed to find tables");
       return interaction.editReply({ content: e.message });
     }
   }
@@ -303,7 +303,7 @@ export class PostHighScoreCommand extends Command {
         setTimeout(() => reply.delete().catch(() => {}), 10000);
       }
     } catch (e) {
-      logger.error(e);
+      logger.error({ err: e }, "Failed to find tables");
       message.reply({ content: e.message });
     }
   }

@@ -160,7 +160,7 @@ export class PostScoreCommand extends Command {
         attachmentBuffer = Buffer.from(await response.arrayBuffer());
         attachmentName = attachment.name;
       } catch (fetchError) {
-        logger.error("Failed to download attachment:", fetchError);
+        logger.error({ err: fetchError }, "Failed to download attachment:");
         const reply = await message.reply({
           content: "Failed to process image. Please try again.",
         });
@@ -182,7 +182,7 @@ export class PostScoreCommand extends Command {
 
       // Asynchronously update historical avatars if changed
       this.updateHistoricalAvatars(user).catch((e) =>
-        logger.error("Error updating historical avatars:", e),
+        logger.error({ err: e }, "Error updating historical avatars:"),
       );
 
       // Pre-score raffle qualification state
@@ -317,12 +317,14 @@ export class PostScoreCommand extends Command {
           ),
           wasQualified,
           nowQualified,
-        ).catch((e) => logger.error("notifyQualificationChange error:", e));
+        ).catch((e) =>
+          logger.error({ err: e }, "notifyQualificationChange error:"),
+        );
       }
 
       await message.delete().catch(() => {});
     } catch (e) {
-      logger.error(e);
+      logger.error({ err: e }, "Error in PostScoreCommand:");
       const reply = await message.reply({
         content: `${e.message} This message will be deleted in 10 seconds.`,
       });

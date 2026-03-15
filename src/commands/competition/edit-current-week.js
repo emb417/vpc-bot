@@ -157,7 +157,7 @@ export class EditCurrentWeekCommand extends Command {
         });
       }
     } catch (e) {
-      logger.error(e);
+      logger.error({ err: e }, "Failed to update week:");
       return interaction.reply({
         content: e.message,
         flags: 64,

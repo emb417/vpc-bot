@@ -79,7 +79,7 @@ export class HighScoreSelectListener extends Listener {
           const res = await fetch(resolvedAttachmentUrl);
           if (res.ok) attachmentBuffer = Buffer.from(await res.arrayBuffer());
         } catch (e) {
-          logger.error("Failed to pre-fetch attachment buffer:", e);
+          logger.error({ err: e }, "Failed to pre-fetch attachment buffer:");
         }
       }
 
@@ -105,7 +105,7 @@ export class HighScoreSelectListener extends Listener {
 
       await interaction.message.delete().catch(() => {});
     } catch (e) {
-      logger.error(e);
+      logger.error({ err: e }, "Failed to post high score:");
       if (!interaction.replied) {
         await interaction.reply({
           content: e.message,

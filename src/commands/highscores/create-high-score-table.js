@@ -88,7 +88,7 @@ export class CreateHighScoreTableCommand extends Command {
         flags: 64,
       });
     } catch (e) {
-      logger.error(e);
+      logger.error({ err: e }, "Failed to create high score table:");
       return interaction.reply({
         embeds: [
           new EmbedBuilder().setColor("Red").setDescription(`❌ ${e.message}`),

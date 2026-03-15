@@ -15,7 +15,10 @@ export const getVpsGameById = async (vpsId) => {
     }
     return response.json();
   } catch (error) {
-    logger.error(`Error fetching VPS game data for ID ${vpsId}:`, error);
+    logger.error(
+      { err: error },
+      `Error fetching VPS game data for ID ${vpsId}:`,
+    );
     throw new Error(
       "Could not retrieve VPS game data. Please try again later.",
     );
@@ -34,7 +37,10 @@ export const getVpsGameByUrl = async (url) => {
     const vpsGame = await response.json();
     return Object.keys(vpsGame).length > 0 ? vpsGame : null;
   } catch (error) {
-    logger.error(`Error fetching VPS game data for URL ${url}:`, error);
+    logger.error(
+      { err: error },
+      `Error fetching VPS game data for URL ${url}:`,
+    );
     throw new Error(
       "Could not retrieve VPS game data. Please try again later.",
     );
@@ -56,7 +62,10 @@ export const getVpsGameByName = async (name) => {
     }
     return response.json();
   } catch (error) {
-    logger.error(`Error fetching VPS game data for name "${name}":`, error);
+    logger.error(
+      { err: error },
+      `Error fetching VPS game data for name "${name}":`,
+    );
     throw new Error(
       "Could not retrieve VPS game data. Please try again later.",
     );

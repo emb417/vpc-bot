@@ -32,7 +32,7 @@ export class CreateMessageCommand extends Command {
         content: "Placeholder message created successfully.",
       });
     } catch (e) {
-      logger.error(e);
+      logger.error({ err: e }, "Failed to create message:");
       return interaction.reply({
         content: e.message,
         flags: 64,

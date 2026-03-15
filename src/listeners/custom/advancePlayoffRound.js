@@ -87,7 +87,7 @@ export class AdvancePlayoffRoundListener extends Listener {
         content: `Advanced playoff round to: ${roundName}`,
       });
     } catch (e) {
-      logger.error("Error in advancePlayoffRound:", e);
+      logger.error({ err: e }, "Error in advancePlayoffRound:");
     }
   }
 }

@@ -39,7 +39,9 @@ export class EditCurrentSeasonCommand extends Command {
               .setDescription("Season start (YYYY-MM-DD)"),
           )
           .addStringOption((option) =>
-            option.setName("seasonend").setDescription("Season end (YYYY-MM-DD)"),
+            option
+              .setName("seasonend")
+              .setDescription("Season end (YYYY-MM-DD)"),
           ),
       {
         guildIds: [guildId],
@@ -107,7 +109,7 @@ export class EditCurrentSeasonCommand extends Command {
         flags: 64,
       });
     } catch (e) {
-      logger.error(e);
+      logger.error({ err: e }, "Failed to update season:");
       return interaction.reply({
         content: e.message,
         flags: 64,

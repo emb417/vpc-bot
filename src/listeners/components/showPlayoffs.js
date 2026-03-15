@@ -18,7 +18,7 @@ export class ShowPlayoffsButtonListener extends Listener {
     try {
       await getPlayoffRoundMatchups(interaction, interaction.channel);
     } catch (e) {
-      logger.error(e);
+      logger.error({ err: e }, "Failed to show playoffs:");
       if (!interaction.replied) {
         await interaction.reply({
           content: e.message,

@@ -118,7 +118,7 @@ export class CreateSeasonCommand extends Command {
         flags: 64,
       });
     } catch (e) {
-      logger.error(e);
+      logger.error({ err: e }, "Failed to create season:");
       return interaction.reply({
         content: e.message,
         flags: 64,

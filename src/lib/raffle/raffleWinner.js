@@ -175,7 +175,10 @@ export const runRaffleAndCreateNextWeek = async (client, channel) => {
       await channel.send("Error: Could not determine a raffle winner.");
     }
   } catch (error) {
-    logger.error("Error during raffle and week creation process:", error);
+    logger.error(
+      { err: error },
+      "Error during raffle and week creation process:",
+    );
     await channel.send(
       "An unexpected error occurred during the raffle draw and new week creation. Please check logs.",
     );

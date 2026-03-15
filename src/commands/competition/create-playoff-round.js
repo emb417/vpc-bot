@@ -34,7 +34,9 @@ export class CreatePlayoffRoundCommand extends Command {
           .addStringOption((option) =>
             option
               .setName("games")
-              .setDescription("Comma-separated list of seed numbers for matchups")
+              .setDescription(
+                "Comma-separated list of seed numbers for matchups",
+              )
               .setRequired(true),
           ),
       {
@@ -96,7 +98,7 @@ export class CreatePlayoffRoundCommand extends Command {
         flags: 64,
       });
     } catch (e) {
-      logger.error(e);
+      logger.error({ err: e }, "Failed to create playoff round:");
       return interaction.reply({
         content: e.message,
         flags: 64,

@@ -55,7 +55,7 @@ async function main() {
       }
     });
   } catch (error) {
-    logger.error("Failed to start bot:", error);
+    logger.error({ err: error }, "Failed to start bot:");
     await closeDatabase();
     process.exit(1);
   }
@@ -80,11 +80,11 @@ process.on("SIGTERM", async () => {
 
 // Handle uncaught errors
 process.on("uncaughtException", (error) => {
-  logger.error("Uncaught exception:", error);
+  logger.error({ err: error }, "Uncaught exception:");
 });
 
 process.on("unhandledRejection", (reason, promise) => {
-  logger.error("Unhandled rejection at:", promise, "reason:", reason);
+  logger.error({ err: reason, promise }, "Unhandled rejection:");
 });
 
 main();

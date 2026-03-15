@@ -108,7 +108,7 @@ export const showRaffleBoard = async (interaction) => {
       await interaction.reply({ ...responseOptions, flags: 64 });
     }
   } catch (e) {
-    logger.error(e);
+    logger.error({ err: e }, "Failed to show raffle board:");
     const msg = "An error occurred while fetching the raffle board.";
     if (!interaction.replied && !interaction.deferred) {
       await interaction.reply({ content: msg, flags: 64 });

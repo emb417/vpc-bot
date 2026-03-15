@@ -60,7 +60,10 @@ export const findTable = async ({ url, vpsId }) => {
         tableFile.id,
       );
     } catch (error) {
-      logger.error(`Error fetching VPS game data by URL ${url}:`, error);
+      logger.error(
+        { err: error },
+        `Error fetching VPS game data by URL ${url}:`,
+      );
       return {
         table: null,
         status: null,
@@ -93,7 +96,10 @@ export const findTable = async ({ url, vpsId }) => {
         vpsId,
       );
     } catch (error) {
-      logger.error(`Error fetching VPS game data for ID ${vpsId}:`, error);
+      logger.error(
+        { err: error },
+        `Error fetching VPS game data for ID ${vpsId}:`,
+      );
       return {
         table: null,
         status: null,
@@ -146,7 +152,7 @@ export const findTablesByName = async (name, maxResults = 10) => {
 
     return { tables: results, error: null };
   } catch (error) {
-    logger.error(`Error in findTablesByName for "${name}":`, error);
+    logger.error({ err: error }, `Error in findTablesByName for "${name}":`);
     return {
       tables: [],
       error: `Failed to search VPS game data. ${error.message}`,

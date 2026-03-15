@@ -60,7 +60,7 @@ export class RemoveHighScoreCommand extends Command {
         flags: 64,
       });
     } catch (e) {
-      logger.error(e);
+      logger.error({ err: e }, "Failed to remove high score:");
       return interaction.reply({
         content: e.message,
         flags: 64,

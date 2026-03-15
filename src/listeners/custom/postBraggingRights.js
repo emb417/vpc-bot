@@ -51,7 +51,7 @@ export class PostBraggingRightsListener extends Listener {
         },
       });
     } catch (e) {
-      logger.error("Error in postBraggingRights:", e);
+      logger.error({ err: e }, "Error in postBraggingRights:");
     }
   }
 }

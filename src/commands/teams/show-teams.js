@@ -68,7 +68,7 @@ export class ShowTeamsCommand extends Command {
         }
       }
     } catch (e) {
-      logger.error(e);
+      logger.error({ err: e }, "Failed to show teams:");
       return interaction.reply({
         content: e.message,
         flags: 64,

@@ -118,7 +118,7 @@ export class SuggestTeamsCommand extends Command {
         flags: 64,
       });
     } catch (e) {
-      logger.error(e);
+      logger.error({ err: e }, "Failed to suggest teams:");
       return interaction.reply({
         content: e.message,
         flags: 64,

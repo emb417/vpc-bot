@@ -17,7 +17,7 @@ export class CreateHighScoreTableListener extends Listener {
     try {
       await findTable({ vpsId });
     } catch (e) {
-      logger.error("Error in createHighScoreTable event:", e.message, e.stack);
+      logger.error({ err: e }, "Error in createHighScoreTable event:");
     }
   }
 }

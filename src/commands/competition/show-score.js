@@ -92,7 +92,7 @@ export class ShowScoreCommand extends Command {
         flags: 64,
       });
     } catch (e) {
-      logger.error(e);
+      logger.error({ err: e }, "Failed to show score:");
       return interaction.reply({
         content: e.message,
         flags: 64,

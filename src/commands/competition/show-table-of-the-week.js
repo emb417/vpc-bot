@@ -98,7 +98,7 @@ export class ShowTableOfTheWeekCommand extends Command {
         ],
       });
     } catch (e) {
-      logger.error(e);
+      logger.error({ err: e }, "Failed to show table of the week:");
       return interaction.editReply({
         embeds: [
           new EmbedBuilder().setColor("Red").setDescription(`❌ ${e.message}`),

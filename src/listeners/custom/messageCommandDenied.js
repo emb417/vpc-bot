@@ -13,7 +13,7 @@ export class MessageCommandDeniedListener extends Listener {
     try {
       await message.reply(error.message || "You cannot use this command.");
     } catch (e) {
-      logger.error("Error in MessageCommandDeniedListener:", e);
+      logger.error({ err: e }, "Error in MessageCommandDeniedListener:");
     }
   }
 }

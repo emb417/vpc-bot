@@ -23,8 +23,7 @@ export class ShowSeasonLeaderboardCommand extends Command {
     }
 
     registry.registerChatInputCommand(
-      (builder) =>
-        builder.setName(this.name).setDescription(this.description),
+      (builder) => builder.setName(this.name).setDescription(this.description),
       {
         guildIds: [guildId],
       },
@@ -60,7 +59,7 @@ export class ShowSeasonLeaderboardCommand extends Command {
 
       await this.showSeasonLeaderboard(channel, interaction, currentSeason);
     } catch (e) {
-      logger.error(e);
+      logger.error({ err: e }, "Failed to show season leaderboard:");
       return interaction.reply({
         content: e.message,
         flags: 64,

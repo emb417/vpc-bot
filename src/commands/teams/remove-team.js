@@ -73,7 +73,7 @@ export class RemoveTeamCommand extends Command {
         flags: 64,
       });
     } catch (e) {
-      logger.error(e);
+      logger.error({ err: e }, "Failed to remove team:");
       return interaction.reply({
         content: e.message,
         flags: 64,

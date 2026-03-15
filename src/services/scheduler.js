@@ -30,7 +30,10 @@ export const initScheduledJobs = (client) => {
 
         await runRaffleAndCreateNextWeek(client, channel);
       } catch (error) {
-        logger.error("Error during scheduled raffle and week creation:", error);
+        logger.error(
+          { err: error },
+          "Error during scheduled raffle and week creation:",
+        );
       }
     },
     {
