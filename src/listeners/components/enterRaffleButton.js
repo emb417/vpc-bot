@@ -1,9 +1,13 @@
 import "dotenv/config";
 import { Listener } from "@sapphire/framework";
 import { InteractionType } from "discord.js";
-import { findCurrentWeek } from "../../services/database.js";
+import { findCurrentWeek, find } from "../../services/database.js";
 import { processRaffleEntry } from "../../lib/raffle/entryHandler.js";
-import { validateEntry } from "../../lib/raffle/raffle.js";
+import {
+  validateEntry,
+  isEntryQualified,
+  loadApprovedTables,
+} from "../../lib/raffle/raffle.js";
 import { findTable } from "../../lib/data/tables.js";
 import logger from "../../utils/logger.js";
 
@@ -22,7 +26,6 @@ export class EnterRaffleButtonListener extends Listener {
     const vpsId = interaction.customId.slice("raffle-enter:".length);
     const userId = interaction.user.id;
 
-    // All validation before deferReply so errors can be ephemeral
     let currentWeek, table, validation;
     try {
       currentWeek = await findCurrentWeek(process.env.COMPETITION_CHANNEL_NAME);
@@ -32,6 +35,8 @@ export class EnterRaffleButtonListener extends Listener {
           flags: 64,
         });
       }
+
+      const weekId = currentWeek._id.toString();
 
       const { table: foundTable, error: tableError } = await findTable({
         vpsId,
@@ -49,6 +54,18 @@ export class EnterRaffleButtonListener extends Listener {
         return interaction.reply({ content: validation.error, flags: 64 });
       }
 
+      if (validation.warning) {
+        const weekEntries = await find({ weekId }, "raffles");
+        const approvedTables = await loadApprovedTables();
+        const alreadyQualified = isEntryQualified(
+          foundTable.vpsId,
+          weekEntries,
+          currentWeek.scores ?? [],
+          approvedTables,
+        );
+        if (alreadyQualified) validation.warning = null;
+      }
+
       table = foundTable;
     } catch (e) {
       logger.error({ err: e }, "Failed to validate entry:");
@@ -58,7 +75,6 @@ export class EnterRaffleButtonListener extends Listener {
       });
     }
 
-    // Slow work — defer before DB writes and qualification checks
     await interaction.deferReply();
 
     try {

@@ -1,9 +1,13 @@
 import "dotenv/config";
 import { Listener } from "@sapphire/framework";
 import { InteractionType } from "discord.js";
-import { findCurrentWeek, findOne } from "../../services/database.js";
+import { findCurrentWeek, findOne, find } from "../../services/database.js";
 import { processRaffleEntry } from "../../lib/raffle/entryHandler.js";
-import { validateEntry } from "../../lib/raffle/raffle.js";
+import {
+  validateEntry,
+  isEntryQualified,
+  loadApprovedTables,
+} from "../../lib/raffle/raffle.js";
 import { findTable } from "../../lib/data/tables.js";
 import logger from "../../utils/logger.js";
 
@@ -64,6 +68,18 @@ export class ChangeRaffleModalListener extends Listener {
         validation = await validateEntry(userId, foundTable, currentWeek);
         if (!validation.valid)
           return interaction.reply({ content: validation.error, flags: 64 });
+
+        if (validation.warning) {
+          const weekEntries = await find({ weekId }, "raffles");
+          const approvedTables = await loadApprovedTables();
+          const alreadyQualified = isEntryQualified(
+            foundTable.vpsId,
+            weekEntries,
+            currentWeek.scores ?? [],
+            approvedTables,
+          );
+          if (alreadyQualified) validation.warning = null;
+        }
 
         table = foundTable;
       } else {
