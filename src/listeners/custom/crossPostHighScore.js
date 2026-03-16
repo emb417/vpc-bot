@@ -127,7 +127,7 @@ export class CrossPostHighScoreListener extends Listener {
             new ButtonBuilder()
               .setCustomId("show_high_score_rules")
               .setLabel("Show Rules")
-              .setStyle(ButtonStyle.Primary),
+              .setStyle(ButtonStyle.Secondary),
           );
 
           const message = await channel.send({

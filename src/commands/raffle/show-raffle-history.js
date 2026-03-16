@@ -31,7 +31,7 @@ const buildPaginatedMessage = (entries, target) => {
       },
       {
         customId: "@sapphire/paginated-messages.nextPage",
-        style: ButtonStyle.Primary,
+        style: ButtonStyle.Secondary,
         emoji: "▶️",
         label: "Next Page",
         type: ComponentType.Button,

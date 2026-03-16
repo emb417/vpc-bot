@@ -39,7 +39,6 @@ export class SelectRaffleListener extends Listener {
       const weekId = currentWeek._id.toString();
       const weekEntries = await find({ weekId }, "raffles");
 
-      // Get table data from existing entries — no need to call findTable
       const existingTableEntry = weekEntries.find(
         (e) => e.table.vpsId === vpsId,
       );

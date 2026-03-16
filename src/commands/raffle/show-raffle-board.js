@@ -1,6 +1,11 @@
 import "dotenv/config";
 import { Command } from "@sapphire/framework";
-import { EmbedBuilder } from "discord.js";
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  EmbedBuilder,
+} from "discord.js";
 import { find } from "../../services/database.js";
 import {
   calculateRaffleDataWithStatus,
@@ -17,6 +22,13 @@ const escapeUnderscores = (str) => {
   if (!str) return "";
   return (str.match(/_/g)?.length ?? 0) >= 2 ? str.replace(/_/g, "\\_") : str;
 };
+
+const selectRaffleEntryButton = new ActionRowBuilder().addComponents(
+  new ButtonBuilder()
+    .setCustomId("show_select_raffle_entry")
+    .setLabel("🎯 Select Raffle Entry")
+    .setStyle(ButtonStyle.Secondary),
+);
 
 export class ShowRaffleBoardCommand extends Command {
   constructor(context, options) {
@@ -98,7 +110,10 @@ export const showRaffleBoard = async (interaction) => {
         text: "Post a score to win a ticket,\nthen use /enter-raffle.",
       });
 
-    const responseOptions = { embeds: [embed] };
+    const responseOptions = {
+      embeds: [embed],
+      components: [selectRaffleEntryButton],
+    };
 
     if (interaction.isButton()) {
       await interaction.editReply(responseOptions);

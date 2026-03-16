@@ -183,7 +183,7 @@ export async function processRaffleEntry({
       new ButtonBuilder()
         .setCustomId("show_raffle_board")
         .setLabel("📋 Raffle Board")
-        .setStyle(ButtonStyle.Primary),
+        .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
         .setCustomId("show_raffle_rules")
         .setLabel("📜 Raffle Rules")

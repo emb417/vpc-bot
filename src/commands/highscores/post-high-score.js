@@ -361,7 +361,7 @@ export const postHighScoreEmbed = async ({
     new ButtonBuilder()
       .setCustomId("show_high_score_rules")
       .setLabel("Show Rules")
-      .setStyle(ButtonStyle.Primary),
+      .setStyle(ButtonStyle.Secondary),
   );
 
   if (attachmentUrl) {

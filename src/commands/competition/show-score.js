@@ -74,7 +74,7 @@ export class ShowScoreCommand extends Command {
         new ButtonBuilder()
           .setCustomId("showLeaderboard")
           .setLabel("Show Leaderboard")
-          .setStyle(ButtonStyle.Primary),
+          .setStyle(ButtonStyle.Secondary),
       );
 
       if (showPlayoffButton) {
@@ -82,7 +82,7 @@ export class ShowScoreCommand extends Command {
           new ButtonBuilder()
             .setCustomId("showPlayoffs")
             .setLabel("Show Playoffs")
-            .setStyle(ButtonStyle.Primary),
+            .setStyle(ButtonStyle.Secondary),
         );
       }
 

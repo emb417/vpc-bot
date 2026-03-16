@@ -254,7 +254,7 @@ export class PostScoreCommand extends Command {
         new ButtonBuilder()
           .setCustomId("showLeaderboard")
           .setLabel("Show Leaderboard")
-          .setStyle(ButtonStyle.Primary),
+          .setStyle(ButtonStyle.Secondary),
         new ButtonBuilder()
           .setCustomId("show_competition_rules")
           .setLabel("Show Rules")
@@ -266,7 +266,7 @@ export class PostScoreCommand extends Command {
           new ButtonBuilder()
             .setCustomId("showPlayoffs")
             .setLabel("Show Playoffs")
-            .setStyle(ButtonStyle.Primary),
+            .setStyle(ButtonStyle.Secondary),
         );
       }
 
