@@ -126,7 +126,7 @@ export class CrossPostHighScoreListener extends Listener {
           const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
               .setCustomId("show_high_score_rules")
-              .setLabel("Show Rules")
+              .setLabel("📜 Rules")
               .setStyle(ButtonStyle.Secondary),
           );
 

@@ -253,11 +253,11 @@ export class PostScoreCommand extends Command {
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId("showLeaderboard")
-          .setLabel("Show Leaderboard")
+          .setLabel("📋 Leaderboard")
           .setStyle(ButtonStyle.Secondary),
         new ButtonBuilder()
           .setCustomId("show_competition_rules")
-          .setLabel("Show Rules")
+          .setLabel("📜 Rules")
           .setStyle(ButtonStyle.Secondary),
       );
 
@@ -265,7 +265,7 @@ export class PostScoreCommand extends Command {
         row.addComponents(
           new ButtonBuilder()
             .setCustomId("showPlayoffs")
-            .setLabel("Show Playoffs")
+            .setLabel("🏆 Playoffs")
             .setStyle(ButtonStyle.Secondary),
         );
       }

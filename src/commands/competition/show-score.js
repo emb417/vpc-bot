@@ -73,7 +73,7 @@ export class ShowScoreCommand extends Command {
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId("showLeaderboard")
-          .setLabel("Show Leaderboard")
+          .setLabel("📋 Leaderboard")
           .setStyle(ButtonStyle.Secondary),
       );
 
@@ -81,7 +81,7 @@ export class ShowScoreCommand extends Command {
         row.addComponents(
           new ButtonBuilder()
             .setCustomId("showPlayoffs")
-            .setLabel("Show Playoffs")
+            .setLabel("🏆 Playoffs")
             .setStyle(ButtonStyle.Secondary),
         );
       }
