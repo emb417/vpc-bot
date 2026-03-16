@@ -7,7 +7,7 @@ import { validateEntry } from "../../lib/raffle/raffle.js";
 import { findTable } from "../../lib/data/tables.js";
 import logger from "../../utils/logger.js";
 
-export class EnterRaffleListener extends Listener {
+export class EnterRaffleButtonListener extends Listener {
   constructor(context, options) {
     super(context, {
       ...options,

@@ -182,11 +182,11 @@ export async function processRaffleEntry({
     new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId("show_raffle_board")
-        .setLabel("📋 Show Raffle Board")
+        .setLabel("📋 Raffle Board")
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
         .setCustomId("show_raffle_rules")
-        .setLabel("📜 Show Raffle Rules")
+        .setLabel("📜 Raffle Rules")
         .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
         .setCustomId(`raffle-enter:${table.vpsId}`)
