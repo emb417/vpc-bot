@@ -17,7 +17,8 @@ const paginationActions = [
     emoji: "◀️",
     label: "Previous",
     type: ComponentType.Button,
-    run: ({ handler }) => {
+    run: async ({ handler, interaction }) => {
+      await interaction.deferUpdate();
       if (handler.index > 0) handler.index--;
     },
   },
@@ -27,7 +28,8 @@ const paginationActions = [
     emoji: "▶️",
     label: "Next Page",
     type: ComponentType.Button,
-    run: ({ handler }) => {
+    run: async ({ handler, interaction }) => {
+      await interaction.deferUpdate();
       if (handler.index < handler.pages.length - 1) handler.index++;
     },
   },
