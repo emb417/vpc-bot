@@ -1,42 +1,7 @@
 /**
- * Search pipeline for finding tables by name.
- */
-export const searchPipeline = (searchTerm) => [
-  { $match: { tableName: { $regex: `.*${searchTerm}*`, $options: "i" } } },
-  { $unwind: "$authors" },
-  {
-    $unwind: { path: "$authors.versions", preserveNullAndEmptyArrays: true },
-  },
-  {
-    $project: {
-      tableId: { $toString: "$_id" },
-      tableName: "$tableName",
-      authorId: { $toString: "$authors._id" },
-      authorName: "$authors.authorName",
-      vpsId: "$authors.vpsId",
-      versionId: { $toString: "$authors.versions._id" },
-      versionNumber: "$authors.versions.versionNumber",
-      tableUrl: "$authors.versions.versionUrl",
-      scores: "$authors.versions.scores",
-      postUrl: { $last: "$authors.versions.scores.postUrl" },
-      _id: 0,
-    },
-  },
-  { $sort: { tableName: 1, AuthorName: -1, versionNumber: -1 } },
-];
-
-/**
- * Search pipeline for finding tables by VPS ID.
- */
-export const searchTableByVpsIdPipeline = (vpsId) => [
-  { $match: { "authors.vpsId": vpsId } },
-  { $project: { tableName: 1, authors: 1 } },
-];
-
-/**
  * Search pipeline for finding a specific score by VPS ID and version.
  */
-export const searchScorePipeline = (vpsId, versionNumber) => [
+const searchScorePipeline = (vpsId, versionNumber) => [
   { $unwind: "$authors" },
   {
     $unwind: { path: "$authors.versions", preserveNullAndEmptyArrays: true },
@@ -66,7 +31,7 @@ export const searchScorePipeline = (vpsId, versionNumber) => [
 /**
  * Search pipeline for finding a score by VPS ID, username, and score value.
  */
-export const searchScoreByVpsIdUsernameScorePipeline = (data) => [
+const searchScoreByVpsIdUsernameScorePipeline = (data) => [
   { $unwind: "$authors" },
   {
     $unwind: { path: "$authors.versions", preserveNullAndEmptyArrays: true },
@@ -110,34 +75,9 @@ export const searchScoreByVpsIdUsernameScorePipeline = (data) => [
 ];
 
 /**
- * Pipeline to get all tables with versions.
- */
-export const allTablesPipeline = () => [
-  { $unwind: "$authors" },
-  {
-    $unwind: { path: "$authors.versions", preserveNullAndEmptyArrays: true },
-  },
-  {
-    $project: {
-      tableId: { $toString: "$_id" },
-      tableName: "$tableName",
-      authorId: { $toString: "$authors._id" },
-      authorName: "$authors.authorName",
-      versionId: { $toString: "$authors.versions._id" },
-      versionNumber: "$authors.versions.versionNumber",
-      tableUrl: "$authors.versions.versionUrl",
-      scores: "$authors.versions.scores",
-      postUrl: { $last: "$authors.versions.scores.postUrl" },
-      _id: 0,
-    },
-  },
-  { $sort: { tableName: 1, AuthorName: -1, versionNumber: -1 } },
-];
-
-/**
  * Pipeline for ranking players across weeks.
  */
-export const rankingPipeline = (weeks, players) => [
+const rankingPipeline = (weeks, players) => [
   {
     $match: {
       weekNumber: {
@@ -180,9 +120,7 @@ export const rankingPipeline = (weeks, players) => [
 ];
 
 export default {
-  searchPipeline,
   searchScorePipeline,
   searchScoreByVpsIdUsernameScorePipeline,
-  allTablesPipeline,
   rankingPipeline,
 };
