@@ -1,7 +1,7 @@
 /**
  * Search pipeline for finding a specific score by VPS ID and version.
  */
-const searchScorePipeline = (vpsId, versionNumber) => [
+export const searchScorePipeline = (vpsId, versionNumber) => [
   { $unwind: "$authors" },
   {
     $unwind: { path: "$authors.versions", preserveNullAndEmptyArrays: true },
@@ -31,7 +31,7 @@ const searchScorePipeline = (vpsId, versionNumber) => [
 /**
  * Search pipeline for finding a score by VPS ID, username, and score value.
  */
-const searchScoreByVpsIdUsernameScorePipeline = (data) => [
+export const searchScoreByVpsIdUsernameScorePipeline = (data) => [
   { $unwind: "$authors" },
   {
     $unwind: { path: "$authors.versions", preserveNullAndEmptyArrays: true },
@@ -77,7 +77,7 @@ const searchScoreByVpsIdUsernameScorePipeline = (data) => [
 /**
  * Pipeline for ranking players across weeks.
  */
-const rankingPipeline = (weeks, players) => [
+export const rankingPipeline = (weeks, players) => [
   {
     $match: {
       weekNumber: {
