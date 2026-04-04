@@ -96,64 +96,70 @@ export class CreateWeekCommand extends Command {
         vpsid,
         options,
       );
+      const embed = new EmbedBuilder()
+        .setColor("Green")
+        .setTitle(`✅ Week ${result.week.weekNumber} Created`)
+        .setURL(
+          `https://discord.com/channels/${process.env.GUILD_ID}/${interaction.channel.id}/${process.env.COMPETITION_WEEKLY_POST_ID}`,
+        )
+        .addFields(
+          {
+            name: "Table",
+            value: result.week.tableUrl
+              ? `[🔗 ${result.week.table}](${result.week.tableUrl})`
+              : result.week.table,
+            inline: false,
+          },
+          { name: "Author", value: result.week.authorName, inline: true },
+          {
+            name: "Version",
+            value: result.week.versionNumber,
+            inline: true,
+          },
+          {
+            name: "Period",
+            value: `${result.week.periodStart} – ${result.week.periodEnd}`,
+            inline: false,
+          },
+          {
+            name: "ROM",
+            value: (() => {
+              const label =
+                result.week.romName && result.week.romName !== "N/A"
+                  ? `${result.week.romName} - Required`
+                  : "Required";
+              const hasUrl = result.week.romUrl && result.week.romUrl !== "N/A";
+              const hasRom =
+                hasUrl ||
+                (result.week.romName && result.week.romName !== "N/A");
+              return hasRom
+                ? hasUrl
+                  ? `[🔗 ${label}](${result.week.romUrl})`
+                  : label
+                : "N/A";
+            })(),
+            inline: true,
+          },
+          {
+            name: "B2S",
+            value:
+              result.week.b2sUrl !== "N/A"
+                ? `[🔗 Available](${result.week.b2sUrl})`
+                : "N/A",
+            inline: true,
+          },
+        );
+
+      if (result.week.notes) {
+        embed.addFields({
+          name: "📝 Notes",
+          value: result.week.notes,
+          inline: false,
+        });
+      }
+
       return interaction.editReply({
-        embeds: [
-          new EmbedBuilder()
-            .setColor("Green")
-            .setTitle(`✅ Week ${result.week.weekNumber} Created`)
-            .setURL(
-              `https://discord.com/channels/${process.env.GUILD_ID}/${interaction.channel.id}/${process.env.COMPETITION_WEEKLY_POST_ID}`,
-            )
-            .addFields(
-              {
-                name: "Table",
-                value: result.week.tableUrl
-                  ? `[🔗 ${result.week.table}](${result.week.tableUrl})`
-                  : result.week.table,
-                inline: false,
-              },
-              { name: "Author", value: result.week.authorName, inline: true },
-              {
-                name: "Version",
-                value: result.week.versionNumber,
-                inline: true,
-              },
-              {
-                name: "Period",
-                value: `${result.week.periodStart} – ${result.week.periodEnd}`,
-                inline: false,
-              },
-              {
-                name: "ROM",
-                value: (() => {
-                  const label =
-                    result.week.romName && result.week.romName !== "N/A"
-                      ? `${result.week.romName} - Required`
-                      : "Required";
-                  const hasUrl =
-                    result.week.romUrl && result.week.romUrl !== "N/A";
-                  const hasRom =
-                    hasUrl ||
-                    (result.week.romName && result.week.romName !== "N/A");
-                  return hasRom
-                    ? hasUrl
-                      ? `[🔗 ${label}](${result.week.romUrl})`
-                      : label
-                    : "N/A";
-                })(),
-                inline: true,
-              },
-              {
-                name: "B2S",
-                value:
-                  result.week.b2sUrl !== "N/A"
-                    ? `[🔗 Available](${result.week.b2sUrl})`
-                    : "N/A",
-                inline: true,
-              },
-            )
-            .setFooter({ text: "Good luck everyone!" }),
-        ],
+        embeds: [embed.setFooter({ text: "Good luck everyone!" })],
       });
     } catch (e) {
       logger.error({ err: e }, "Failed to create week:");

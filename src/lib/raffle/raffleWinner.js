@@ -94,11 +94,18 @@ export const runRaffleAndCreateNextWeek = async (client, channel) => {
         )
         .setColor("Gold");
 
+      if (winner.notes) {
+        winnerEmbed.addFields({
+          name: "📝 Notes",
+          value: winner.table.notes,
+          inline: false,
+        });
+      }
+
       await channel.send({
         content: `<@${winner.userId}>`,
         embeds: [winnerEmbed],
       });
-
       if (process.env.RAFFLE_CREATE_WEEK_ENABLED === "true") {
         const createWeekResult = await createWeek(
           client,

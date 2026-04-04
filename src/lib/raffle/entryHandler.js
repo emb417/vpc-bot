@@ -172,7 +172,7 @@ export async function processRaffleEntry({
   const embed = new EmbedBuilder()
     .setTitle(isNew ? "🎟 New Raffle Entry" : "🎟 Changed Raffle Entry")
     .setDescription(
-      `**${username}** ${isNew ? "entered" : "changed to"}\n[${table.name}](${table.url})${validation.warning ? `\n\n⏳ ${validation.warning}` : ""}`,
+      `**${username}** ${isNew ? "entered" : "changed to"}\n[${table.name}](${table.url})${notes ? `\n\n📝 *${notes}*` : ""}${validation.warning ? `\n\n⏳ ${validation.warning}` : ""}`,
     )
     .setColor(validation.warning ? "Yellow" : "Green")
     .setThumbnail(avatarURL)

@@ -120,7 +120,8 @@ export const showRaffleBoard = async (interaction) => {
           ? statusIcon
           : `${user.probability.toFixed(1)}%`;
         const username = escapeUnderscores(user.username);
-        return `${user.tickets} 🎟 (${probability})  — ${tableLink}\n — ${user.performanceTickets} 🏆 ${user.persistenceTickets} 🔥 — #${user.rank}. ${username}`;
+        const notes = user.table.notes ? `\n — 📝 *${user.table.notes}*` : "";
+        return `${user.tickets} 🎟 (${probability})  — ${tableLink}\n — ${user.performanceTickets} 🏆 ${user.persistenceTickets} 🔥 — #${user.rank}. ${username}${notes}`;
       })
       .join("\n");
 
