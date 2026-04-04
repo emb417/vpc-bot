@@ -94,11 +94,11 @@ export const showRaffleBoard = async (interaction) => {
         const tableUrl = user.table.url;
         const tableName = user.table.name;
         const tableLink = tableUrl ? `[${tableName}](${tableUrl})` : tableName;
-        const statusIcon = user.tableStatus.pending
-          ? ` ⏳ (${user.tableStatus.trophies}/3 🏆)`
-          : "";
+        const isPending = user.tableStatus.pending;
+        const statusIcon = isPending ? ` ⏳ (${user.tableStatus.trophies}/3 🏆)` : "";
+        const probability = isPending ? "0.0" : user.probability.toFixed(1);
         const username = escapeUnderscores(user.username);
-        return `${user.tickets} 🎟 (${user.probability.toFixed(1)}%)  — #${user.rank}. ${username} (${user.performanceTickets} 🏆 ${user.persistenceTickets} 🔥) — ${tableLink}${statusIcon}`;
+        return `${user.tickets} 🎟 (${probability}%)  — #${user.rank}. ${username} (${user.performanceTickets} 🏆 ${user.persistenceTickets} 🔥) — ${tableLink}${statusIcon}`;
       })
       .join("\n");
 
