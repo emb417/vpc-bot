@@ -128,7 +128,7 @@ export const showRaffleBoard = async (interaction) => {
     const embed = new EmbedBuilder()
       .setTitle("🎟 Weekly Raffle Board")
       .setDescription(
-        `**Top Tables**\n${topTables}\n\n**Entries**\n${description}`,
+        `${raffleData.length > 6 ? `**Top Tables**\n${topTables}\n\n` : ""}**Entries**\n${description}`,
       )
       .setColor("Red")
       .setFooter({
