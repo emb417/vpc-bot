@@ -89,22 +89,46 @@ export const showRaffleBoard = async (interaction) => {
       approvedTables,
     );
 
+    const tableStats = raffleData.reduce((acc, user) => {
+      const vpsId = user.table.vpsId;
+      if (!acc[vpsId]) {
+        acc[vpsId] = { name: user.table.name, probability: 0 };
+      }
+      acc[vpsId].probability += user.probability;
+      return acc;
+    }, {});
+
+    const topTables = Object.values(tableStats)
+      .sort((a, b) => b.probability - a.probability)
+      .slice(0, 3)
+      .map(
+        (t, index) =>
+          `#${index + 1} — ${t.probability.toFixed(1)}% — ${t.name}`,
+      )
+      .join("\n");
+
     const description = raffleData
       .map((user) => {
         const tableUrl = user.table.url;
         const tableName = user.table.name;
         const tableLink = tableUrl ? `[${tableName}](${tableUrl})` : tableName;
         const isPending = user.tableStatus.pending;
-        const statusIcon = isPending ? ` ⏳ (${user.tableStatus.trophies}/3 🏆)` : "";
-        const probability = isPending ? "0.0" : user.probability.toFixed(1);
+        const statusIcon = isPending
+          ? `⏳ ${user.tableStatus.trophies}/3 🏆`
+          : "";
+        const probability = isPending
+          ? statusIcon
+          : `${user.probability.toFixed(1)}%`;
         const username = escapeUnderscores(user.username);
-        return `${user.tickets} 🎟 (${probability}%)  — #${user.rank}. ${username} (${user.performanceTickets} 🏆 ${user.persistenceTickets} 🔥) — ${tableLink}${statusIcon}`;
+        return `${user.tickets} 🎟 (${probability})  — ${tableLink}\n — ${user.performanceTickets} 🏆 ${user.persistenceTickets} 🔥 — #${user.rank}. ${username}`;
       })
       .join("\n");
 
     const embed = new EmbedBuilder()
       .setTitle("🎟 Weekly Raffle Board")
-      .setDescription(description)
+      .setDescription(
+        `**Top Tables**\n${topTables}\n\n**Entries**\n${description}`,
+      )
       .setColor("Red")
       .setFooter({
         text: "Post a score to win a ticket,\nthen use /enter-raffle.",
