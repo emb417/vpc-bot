@@ -26,39 +26,51 @@ export const generateWeeklyBoilerPlateText = (
   b2sUrl,
   mode,
 ) => {
-  let bp = "\n\n";
+  let bp = "";
 
-  bp += "**WEEKLY LEADERBOARD**\n\n";
-  bp += `**Week:** ${weekNumber ?? "N/A"}\n`;
-  bp += `**Current Season Week:** ${currentSeasonWeekNumber ?? "N/A"}\n`;
-  bp += `**Dates:** ${periodStart} - ${periodEnd}\n`;
-  bp += "\n";
-  bp += `**VPS Id:** ${vpsId ?? "N/A"}\n`;
-  bp += `**Table Name:** ${tableName ?? "N/A"}\n`;
-  bp += `**Author Name:** ${authorName ?? "N/A"}\n`;
-  bp += `**Version:** ${versionNumber ?? "N/A"}\n`;
-  bp += mode && mode !== "default" ? `**Mode:** ${mode}\n` : `**Mode:** N/A\n`;
-  bp += `**Table Url:** ${tableUrl ?? "N/A"}\n`;
-  bp += `**Rom Url:** ${romUrl ?? "N/A"}\n`;
-  bp += `**Rom Name:** ${romName ?? "N/A"}\n`;
-  bp += `**B2S Url:** ${b2sUrl && b2sUrl.trim() !== "" ? b2sUrl : "N/A"}\n`;
-  bp += `**Notes:** ${notes ?? "N/A"}\n\n`;
-
-  const leaderboardEmbed = printCombinedLeaderboard(
-    scores,
-    40,
-    teams,
-    false,
-    false,
-  )[0];
-  if (leaderboardEmbed instanceof EmbedBuilder) {
-    const desc = leaderboardEmbed.toJSON().description;
-    bp +=
-      (desc && desc.trim() !== "" ? desc : "_No scores yet this week._") + "\n";
+  bp += "**🏆 WEEKLY LEADERBOARD**\n\n";
+  
+  // Week Info
+  bp += `**Week:** ${weekNumber ?? "N/A"}`;
+  if (currentSeasonWeekNumber) {
+    bp += ` (Season Week ${currentSeasonWeekNumber})`;
   }
   bp += "\n";
-  bp += "**All Current & Historical Results:**\n";
-  bp += `<${process.env.COMPETITIONS_URL}>`;
+  bp += `**Period:** ${periodStart} – ${periodEnd}\n\n`;
+
+  // Truncate authors to first author only
+  const displayAuthor = (() => {
+    if (!authorName || authorName === "N/A") return "N/A";
+    const authors = authorName.split(",").map(a => a.trim());
+    return authors.length > 1 ? `${authors[0]}, and others` : authors[0];
+  })();
+
+  // Table Info
+  bp += `**Table:** ${tableUrl && tableUrl !== "N/A" ? `[${tableName}](${tableUrl})` : tableName ?? "N/A"}\n`;
+  bp += `**Author:** ${displayAuthor}\n`;
+  bp += `**Version:** ${versionNumber ?? "N/A"}\n`;
+  
+  if (mode && mode !== "default") {
+    bp += `**Mode:** ${mode}\n`;
+  }
+
+  // ROM Info
+  const hasRom = romUrl && romUrl !== "N/A";
+  const romLabel = romName && romName !== "N/A" ? `${romName} - Required` : "Required";
+  bp += `**ROM:** ${hasRom ? `[${romLabel}](${romUrl})` : "N/A"}\n`;
+
+  // B2S Info
+  bp += `**B2S:** ${b2sUrl && b2sUrl.trim() !== "" && b2sUrl !== "N/A" ? `[Available](${b2sUrl})` : "N/A"}\n`;
+
+  if (notes && notes.trim() !== "") {
+    bp += `\n**📝 Notes:** ${notes}\n`;
+  }
+
+  bp += "\n";
+  bp += "**📊 All Current & Historical Results:**\n";
+  bp += `<${process.env.COMPETITIONS_URL}>\n\n`;
+  bp += "**📌 How to Post:**\n";
+  bp += "Use `/post-score` or attach an image and use `!score 12345678`";
 
   return bp;
 };
@@ -74,14 +86,8 @@ export const generateSeasonBoilerPlateText = (season, weeks) => {
   bp += "**Name:** " + season.seasonName + "\n";
   bp += "**Dates:** " + season.seasonStart + " - " + season.seasonEnd + "\n";
   bp += "\n";
-
-  const leaderboardEmbed = printSeasonLeaderboard(weeks, 40, false)[0];
-  if (leaderboardEmbed instanceof EmbedBuilder) {
-    bp += leaderboardEmbed.toJSON().description + "\n";
-  }
-
   bp +=
-    '** * Only the Top 40 positions will displayed.  Please use the "/show-season-leaderboard" command for full results.**\n';
+    '** * Please use "/show-season-leaderboard" command for leaderboard.**\n';
 
   return bp;
 };
