@@ -28,27 +28,24 @@ export const generateWeeklyBoilerPlateText = (
 ) => {
   let bp = "";
 
-  bp += "**🏆 WEEKLY LEADERBOARD**\n\n";
-  
-  // Week Info
-  bp += `**Week:** ${weekNumber ?? "N/A"}`;
+  bp += `🎰 **Week ${weekNumber ?? "N/A"} - TABLE OF THE WEEK**\n`;
   if (currentSeasonWeekNumber) {
-    bp += ` (Season Week ${currentSeasonWeekNumber})`;
+    bp += ` (Season Week ${currentSeasonWeekNumber})\n`;
   }
   bp += "\n";
-  bp += `**Period:** ${periodStart} – ${periodEnd}\n\n`;
-
+  
   // Truncate authors to first author only
   const displayAuthor = (() => {
     if (!authorName || authorName === "N/A") return "N/A";
     const authors = authorName.split(",").map(a => a.trim());
     return authors.length > 1 ? `${authors[0]}, and others` : authors[0];
   })();
-
+  
   // Table Info
   bp += `**Table:** ${tableUrl && tableUrl !== "N/A" ? `[${tableName}](${tableUrl})` : tableName ?? "N/A"}\n`;
   bp += `**Author:** ${displayAuthor}\n`;
   bp += `**Version:** ${versionNumber ?? "N/A"}\n`;
+  bp += `**Period:** ${periodStart} – ${periodEnd}\n`;
   
   if (mode && mode !== "default") {
     bp += `**Mode:** ${mode}\n`;
