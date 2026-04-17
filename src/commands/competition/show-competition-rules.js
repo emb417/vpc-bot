@@ -40,7 +40,7 @@ export const showCompetitionRules = async (interaction) => {
           "4. No **EXTRA BALL** buy-ins.\n" +
           "5. Only **SINGLE-PLAYER** games allowed.\n" +
           "6. **Death Saves** and **Bangbacks** are banned. Natural lazarus bounces are permitted.\n" +
-          "7. You **MUST** post a pic/screenshot of your score (including backglass and full table). Score must be at end of game (Match Sequence, Credit Award, etc). High Score roster screenshots are not allowed.\n" +
+          "7. You **MUST** post a pic/screenshot of your score including full table (and backglass if needed). Score must be at end of game (Match Sequence, Credit Award, etc). High Score roster screenshots are not allowed.\n" +
           "8. **Rollovers:** Scores exceeding game limits require proof prior to rollover (photo or video).\n" +
           "9. To post a score you **MUST** use `/post-score` or `!score` (see below).\n" +
           "10. Gameplay runs **Monday–Sunday**, ending at midnight Pacific time.",
