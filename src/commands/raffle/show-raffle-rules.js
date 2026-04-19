@@ -34,7 +34,7 @@ export const showRaffleRules = async (interaction) => {
       {
         name: "📜 How to Enter",
         value:
-          "After you've posted a score for the week, use `/enter-raffle` with a [vpsId](https://virtualpinballspreadsheet.github.io/) or [url](https://vpuniverse.com/files/category/82-vpx-pinball-tables/) of a table.",
+          "After you've posted a score for the week, use `/enter-raffle` with a [vpsId](https://virtualpinballspreadsheet.github.io/) or [url](https://vpuniverse.com/files/category/82-vpx-pinball-tables/) of a table that has NOT been played in the last 52 weeks.",
       },
       {
         name: "🏆 Performance (max 4 tickets)",
@@ -58,7 +58,7 @@ export const showRaffleRules = async (interaction) => {
       {
         name: "⚖️ The Bottom Line",
         value:
-          "This creates a cycle of collaborative validation. If you want a new table, place higher on `/show-leaderboard` or recruit allies! Unqualified entries are discarded at week's end.",
+          "If you want a new table, place higher on `/show-leaderboard` or recruit allies! Unqualified entries are discarded at week's end.",
       },
     )
     .setColor("Red")
