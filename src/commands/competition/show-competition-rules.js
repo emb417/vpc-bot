@@ -32,31 +32,38 @@ export const showCompetitionRules = async (interaction) => {
     )
     .addFields(
       {
-        name: "📜 Rules",
+        name: "📜 General Rules",
         value:
-          "1. Look at the Leaderboard pin for a link to the current table. You **MUST** use the specified table and version.\n" +
+          "1. You **MUST** use the specified table and version. Use `/show-table-of-the-week` for a link to the current table.\n" +
           "2. No table or script modifications allowed that affect gameplay (including ROM selection).\n" +
           "3. Number of balls per game **MUST NOT** be modified.\n" +
           "4. No **EXTRA BALL** buy-ins.\n" +
           "5. Only **SINGLE-PLAYER** games allowed.\n" +
-          "6. **Death Saves** and **Bangbacks** are banned. Natural lazarus bounces are permitted.\n" +
-          "7. You **MUST** post a pic/screenshot of your score including full table (and backglass if needed). Score must be at end of game (Match Sequence, Credit Award, etc). High Score roster screenshots are not allowed.\n" +
-          "8. **Rollovers:** Scores exceeding game limits require proof prior to rollover (photo or video).\n" +
-          "9. To post a score you **MUST** use `/post-score` or `!score` (see below).\n" +
-          "10. Gameplay runs **Monday–Sunday**, ending at midnight Pacific time.",
+          "6. **Death Saves** and **Bangbacks** are banned. Natural lazarus bounces are permitted.",
+      },
+      {
+        name: "📸 Score Submission & Deadlines",
+        value:
+          "1. You **MUST** post a clear, high-resolution screenshot or photo of your final score. The image must capture the full table (and the backglass, if the score is displayed there).\n" +
+          "  * **Timing:** The image must be taken at the immediate end of the game (e.g., during the Match Sequence, Credit Award, Initials Entry, or Previous Game Score).\n" +
+          "  * **Prohibited Images:** High score roster/leaderboard screenshots are strictly invalid and will not be counted.\n" +
+          "  * **Legibility:** If a submission is blurry, cropped, glare-ridden, or otherwise unreadable, the score will be rejected. It is your responsibility to ensure the text is legible before posting.\n" +
+          "2. **Rollovers:** Scores exceeding game limits require proof prior to rollover (photo or video).\n" +
+          "3. To post a score you **MUST** use `/post-score` or `!score` (see below).\n" +
+          "4. Gameplay runs **Monday–Sunday**, ending at midnight Pacific time.",
       },
       {
         name: "🤖 How to Use Score Bot",
         value:
-          "Post a score: `!score <value>` and attach a photo\n" +
-          "Or use: `/post-score`\n" +
+          "Post a score: `/post-score`\n" +
+          "Or use the alias: `!score <value>` and attach a photo\n" +
           "View your score info: `/show-score`\n" +
           "View the current leaderboard: `/show-leaderboard`",
       },
       {
         name: "🎟️ Table Raffle",
         value:
-          "Post a score, then use `/enter-raffle` to enter a table of your choice. Draw happens at midnight Pacific on the final day.\n" +
+          "Post a score, then use `/enter-raffle` to enter a table of your choice. Draw happens at midnight Pacific after the final day.\n" +
           "Monitor the raffle with `/show-raffle-board`.\n" +
           "See raffle rules with `/show-raffle-rules`.",
       },
@@ -67,24 +74,13 @@ export const showCompetitionRules = async (interaction) => {
     .setTitle("🏆 Competition Corner Pinball League")
     .addFields(
       {
-        name: "📅 Season 6 Info",
-        value:
-          "**Dates:** TBD\n" +
-          "**Length:** Regular Season – 12 weeks | Playoffs – 4 weeks\n" +
-          "Any player who participates during the season automatically accumulates points. No extra step to join.",
-      },
-      {
         name: "📊 Weekly Scoring",
         value:
           "1st: 12pts | 2nd: 10pts | 3rd: 9pts | 4th: 8pts | 5th: 7pts\n" +
           "6th: 6pts | 7th: 5pts | 8th: 4pts | 9th: 3pts | 10th: 2pts | 11th+: 1pt\n" +
-          "Ties broken by total accumulated scores. Scores must be posted by **Sunday, 12am PST**. Missing a week means **no points** — including during playoffs.",
-      },
-      {
-        name: "🥊 Playoff Format",
-        value:
-          "Top 16 players at end of regular season advance to the **Tournament of Champions**. Single elimination over 4 weeks, bracketed via S-curve method (1 vs. 16, 2 vs. 15, etc.).\n" +
-          "No exceptions for missing a playoff week — missing = forfeit (if opponent posted).",
+          " * Ties broken by total accumulated scores.\n" +
+          " * Scores must be posted by **Monday, 12am PST**.\n" +
+          " * Missing a week means **no points**.",
       },
       {
         name: "❓ Questions?",
