@@ -159,7 +159,9 @@ export const calculateRaffleDataWithStatus = (
   }, {});
 
   const getTableStatus = (vpsId) => {
-    const isApproved = approvedTables.some((row) => row["VPS-ID"] === vpsId);
+    const isApproved = approvedTables.some(
+      (row) => row["VPS-ID"].trim() === vpsId.trim(),
+    );
     if (isApproved) return { qualified: true, pending: false };
     const trophies = performanceByTable[vpsId] ?? 0;
     return { qualified: trophies >= 3, pending: trophies < 3, trophies };
@@ -190,8 +192,8 @@ export const loadApprovedTables = async () => {
   const csv = await response.text();
   const rows = parse(csv, { columns: true, skip_empty_lines: true });
   cachedTables = rows.filter((row) => {
-    const confidence = row["Confidence"]?.trim() ?? "";
-    return confidence === "Full";
+    const confidence = row["Status"]?.trim() ?? "";
+    return confidence === "Full confidence";
   });
   cacheExpiresAt = Date.now() + CACHE_TTL_MS;
   return cachedTables;
