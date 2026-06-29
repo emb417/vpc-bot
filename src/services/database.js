@@ -122,6 +122,17 @@ export const findCurrentSeason = async (channelName) => {
 };
 
 /**
+ * Find the active tournament for a channel.
+ */
+export const findActiveTournament = async (channelName) => {
+  const collection = await getCollection("tournaments");
+  return collection.findOne({
+    channelName: channelName,
+    status: "active",
+  });
+};
+
+/**
  * Find the current playoff for a channel.
  */
 export const findCurrentPlayoff = async (channelName) => {
@@ -189,6 +200,7 @@ export default {
   findOneAndUpdate,
   findCurrentWeek,
   findCurrentSeason,
+  findActiveTournament,
   findCurrentPlayoff,
   findCurrentPlayoffRound,
   updateOne,

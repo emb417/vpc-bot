@@ -38,10 +38,13 @@ export const getCurrentRankText = (username, scores) => {
  * Process a new score submission.
  * @param {Object} user - Discord user object
  * @param {number} scoreValue - The score value
- * @param {Object} currentWeek - The current week data
+ * @param {Object} currentWeek - The current week (or tournament table) data; needs `.scores` and `.mode`
+ * @param {Object} [options] - Optional settings
+ * @param {Array} [options.pointsTable] - Points-by-rank table (defaults to weekly POINTS_BY_RANK)
  * @returns {Object} Result object with updated scores and metadata
  */
-export const processScore = (user, scoreValue, currentWeek) => {
+export const processScore = (user, scoreValue, currentWeek, options = {}) => {
+  const { pointsTable } = options;
   const username = user.username?.trimEnd() || user.id;
   const avatarUrl = user.displayAvatarURL();
   const mode = currentWeek.mode ?? "default";
@@ -82,7 +85,7 @@ export const processScore = (user, scoreValue, currentWeek) => {
   scores.sort((a, b) => b.score - a.score);
 
   // Assign points
-  assignPoints(scores);
+  assignPoints(scores, pointsTable);
 
   // Calculate rank change
   const rankChange = getRankChange(username, prevScores, scores);

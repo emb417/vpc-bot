@@ -9,6 +9,7 @@ import { startHeartbeat, stopHeartbeat } from "./services/heartbeat.js";
 
 // Register preconditions
 import "./preconditions/CompetitionChannel.js";
+import "./preconditions/CompetitionOrTournamentChannel.js";
 import "./preconditions/CompetitionAdminRole.js";
 import "./preconditions/HighScoresChannel.js";
 

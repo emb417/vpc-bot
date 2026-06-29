@@ -14,10 +14,15 @@ import {
   notifyQualificationChange,
 } from "../../lib/raffle/raffle.js";
 import { processScore, validateScore } from "../../lib/scores/scoring.js";
+import {
+  TOURNAMENT_POINTS_BY_RANK,
+  calculateSeasonPoints,
+} from "../../lib/scores/points.js";
 import { editWeeklyCompetitionCornerMessage } from "../../lib/output/messages.js";
 import {
   find,
   findCurrentWeek,
+  findActiveTournament,
   findCurrentPlayoff,
   findOne,
   updateOne,
@@ -31,7 +36,7 @@ export class PostScoreCommand extends Command {
       name: "post-score",
       aliases: ["score"],
       description: "Post score for a competition channel.",
-      preconditions: ["CompetitionChannel"],
+      preconditions: ["CompetitionOrTournamentChannel"],
     });
   }
 
@@ -57,11 +62,42 @@ export class PostScoreCommand extends Command {
               .setName("image")
               .setDescription("Screenshot of full playfield and score")
               .setRequired(true),
+          )
+          .addStringOption((option) =>
+            option
+              .setName("table")
+              .setDescription(
+                "(Tournament channels) which table this score is for",
+              )
+              .setRequired(false)
+              .setAutocomplete(true),
           ),
       {
         guildIds: [guildId],
       },
     );
+  }
+
+  async autocompleteRun(interaction) {
+    const channelName = interaction.channel?.name;
+    const tournament = channelName
+      ? await findActiveTournament(channelName)
+      : null;
+
+    if (!tournament) {
+      return interaction.respond([]);
+    }
+
+    const focused = interaction.options.getFocused().toLowerCase();
+    const choices = (tournament.tables ?? [])
+      .filter((t) => !focused || t.table.toLowerCase().includes(focused))
+      .slice(0, 25)
+      .map((t) => ({
+        name: t.table.slice(0, 100),
+        value: String(t.tableIndex),
+      }));
+
+    return interaction.respond(choices);
   }
 
   async messageRun(message, args) {
@@ -78,7 +114,7 @@ export class PostScoreCommand extends Command {
       message.author,
       score,
       postToHighScore,
-      true,
+      null,
     );
   }
 
@@ -88,6 +124,17 @@ export class PostScoreCommand extends Command {
       "posttohighscorechannel",
     );
     const attachment = interaction.options.getAttachment("image");
+    const tableIndex = interaction.options.getString("table");
+
+    // Tournament channels require a table selection
+    const tournament = await findActiveTournament(interaction.channel?.name);
+    if (tournament && !tableIndex) {
+      return interaction.reply({
+        content:
+          "Please choose which table this score is for using the `table` option.",
+        flags: 64,
+      });
+    }
 
     await interaction.reply({
       content: "Posting score...",
@@ -107,7 +154,7 @@ export class PostScoreCommand extends Command {
       interaction.user,
       score,
       postToHighScore,
-      false,
+      tableIndex,
     );
 
     return interaction.editReply({
@@ -115,7 +162,7 @@ export class PostScoreCommand extends Command {
     });
   }
 
-  async handleScore(message, user, score, postToHighScoreChannel) {
+  async handleScore(message, user, score, postToHighScoreChannel, tableIndex) {
     const channel = message.channel;
     const reHighScoreCheck = /Rank:\*\* [1|2|3|4|5|6|7|8|9|10] of/;
 
@@ -161,6 +208,19 @@ export class PostScoreCommand extends Command {
         await message.delete().catch(() => {});
         setTimeout(() => reply.delete().catch(() => {}), 10000);
         return;
+      }
+
+      // Tournament channel — route to tournament scoring
+      const tournament = await findActiveTournament(channel.name);
+      if (tournament) {
+        return this.handleTournamentScore(
+          message,
+          user,
+          validation.value,
+          tableIndex,
+          attachmentBuffer,
+          tournament,
+        );
       }
 
       // Get current week
@@ -325,6 +385,114 @@ export class PostScoreCommand extends Command {
       await message.delete().catch(() => {});
       setTimeout(() => reply.delete().catch(() => {}), 10000);
     }
+  }
+
+  async handleTournamentScore(
+    message,
+    user,
+    scoreValue,
+    tableIndex,
+    attachmentBuffer,
+    tournament,
+  ) {
+    const channel = message.channel;
+
+    if (!tableIndex) {
+      const reply = await message.reply({
+        content:
+          "Please choose which table this score is for using the `table` option of `/post-score`. " +
+          "This message will be deleted in 10 seconds.",
+      });
+      await message.delete().catch(() => {});
+      setTimeout(() => reply.delete().catch(() => {}), 10000);
+      return;
+    }
+
+    const tableEntry = (tournament.tables ?? []).find(
+      (t) => String(t.tableIndex) === String(tableIndex),
+    );
+
+    if (!tableEntry) {
+      const reply = await message.reply({
+        content:
+          "That table was not found in this tournament. Please pick a table from the list. " +
+          "This message will be deleted in 10 seconds.",
+      });
+      await message.delete().catch(() => {});
+      setTimeout(() => reply.delete().catch(() => {}), 10000);
+      return;
+    }
+
+    // Process the score with F1-style tournament points
+    const result = processScore(user, scoreValue, tableEntry, {
+      pointsTable: TOURNAMENT_POINTS_BY_RANK,
+    });
+
+    // Persist the updated scores for this table only
+    await updateOne(
+      { channelName: channel.name, status: "active" },
+      { $set: { "tables.$[t].scores": result.scores } },
+      { arrayFilters: [{ "t.tableIndex": tableEntry.tableIndex }] },
+      "tournaments",
+    );
+
+    this.updateHistoricalAvatars(user).catch((e) =>
+      logger.error({ err: e }, "Error updating historical avatars:"),
+    );
+
+    const standings = calculateSeasonPoints(
+      (tournament.tables ?? []).map((t) =>
+        t.tableIndex === tableEntry.tableIndex
+          ? { scores: result.scores }
+          : { scores: t.scores ?? [] },
+      ),
+    );
+    const standingKey = result.username.toLowerCase();
+    const standingIndex = standings.findIndex(
+      (s) => s.username === standingKey,
+    );
+    const totalPoints = standings[standingIndex]?.points ?? 0;
+    const overallRank = `${standingIndex + 1} of ${standings.length}`;
+
+    logger.info(
+      `${user.username} posted tournament score: ${result.scoreAsInt} for ${tableEntry.table} (${tournament.name}) ranked ${result.currentRank}, ${totalPoints} total points`,
+    );
+
+    const description =
+      `**User:** ${user.username}\n` +
+      `**Tournament:** ${tournament.name}\n` +
+      `**Table:** ${tableEntry.table}\n` +
+      `**Score:** ${formatNumber(result.scoreAsInt)} (${result.scoreDiff >= 0 ? "+" : ""}${formatNumber(result.scoreDiff)})\n`;
+
+    const title = result.currentRank.startsWith("1 of")
+      ? "🥇  NEW TOP SCORE"
+      : "🏆  NEW SCORE";
+
+    const embed = new EmbedBuilder()
+      .setTitle(title)
+      .setDescription(description)
+      .addFields(
+        {
+          name: "Table Rank",
+          value: `${result.currentRank} (${result.rankChange >= 0 ? "+" + result.rankChange : result.rankChange})`,
+          inline: true,
+        },
+        {
+          name: "Tournament Points",
+          value: `${totalPoints} pts (${overallRank})`,
+          inline: true,
+        },
+      )
+      .setImage("attachment://score.png")
+      .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 128 }))
+      .setColor("Green");
+
+    await channel.send({
+      embeds: [embed],
+      files: [{ attachment: attachmentBuffer, name: "score.png" }],
+    });
+
+    await message.delete().catch(() => {});
   }
 
   async updateHistoricalAvatars(user) {

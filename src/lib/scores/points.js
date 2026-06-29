@@ -2,17 +2,24 @@
  * Points assignment for rankings.
  * Top 10 positions get decreasing points, everyone else gets 1.
  */
-const POINTS_BY_RANK = [12, 10, 9, 8, 7, 6, 5, 4, 3, 2];
+export const POINTS_BY_RANK = [12, 10, 9, 8, 7, 6, 5, 4, 3, 2];
+
+/**
+ * F1-style points for tournaments.
+ * Top 10 positions get F1 points, everyone else gets 1.
+ */
+export const TOURNAMENT_POINTS_BY_RANK = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
 
 /**
  * Assign points to scores based on their rank position.
  * Mutates the scores array in place.
  * @param {Array} scores - Array of score objects, already sorted descending by score
+ * @param {Array} pointsTable - Points-by-rank table to use (defaults to weekly POINTS_BY_RANK)
  */
-export const assignPoints = (scores) => {
+export const assignPoints = (scores, pointsTable = POINTS_BY_RANK) => {
   scores.forEach((score, index) => {
-    if (index < POINTS_BY_RANK.length) {
-      score.points = POINTS_BY_RANK[index];
+    if (index < pointsTable.length) {
+      score.points = pointsTable[index];
     } else {
       score.points = 1;
     }
@@ -57,6 +64,8 @@ export const calculateSeasonPoints = (weeks) => {
 };
 
 export default {
+  POINTS_BY_RANK,
+  TOURNAMENT_POINTS_BY_RANK,
   assignPoints,
   calculateSeasonPoints,
 };
