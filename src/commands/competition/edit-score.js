@@ -5,6 +5,7 @@ import { formatNumber } from "../../utils/formatting.js";
 import { processScore } from "../../lib/scores/scoring.js";
 import { editWeeklyCompetitionCornerMessage } from "../../lib/output/messages.js";
 import { findCurrentWeek, updateOne } from "../../services/database.js";
+import { editHighScore } from "../highscores/edit-high-score.js";
 
 export class EditScoreCommand extends Command {
   constructor(context, options) {
@@ -90,6 +91,22 @@ export class EditScoreCommand extends Command {
         );
       }
 
+      let highScoreNote = null;
+      if (
+        currentWeek.vpsId &&
+        currentWeek.versionNumber &&
+        result.previousScore > 0
+      ) {
+        const updated = await editHighScore(
+          currentWeek.vpsId,
+          username,
+          result.previousScore,
+          result.scoreAsInt,
+          currentWeek.versionNumber,
+        );
+        highScoreNote = updated ? "updated" : "no matching entry found";
+      }
+
       // Format response
       const retVal =
         "**SCORE EDITED:**\n" +
@@ -97,7 +114,8 @@ export class EditScoreCommand extends Command {
         `**Table:** ${currentWeek.table}\n` +
         (result.mode !== "default" ? `**Mode:** ${result.mode}\n` : "") +
         `**Score:** ${formatNumber(result.scoreAsInt)} (${result.scoreDiff >= 0 ? "+" : ""} ${formatNumber(result.scoreDiff)})\n` +
-        `**Rank:** ${result.currentRank} (${result.rankChange >= 0 ? "+" + result.rankChange : result.rankChange})`;
+        `**Rank:** ${result.currentRank} (${result.rankChange >= 0 ? "+" + result.rankChange : result.rankChange})` +
+        (highScoreNote ? `\n**High Score:** ${highScoreNote}` : "");
 
       return interaction.reply({
         content: retVal,
