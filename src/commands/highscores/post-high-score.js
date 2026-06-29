@@ -258,6 +258,62 @@ export class PostHighScoreCommand extends Command {
       return;
     }
 
+    const term = tableSearchTerm.trim();
+    const isUrl = /^https?:\/\//i.test(term);
+    if (isUrl || !/\s/.test(term)) {
+      const { table } = await findTable(
+        isUrl ? { url: term } : { vpsId: term },
+      );
+      if (table) {
+        try {
+          const { existingScore, existingUserId } =
+            await resolveExistingTopScore(
+              table.vpsId,
+              table.metadata.versionNumber,
+            );
+          const existingUser = existingUserId
+            ? await this.container.client.users.fetch(existingUserId)
+            : null;
+          const isNewTopScore = !existingScore || scoreValue > existingScore;
+
+          await saveHighScore(
+            {
+              tableName: table.name,
+              authorName: table.metadata.authorName,
+              vpsId: table.vpsId,
+              v: table.metadata.versionNumber,
+              s: scoreValue,
+            },
+            message.author,
+          );
+
+          logger.info(
+            `${message.author.username} posted high score: ${scoreValue} for ${table.name}`,
+          );
+
+          await postHighScoreEmbed({
+            channel: message.channel,
+            user: message.author,
+            table,
+            scoreValue,
+            isNewTopScore,
+            attachmentUrl: attachment.url,
+            existingUser,
+            messageUrl: message.url,
+          });
+
+          await message.delete().catch(() => {});
+        } catch (e) {
+          logger.error({ err: e }, "Failed to post high score (!high direct)");
+          const reply = await message.reply({
+            content: "An error occurred while saving your high score.",
+          });
+          setTimeout(() => reply.delete().catch(() => {}), 10000);
+        }
+        return;
+      }
+    }
+
     try {
       const { tables, error: searchError } =
         await findTablesByName(tableSearchTerm);
