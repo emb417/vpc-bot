@@ -29,7 +29,7 @@ export class MessageReactionAddListener extends Listener {
       }
     }
 
-    if (reaction.emoji.name !== "👎") return;
+    if (reaction.emoji.name !== "❔") return;
 
     const message = reaction.message;
     if (message.author.id !== this.container.client.user.id) return;
@@ -45,7 +45,7 @@ export class MessageReactionAddListener extends Listener {
     const username = usernameMatch[1].trim();
 
     logger.info(
-      `Moderation reaction: ${user.username} gave a 👎 to score repost for User: ${username} in ${message.channel.name}`,
+      `Moderation reaction: ${user.username} gave a ❔ to score repost for User: ${username} in ${message.channel.name}`,
     );
 
     const count = reaction.count;
@@ -85,7 +85,7 @@ export class MessageReactionAddListener extends Listener {
       await message.delete().catch(() => {});
 
       await message.channel.send(
-        `Community Moderation: ${username}'s score of ${scoreToRemove.score} was removed due to ${threshold} 👎 reactions.`,
+        `Community Moderation: ${username}'s score of ${scoreToRemove.score} was removed due to ${threshold} ❔ reactions.`,
       );
       logger.info(
         `Score for ${scoreToRemove.username} removed via community moderation in ${message.channel.name}`,
