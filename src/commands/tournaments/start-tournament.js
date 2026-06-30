@@ -4,6 +4,7 @@ import { EmbedBuilder } from "discord.js";
 import logger from "../../utils/logger.js";
 import { formatDateTime } from "../../utils/formatting.js";
 import { getVpsGameById } from "../../lib/data/vps.js";
+import { buildTournamentEmbed } from "../../lib/tournaments/embed.js";
 import { findActiveTournament, insertOne } from "../../services/database.js";
 
 /**
@@ -54,49 +55,6 @@ const resolveTournamentTable = async (vpsid, tableIndex) => {
     mode: "default",
     scores: [],
   };
-};
-
-/**
- * Build a condensed one-line summary for a tournament table with
- * table / ROM / B2S links (only the ones that exist).
- */
-const formatTableLine = (t) => {
-  const title = t.tableUrl ? `[${t.table}](${t.tableUrl})` : t.table;
-  const links = [];
-  if (t.romUrl && t.romUrl !== "N/A") links.push(`[ROM](${t.romUrl})`);
-  if (t.b2sUrl && t.b2sUrl !== "N/A") links.push(`[B2S](${t.b2sUrl})`);
-  const suffix = links.length ? ` · ${links.join(" · ")}` : "";
-  return `\`${t.tableIndex}.\` ${title}${suffix}`;
-};
-
-/**
- * Pack the table lines into one or more embed fields, each kept under
- * Discord's 1024-character field-value limit. Continuation fields use a
- * zero-width name so only the first shows the "Tables (N)" header.
- */
-const buildTableFields = (tables) => {
-  const lines = tables.map(formatTableLine);
-  const fields = [];
-  let current = [];
-  let length = 0;
-
-  for (const line of lines) {
-    // +1 for the joining newline
-    if (length + line.length + 1 > 1024 && current.length) {
-      fields.push(current.join("\n"));
-      current = [];
-      length = 0;
-    }
-    current.push(line);
-    length += line.length + 1;
-  }
-  if (current.length) fields.push(current.join("\n"));
-
-  return fields.map((value, index) => ({
-    name: index === 0 ? `Tables (${tables.length})` : "​",
-    value,
-    inline: false,
-  }));
 };
 
 export class StartTournamentCommand extends Command {
@@ -207,18 +165,9 @@ export class StartTournamentCommand extends Command {
 
       await insertOne(tournament, "tournaments");
 
-      const embed = new EmbedBuilder()
-        .setColor("Green")
-        .setTitle(`🏆 Tournament Started: ${name}`)
-        .addFields(
-          {
-            name: "Period",
-            value: `${startDate} – ${endDate}`,
-            inline: false,
-          },
-          ...buildTableFields(tables),
-        )
-        .setFooter({ text: "Post scores with /post-score. Good luck!" });
+      const embed = buildTournamentEmbed(tournament, {
+        title: `🏆 New Tournament: ${name}`,
+      });
 
       return interaction.editReply({ embeds: [embed] });
     } catch (e) {

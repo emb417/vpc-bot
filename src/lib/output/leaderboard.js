@@ -292,6 +292,56 @@ export const printSeasonLeaderboard = (
 };
 
 /**
+ * Print Tournament Standings (overall points summed across every table).
+ */
+export const printTournamentLeaderboard = (tournament, numOfScoresToShow) => {
+  const standings = calculateSeasonPoints(tournament?.tables ?? []);
+
+  if (standings.length === 0) {
+    return [
+      new EmbedBuilder()
+        .setTitle("🏆  Tournament Standings")
+        .setDescription("NO SCORES POSTED YET")
+        .setColor("#ff0000")
+        .addFields({
+          name: "📌  How to Post",
+          value: "Use `/post-tournament-score`",
+        }),
+    ];
+  }
+
+  const limit = numOfScoresToShow || standings.length;
+
+  const headers = ["#", "User", "Pts"];
+  const rows = standings
+    .slice(0, limit)
+    .map((p, i) => createTableRowSeason(i + 1, p, false));
+
+  const embed = new EmbedBuilder()
+    .setTitle("🏆  Tournament Standings")
+    .setColor("#0099ff")
+    .setDescription(
+      renderTable(headers, rows, {
+        align: [
+          [1, AlignmentEnum.RIGHT],
+          [2, AlignmentEnum.LEFT],
+          [3, AlignmentEnum.RIGHT],
+        ],
+        widths: [3, 15, 8],
+      }),
+    )
+    .addFields({
+      name: "📌  How to Post",
+      value: "Use `/post-tournament-score`",
+    })
+    .setFooter({
+      text: `${tournament.name} · points totaled across all tables`,
+    });
+
+  return [embed];
+};
+
+/**
  * Print combined leaderboard (teams + scores).
  */
 export const printCombinedLeaderboard = (
@@ -346,4 +396,5 @@ export default {
   printTeamLeaderboard,
   printCombinedLeaderboard,
   printSeasonLeaderboard,
+  printTournamentLeaderboard,
 };

@@ -53,6 +53,34 @@ export const parseDate = (dateStr) => {
 };
 
 /**
+ * Format a YYYY-MM-DD string as a human-readable date with weekday,
+ * e.g. "Monday, June 29, 2026". Falls back to the raw string if unparseable.
+ */
+export const formatLongDate = (dateStr) => {
+  if (!dateStr) return "";
+  const date = parseDate(dateStr);
+  if (Number.isNaN(date.getTime())) return dateStr;
+  return date.toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
+
+/**
+ * Determine whether today falls within a tournament's [startDate, endDate]
+ * window. Dates are YYYY-MM-DD strings, which compare lexicographically.
+ * Returns "pending" (before start), "ended" (after end), or "open".
+ */
+export const tournamentWindowStatus = (startDate, endDate) => {
+  const today = formatDateISO(new Date());
+  if (startDate && today < startDate) return "pending";
+  if (endDate && today > endDate) return "ended";
+  return "open";
+};
+
+/**
  * Add days to a date.
  */
 export const addDays = (date, days) => {
@@ -88,6 +116,8 @@ export default {
   formatDate,
   formatDateISO,
   parseDate,
+  formatLongDate,
+  tournamentWindowStatus,
   addDays,
   truncate,
   transformDate,

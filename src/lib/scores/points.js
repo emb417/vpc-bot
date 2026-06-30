@@ -5,8 +5,8 @@
 export const POINTS_BY_RANK = [12, 10, 9, 8, 7, 6, 5, 4, 3, 2];
 
 /**
- * F1-style points for tournaments.
- * Top 10 positions get F1 points, everyone else gets 1.
+ * Points System for tournaments.
+ * Top 10 positions get points, everyone else gets 1.
  */
 export const TOURNAMENT_POINTS_BY_RANK = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
 
