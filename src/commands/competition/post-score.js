@@ -96,7 +96,12 @@ export class PostScoreCommand extends Command {
       delete: () => Promise.resolve(),
     };
 
-    await this.handleScore(fakeMessage, interaction.user, score, postToHighScore);
+    await this.handleScore(
+      fakeMessage,
+      interaction.user,
+      score,
+      postToHighScore,
+    );
 
     return interaction.editReply({
       content: "✅ Score posted successfully.",
