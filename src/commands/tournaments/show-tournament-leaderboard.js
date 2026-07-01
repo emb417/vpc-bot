@@ -24,7 +24,7 @@ export class ShowTournamentLeaderboardCommand extends Command {
   }
 
   async chatInputRun(interaction) {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
     const channel =
       interaction.channel ??
       (await interaction.client.channels.fetch(interaction.channelId));

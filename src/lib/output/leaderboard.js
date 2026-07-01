@@ -300,7 +300,8 @@ export const printTournamentLeaderboard = (tournament, numOfScoresToShow) => {
   if (standings.length === 0) {
     return [
       new EmbedBuilder()
-        .setTitle("🏆  Tournament Standings")
+        .setTitle(`🏆 ${tournament.name} Standings`)
+        .setURL(`${process.env.TOURNAMENTS_URL}/${tournament._id}`)
         .setDescription("NO SCORES POSTED YET")
         .setColor("#ff0000")
         .addFields({
@@ -318,7 +319,8 @@ export const printTournamentLeaderboard = (tournament, numOfScoresToShow) => {
     .map((p, i) => createTableRowSeason(i + 1, p, false));
 
   const embed = new EmbedBuilder()
-    .setTitle("🏆  Tournament Standings")
+    .setTitle(`🏆 ${tournament.name} Standings`)
+    .setURL(`${process.env.TOURNAMENTS_URL}/${tournament._id}`)
     .setColor("#0099ff")
     .setDescription(
       renderTable(headers, rows, {

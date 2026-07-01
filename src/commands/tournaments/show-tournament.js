@@ -23,7 +23,7 @@ export class ShowTournamentCommand extends Command {
   }
 
   async chatInputRun(interaction) {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
 
     try {
       const tournament = await findActiveTournament(interaction.channel.name);
