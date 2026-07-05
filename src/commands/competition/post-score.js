@@ -29,7 +29,6 @@ export class PostScoreCommand extends Command {
     super(context, {
       ...options,
       name: "post-score",
-      aliases: ["score"],
       description: "Post score for a competition channel.",
       preconditions: ["CompetitionChannel"],
     });
@@ -64,18 +63,6 @@ export class PostScoreCommand extends Command {
     );
   }
 
-  async messageRun(message, args) {
-    const score = await args.pick("string").catch(() => null);
-    if (!score) {
-      return message.reply({
-        content: "Please provide a score.",
-      });
-    }
-
-    const postToHighScore = await args.pick("string").catch(() => null);
-    return this.handleScore(message, message.author, score, postToHighScore);
-  }
-
   async chatInputRun(interaction) {
     const score = interaction.options.getString("score") ?? "<score>";
     const postToHighScore = interaction.options.getString(
@@ -88,54 +75,35 @@ export class PostScoreCommand extends Command {
       flags: 64,
     });
 
-    const fakeMessage = {
-      channel: interaction.channel,
-      author: interaction.user,
-      attachments: { first: () => attachment },
-      reply: (opts) => interaction.channel.send(opts),
-      delete: () => Promise.resolve(),
-    };
+    try {
+      await this.handleScore(
+        interaction,
+        score,
+        postToHighScore,
+        attachment,
+      );
 
-    await this.handleScore(
-      fakeMessage,
-      interaction.user,
-      score,
-      postToHighScore,
-    );
-
-    return interaction.editReply({
-      content: "✅ Score posted successfully.",
-    });
+      return interaction.editReply({
+        content: "✅ Score posted successfully.",
+      });
+    } catch (e) {
+      logger.error({ err: e }, "Error in PostScoreCommand.chatInputRun:");
+      return interaction.editReply({
+        content: `❌ ${e.message}`,
+      });
+    }
   }
 
-  async handleScore(message, user, score, postToHighScoreChannel) {
-    const channel = message.channel;
+  async handleScore(interaction, score, postToHighScoreChannel, attachment) {
+    const channel = interaction.channel;
+    const user = interaction.user;
     const reHighScoreCheck = /Rank:\*\* [1|2|3|4|5|6|7|8|9|10] of/;
 
     try {
       // Validate score
       const validation = validateScore(score);
       if (!validation.valid) {
-        const reply = await message.reply({
-          content: `${validation.error} This message will be deleted in 10 seconds.`,
-        });
-        await message.delete().catch(() => {});
-        setTimeout(() => reply.delete().catch(() => {}), 10000);
-        return;
-      }
-
-      // Check for attachment
-      const attachment = message.attachments?.first();
-      if (!attachment) {
-        const reply = await message.reply({
-          content:
-            "No photo attached. Please attach a photo with your score.\n" +
-            `\`!score ${validation.value}\`\n` +
-            "This message will be deleted in 10 seconds.",
-        });
-        await message.delete().catch(() => {});
-        setTimeout(() => reply.delete().catch(() => {}), 10000);
-        return;
+        throw new Error(`${validation.error}`);
       }
 
       let attachmentBuffer, attachmentName;
@@ -148,20 +116,13 @@ export class PostScoreCommand extends Command {
         attachmentName = attachment.name;
       } catch (fetchError) {
         logger.error({ err: fetchError }, "Failed to download attachment:");
-        const reply = await message.reply({
-          content: "Failed to process image. Please try again.",
-        });
-        await message.delete().catch(() => {});
-        setTimeout(() => reply.delete().catch(() => {}), 10000);
-        return;
+        throw new Error("Failed to process image. Please try again.");
       }
 
       // Get current week
       const currentWeek = await findCurrentWeek(channel.name);
       if (!currentWeek) {
-        return message.reply({
-          content: "No active week found for this channel.",
-        });
+        throw new Error("No active week found for this channel.");
       }
 
       // Process the score
@@ -264,7 +225,7 @@ export class PostScoreCommand extends Command {
       }
 
       // Reply with score embed
-      await message.channel.send({
+      await interaction.channel.send({
         embeds: [embed],
         files: [{ attachment: attachmentBuffer, name: "score.png" }],
         components: [row],
@@ -308,15 +269,9 @@ export class PostScoreCommand extends Command {
           logger.error({ err: e }, "notifyQualificationChange error:"),
         );
       }
-
-      await message.delete().catch(() => {});
     } catch (e) {
-      logger.error({ err: e }, "Error in PostScoreCommand:");
-      const reply = await message.reply({
-        content: `${e.message} This message will be deleted in 10 seconds.`,
-      });
-      await message.delete().catch(() => {});
-      setTimeout(() => reply.delete().catch(() => {}), 10000);
+      // Re-throw to be handled by chatInputRun
+      throw e;
     }
   }
 

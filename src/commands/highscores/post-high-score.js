@@ -29,7 +29,6 @@ export class PostHighScoreCommand extends Command {
     super(context, {
       ...options,
       name: "post-high-score",
-      aliases: ["high"],
       description: "Post a high score.",
       preconditions: ["HighScoresChannel"],
     });
@@ -62,21 +61,9 @@ export class PostHighScoreCommand extends Command {
           )
           .addStringOption((option) =>
             option
-              .setName("tablesearchterm")
-              .setDescription("Search term for table")
-              .setRequired(false),
-          )
-          .addStringOption((option) =>
-            option
-              .setName("vpsid")
-              .setDescription("VPS ID of the table")
-              .setRequired(false),
-          )
-          .addStringOption((option) =>
-            option
-              .setName("url")
-              .setDescription("URL of the table")
-              .setRequired(false),
+              .setName("table")
+              .setDescription("Table name, VPS ID, or URL")
+              .setRequired(true),
           ),
       { guildIds: [guildId] },
     );
@@ -84,18 +71,8 @@ export class PostHighScoreCommand extends Command {
 
   async chatInputRun(interaction) {
     const score = interaction.options.getString("score") ?? "<score>";
-    const tableSearchTerm = interaction.options.getString("tablesearchterm");
-    const vpsId = interaction.options.getString("vpsid");
-    const url = interaction.options.getString("url");
+    const tableInput = interaction.options.getString("table");
     const attachment = interaction.options.getAttachment("image");
-
-    if (!tableSearchTerm && !vpsId && !url) {
-      return interaction.reply({
-        content:
-          "You must provide at least one of: `tablesearchterm`, `vpsid`, or `url`.",
-        flags: 64,
-      });
-    }
 
     const scoreValue = parseInt(score.replace(/,/g, ""));
     const re = /^([1-9]|[1-9][0-9]{1,14})$/;
@@ -107,82 +84,90 @@ export class PostHighScoreCommand extends Command {
       });
     }
 
-    // --- Direct path: vpsid or url — resolve, save, and post inline, no select menu ---
-    if (vpsId || url) {
+    const isUrl = /^https?:\/\//i.test(tableInput);
+
+    // --- Direct path: URL or VPS ID ---
+    if (isUrl || !tableInput.includes(" ")) {
       await interaction.deferReply({ flags: 64 });
 
-      const { table, error: tableError } = await findTable({ vpsId, url });
+      const { table, error: tableError } = await findTable(
+        isUrl ? { url: tableInput } : { vpsId: tableInput },
+      );
 
-      if (tableError || !table) {
+      if (table && !tableError) {
+        try {
+          const { existingScore, existingUserId } = await resolveExistingTopScore(
+            table.vpsId,
+            table.metadata.versionNumber,
+          );
+
+          let existingUser = null;
+          if (existingUserId) {
+            existingUser =
+              await this.container.client.users.fetch(existingUserId);
+          }
+
+          const isNewTopScore = !existingScore || scoreValue > existingScore;
+
+          await saveHighScore(
+            {
+              tableName: table.name,
+              authorName: table.metadata.authorName,
+              vpsId: table.vpsId,
+              v: table.metadata.versionNumber,
+              s: scoreValue,
+            },
+            interaction.user,
+          );
+
+          logger.info(
+            `${interaction.user.username} posted high score: ${scoreValue} for ${table.name}`,
+          );
+
+          await postHighScoreEmbed({
+            channel: interaction.channel,
+            user: interaction.user,
+            table,
+            scoreValue,
+            isNewTopScore,
+            attachmentUrl: attachment?.url ?? null,
+            existingUser,
+          });
+
+          await interaction.editReply({ content: "✅ High score posted!" });
+          return;
+        } catch (e) {
+          logger.error({ err: e }, "Failed to post high score");
+          await interaction.editReply({
+            content: "An error occurred while saving your high score.",
+          });
+          return;
+        }
+      }
+
+      // If it was a URL and failed, or a potential VPS ID that didn't match,
+      // we fall through to search if it's not a URL. If it is a URL and failed, we should stop.
+      if (isUrl) {
         return interaction.editReply({
-          content:
-            (tableError ?? "Table not found in VPS data.") +
-            " Please try again using `tablesearchterm` instead.",
+          content: tableError ?? "Table not found via URL. Please try a search term.",
           flags: 64,
         });
       }
-
-      try {
-        const { existingScore, existingUserId } = await resolveExistingTopScore(
-          table.vpsId,
-          table.metadata.versionNumber,
-        );
-
-        let existingUser = null;
-        if (existingUserId) {
-          existingUser =
-            await this.container.client.users.fetch(existingUserId);
-        }
-
-        const isNewTopScore = !existingScore || scoreValue > existingScore;
-
-        await saveHighScore(
-          {
-            tableName: table.name,
-            authorName: table.metadata.authorName,
-            vpsId: table.vpsId,
-            v: table.metadata.versionNumber,
-            s: scoreValue,
-          },
-          interaction.user,
-        );
-
-        logger.info(
-          `${interaction.user.username} posted high score: ${scoreValue} for ${table.name}`,
-        );
-
-        await postHighScoreEmbed({
-          channel: interaction.channel,
-          user: interaction.user,
-          table,
-          scoreValue,
-          isNewTopScore,
-          attachmentUrl: attachment?.url ?? null,
-          existingUser,
-        });
-
-        await interaction.editReply({ content: "✅ High score posted!" });
-      } catch (e) {
-        logger.error({ err: e }, "Failed to post high score");
-        await interaction.editReply({
-          content: "An error occurred while saving your high score.",
-        });
-      }
-
-      return;
     }
 
-    // --- Search term path: search VPS, upsert matches, show select menu ---
+    // --- Search term path ---
     if (attachment?.url) {
       pendingAttachments.set(interaction.user.id, attachment.url);
     }
 
-    // Defer immediately — VPS search + upserts can exceed Discord's 3s interaction timeout
-    await interaction.deferReply({ flags: 64 });
+    // Defer if not already deferred (it might have been deferred in the VPS ID check)
+    if (!interaction.deferred) {
+      await interaction.deferReply({ flags: 64 });
+    }
 
     try {
       const { tables, error: searchError } =
-        await findTablesByName(tableSearchTerm);
+        await findTablesByName(tableInput);
 
       if (searchError) {
         return interaction.editReply({ content: searchError });
@@ -214,7 +199,7 @@ export class PostHighScoreCommand extends Command {
         });
       } else {
         return interaction.editReply({
-          content: `No tables were found in VPS data matching "${tableSearchTerm}". Try a different search term.`,
+          content: `No tables were found in VPS data matching "${tableInput}". Try a different search term.`,
         });
       }
     } catch (e) {
@@ -222,148 +207,9 @@ export class PostHighScoreCommand extends Command {
       return interaction.editReply({ content: e.message });
     }
   }
-
-  async messageRun(message, args) {
-    const score = await args.pick("string").catch(() => null);
-    const tableSearchTerm = await args.rest("string").catch(() => null);
-
-    if (!score || !tableSearchTerm) {
-      return message.reply({
-        content: "Please provide a score and table search term.",
-      });
-    }
-
-    const scoreValue = parseInt(score.replace(/,/g, ""));
-    const re = /^([1-9]|[1-9][0-9]{1,14})$/;
-    if (isNaN(scoreValue) || !re.test(String(scoreValue))) {
-      const reply = await message.reply({
-        content:
-          "The score needs to be a number between 1 and 999999999999999.",
-      });
-      await message.delete().catch(() => {});
-      setTimeout(() => reply.delete().catch(() => {}), 10000);
-      return;
-    }
-
-    const attachment = message.attachments?.first();
-    if (!attachment) {
-      const reply = await message.reply({
-        content:
-          "No photo attached. Please attach a photo with your high score.\n" +
-          `\`!high ${scoreValue} ${tableSearchTerm}\`\n` +
-          "This message will be deleted in 10 seconds.",
-      });
-      await message.delete().catch(() => {});
-      setTimeout(() => reply.delete().catch(() => {}), 10000);
-      return;
-    }
-
-    const term = tableSearchTerm.trim();
-    const isUrl = /^https?:\/\//i.test(term);
-    if (isUrl || !/\s/.test(term)) {
-      const { table } = await findTable(
-        isUrl ? { url: term } : { vpsId: term },
-      );
-      if (table) {
-        try {
-          const { existingScore, existingUserId } =
-            await resolveExistingTopScore(
-              table.vpsId,
-              table.metadata.versionNumber,
-            );
-          const existingUser = existingUserId
-            ? await this.container.client.users.fetch(existingUserId)
-            : null;
-          const isNewTopScore = !existingScore || scoreValue > existingScore;
-
-          await saveHighScore(
-            {
-              tableName: table.name,
-              authorName: table.metadata.authorName,
-              vpsId: table.vpsId,
-              v: table.metadata.versionNumber,
-              s: scoreValue,
-            },
-            message.author,
-          );
-
-          logger.info(
-            `${message.author.username} posted high score: ${scoreValue} for ${table.name}`,
-          );
-
-          await postHighScoreEmbed({
-            channel: message.channel,
-            user: message.author,
-            table,
-            scoreValue,
-            isNewTopScore,
-            attachmentUrl: attachment.url,
-            existingUser,
-            messageUrl: message.url,
-          });
-
-          await message.delete().catch(() => {});
-        } catch (e) {
-          logger.error({ err: e }, "Failed to post high score (!high direct)");
-          const reply = await message.reply({
-            content: "An error occurred while saving your high score.",
-          });
-          setTimeout(() => reply.delete().catch(() => {}), 10000);
-        }
-        return;
-      }
-    }
-
-    try {
-      const { tables, error: searchError } =
-        await findTablesByName(tableSearchTerm);
-
-      if (searchError) {
-        const reply = await message.reply({ content: searchError });
-        await message.delete().catch(() => {});
-        setTimeout(() => reply.delete().catch(() => {}), 10000);
-        return;
-      }
-
-      if (tables.length > 0) {
-        const options = tables.map((table) => {
-          const firstAuthor = table.authorName.split(", ")[0];
-          return {
-            label: `${table.name} (${firstAuthor}... ${table.versionNumber})`,
-            value: JSON.stringify({
-              vpsId: table.vpsId,
-              v: table.versionNumber,
-              s: scoreValue,
-            }),
-          };
-        });
-
-        await message.reply({
-          content: "Which table do you want to post this high score?",
-          files: [attachment],
-          components: [
-            new ActionRowBuilder().addComponents(
-              new StringSelectMenuBuilder()
-                .setCustomId("select")
-                .setPlaceholder("Please select table for high score...")
-                .addOptions(options),
-            ),
-          ],
-        });
-        await message.delete().catch(() => {});
-      } else {
-        const reply = await message.reply({
-          content: `No tables were found in VPS data matching "${tableSearchTerm}". Try a different search term.`,
-        });
-        await message.delete().catch(() => {});
-        setTimeout(() => reply.delete().catch(() => {}), 10000);
-      }
-    } catch (e) {
-      logger.error({ err: e }, "Failed to find tables");
-      message.reply({ content: e.message });
-    }
-  }
 }
+
+// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 // Shared helpers — used by the command (direct path) and the listener

@@ -205,7 +205,7 @@ export const validateEntry = async (userId, table, currentWeek) => {
     return {
       valid: false,
       error:
-        "You must have a score posted for the current week to enter the weekly raffle.\n\nYou can post a score with `/post-score` or type `!score 12345678` and attach a photo.",
+        "You must have a score posted for the current week to enter the weekly raffle.\n\nYou can post a score with `/post-score`.",
     };
   }
 

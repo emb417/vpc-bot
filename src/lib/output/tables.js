@@ -115,7 +115,7 @@ export const printHighScoreTables = (
           .addFields({
             name: "📌  How to Post",
             value:
-              "Use `/post-high-score` or\nAttach an image and use `!high 12345678 tablename`",
+              "Use `/post-high-score`",
           }),
       );
       buffer = "";
@@ -137,7 +137,7 @@ export const printHighScoreTables = (
         .addFields({
           name: "📌  How to Post",
           value:
-            "Use `/post-high-score` or\nAttach an image and use `!high 12345678 tablename`",
+            "Use `/post-high-score`",
         }),
     );
   }

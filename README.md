@@ -40,23 +40,23 @@ Discord bot for the Virtual Pinball Chat league - manages weekly competitions, h
 
 These commands are available to all users in the appropriate channels.
 
-#### `!score` / `/post-score`
+#### `/post-score`
 
 Post your score for the current weekly competition. **Requires an attached screenshot.**
 
 ```bash
-!score 1234567
-!score 1,234,567
-!score 9876543 y    # Also post to high scores channel
+/post-score 1234567
+/post-score 1,234,567
+/post-score 9876543 y    # Also post to high scores channel
 ```
 
-#### `!high` / `/post-high-score`
+#### `/post-high-score`
 
 Post a high score to a specific table. **Requires an attached screenshot.**
 
 ```bash
-!high 5000000 medieval madness
-!high 12345678 attack from mars
+/post-high-score 5000000 medieval madness
+/post-high-score 12345678 attack from mars
 ```
 
 #### `/show-leaderboard`
@@ -323,8 +323,6 @@ The project follows a modular structure within the `src/` directory:
 
 ## Notes
 
-- Message commands use `!` prefix (e.g., `!score`)
 - Slash commands use `/` prefix (e.g., `/show-leaderboard`)
-- Commands with the `score` alias can use either `!score` or `!post-score`
 - Error messages auto-delete after 10 seconds
 - Screenshots are required when posting scores

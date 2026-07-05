@@ -49,21 +49,20 @@ export const showCompetitionRules = async (interaction) => {
           "  * **Prohibited Images:** High score roster/leaderboard screenshots are strictly invalid and will not be counted.\n" +
           "  * **Legibility:** If a submission is blurry, cropped, glare-ridden, or otherwise unreadable, the score will be rejected. It is your responsibility to ensure the text is legible before posting.\n" +
           "2. **Rollovers:** Scores exceeding game limits require proof prior to rollover (photo or video).\n" +
-          "3. To post a score you **MUST** use `/post-score` or `!score` (see below).\n" +
-          "4. Gameplay runs **Monday–Sunday**, ending at midnight Pacific time.",
+          "3. To post a score you **MUST** use `/post-score`.\n" +
+          "4. Gameplay runs **Monday–Sunday**, ending and starting a new week at **Monday, 12am PST**.",
       },
       {
         name: "🤖 How to Use Score Bot",
         value:
           "Post a score: `/post-score`\n" +
-          "Or use the alias: `!score <value>` and attach a photo\n" +
-          "View your score info: `/show-score`\n" +
-          "View the current leaderboard: `/show-leaderboard`",
+          "View the current leaderboard: `/show-leaderboard`\n" +
+          "View the current table of the week: `/show-table-of-the-week`",
       },
       {
         name: "🎟️ Table Raffle",
         value:
-          "Post a score, then use `/enter-raffle` to enter a table of your choice. Draw happens at midnight Pacific after the final day.\n" +
+          "Post a score, then use `/enter-raffle` to enter a table of your choice. Draw happens at **Monday, 12am PST**.\n" +
           "Monitor the raffle with `/show-raffle-board`.\n" +
           "See raffle rules with `/show-raffle-rules`.",
       },
@@ -83,9 +82,14 @@ export const showCompetitionRules = async (interaction) => {
           " * Missing a week means **no points**.",
       },
       {
-        name: "❓ Questions?",
+        name: "❔ Questionable Scores",
         value:
-          "Contact <@1069383371127541800> or <@718313274164117505> with questions about posting scores.\n\n" +
+          "If you see a score that you think should not be counted, add a ❔ (grey_question) emoji to the score post, and post the reason. If the score gets 5 ❔s, it will be deleted automatically.",
+      },
+      {
+        name: "🙋‍♂️ Questions?",
+        value:
+          "Contact <@718313274164117505> with questions about posting scores or deleted scores.\n\n" +
           `Winner at the end of the weekly competition will be posted with their score in the [**${process.env.BRAGGING_RIGHTS_CHANNEL_NAME}**](https://discord.com/channels/${process.env.GUILD_ID}/${process.env.BRAGGING_RIGHTS_CHANNEL_ID}) channel.`,
       },
     )

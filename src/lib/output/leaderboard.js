@@ -122,7 +122,7 @@ export const printWeeklyLeaderboard = (
         .addFields({
           name: "📌  How to Post",
           value:
-            "Use `/post-score` or\nAttach an image and use `!score 12345678`",
+            "Use `/post-score`",
         }),
     ];
   }
@@ -158,7 +158,7 @@ export const printWeeklyLeaderboard = (
     })
     .addFields({
       name: "📌  How to Post",
-      value: "Use `/post-score` or\nAttach an image and use `!score 12345678`",
+      value: "Use `/post-score`",
     });
 
   return [embed];
@@ -285,7 +285,7 @@ export const printSeasonLeaderboard = (
     })
     .addFields({
       name: "📌  How to Post",
-      value: "Use `/post-score` or\nAttach an image and use `!score 12345678`",
+      value: "Use `/post-score`",
     });
 
   return [embed];
@@ -368,7 +368,7 @@ export const printCombinedLeaderboard = (
         .addFields({
           name: "📌  How to Post",
           value:
-            "Use `/post-score` or\nAttach an image and use `!score 12345678`",
+            "Use `/post-score`",
         }),
     ];
   }

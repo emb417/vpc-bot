@@ -58,86 +58,50 @@ export class ShowTableHighScoresCommand extends Command {
           .setDescription(this.description)
           .addStringOption((option) =>
             option
-              .setName("tablesearchterm")
-              .setDescription("Search term for table name")
-              .setRequired(false),
-          )
-          .addStringOption((option) =>
-            option
-              .setName("vpsid")
-              .setDescription("VPS ID of the table")
-              .setRequired(false),
-          )
-          .addStringOption((option) =>
-            option
-              .setName("url")
-              .setDescription("URL of the table")
-              .setRequired(false),
-          )
-          .addBooleanOption((option) =>
-            option
-              .setName("isephemeral")
-              .setDescription("Show results only to you"),
+              .setName("table")
+              .setDescription("Table name, VPS ID, or URL")
+              .setRequired(true),
           ),
       { guildIds: [guildId] },
     );
   }
 
   async chatInputRun(interaction) {
-    const tableSearchTerm = interaction.options.getString("tablesearchterm");
-    const vpsId = interaction.options.getString("vpsid");
-    const url = interaction.options.getString("url");
-    const isEphemeral = interaction.options.getBoolean("isephemeral") ?? true;
+    const tableInput = interaction.options.getString("table");
+    const isUrl = /^https?:\/\//i.test(tableInput);
 
-    if (!tableSearchTerm && !vpsId && !url) {
-      return interaction.reply({
-        content: `Please provide a table search term, VPS ID, or URL.\n\nVPC High Score Corner\n<${process.env.HIGH_SCORES_URL}>`,
-        flags: 64,
-      });
-    }
-
-    await interaction.deferReply({ flags: isEphemeral ? 64 : undefined });
+    await interaction.deferReply({ flags: 64 });
 
     try {
-      let resolvedVpsId = vpsId;
-
-      if (url && !vpsId) {
-        const { table, error: tableError } = await findTable({ url });
-        if (tableError || !table) {
-          return interaction.editReply({
-            content:
-              tableError ??
-              "Table not found by URL. Please try using a VPS ID or search term instead.",
-          });
-        }
-        resolvedVpsId = table.vpsId;
-      }
-
-      if (resolvedVpsId) {
-        const { table, error: tableError } = await findTable({
-          vpsId: resolvedVpsId,
-        });
-        if (tableError || !table) {
-          return interaction.editReply({
-            content: `No table found for VPS ID \`${resolvedVpsId}\`. Please check the ID and try again.`,
-          });
-        }
-
-        const imageBuffer = await fetchHighScoresImage(resolvedVpsId);
-        const { embed, attachment } = buildHighScoresPage(
-          { vpsId: resolvedVpsId },
-          imageBuffer,
+      // --- Direct path: URL or VPS ID ---
+      if (isUrl || !tableInput.includes(" ")) {
+        const { table, error: tableError } = await findTable(
+          isUrl ? { url: tableInput } : { vpsId: tableInput },
         );
-        return interaction.editReply({ embeds: [embed], files: [attachment] });
+
+        if (table && !tableError) {
+          const imageBuffer = await fetchHighScoresImage(table.vpsId);
+          const { embed, attachment } = buildHighScoresPage(
+            { vpsId: table.vpsId },
+            imageBuffer,
+          );
+          return interaction.editReply({ embeds: [embed], files: [attachment] });
+        }
+
+        if (isUrl) {
+          return interaction.editReply({
+            content: tableError ?? "Table not found via URL. Please try a search term.",
+          });
+        }
       }
 
-      // Search term path — one image per unique vpsId, paginated
+      // --- Search term path ---
       const results =
-        await getScoresByTableAndAuthorUsingFuzzyTableSearch(tableSearchTerm);
+        await getScoresByTableAndAuthorUsingFuzzyTableSearch(tableInput);
 
       if (!results || results.length === 0) {
         return interaction.editReply({
-          content: `No tables found matching "${tableSearchTerm}".`,
+          content: `No tables found matching "${tableInput}".`,
         });
       }
 

@@ -67,7 +67,7 @@ export const generateWeeklyBoilerPlateText = (
   bp += "**📊 All Current & Historical Results:**\n";
   bp += `<${process.env.COMPETITIONS_URL}>\n\n`;
   bp += "**📌 How to Post:**\n";
-  bp += "Use `/post-score` or attach an image and use `!score 12345678`";
+  bp += "Use `/post-score` to submit your score";
 
   return bp;
 };
