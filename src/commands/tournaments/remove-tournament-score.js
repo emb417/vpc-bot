@@ -8,6 +8,52 @@ import {
 } from "../../lib/scores/points.js";
 import { findActiveTournament, updateOne } from "../../services/database.js";
 
+export const removeTournamentScore = async (
+  channelName,
+  tableIndex,
+  username,
+) => {
+  const tournament = await findActiveTournament(channelName);
+  if (!tournament) {
+    throw new Error("No active tournament found for this channel.");
+  }
+
+  const tableEntry = (tournament.tables ?? []).find(
+    (t) => String(t.tableIndex) === String(tableIndex),
+  );
+  if (!tableEntry) {
+    throw new Error("That table was not found in this tournament.");
+  }
+
+  const scores = tableEntry.scores ?? [];
+  const scoreToRemove = scores.find(
+    (s) => s.username?.toLowerCase() === username.toLowerCase(),
+  );
+
+  if (!scoreToRemove) {
+    return null;
+  }
+
+  const updatedScores = scores.filter(
+    (s) => s.username?.toLowerCase() !== username.toLowerCase(),
+  );
+  updatedScores.sort((a, b) => b.score - a.score);
+  assignPoints(updatedScores, TOURNAMENT_POINTS_BY_RANK);
+
+  await updateOne(
+    { channelName: channelName, status: "active" },
+    { $set: { "tables.$[t].scores": updatedScores } },
+    { arrayFilters: [{ "t.tableIndex": tableEntry.tableIndex }] },
+    "tournaments",
+  );
+
+  return {
+    score: scoreToRemove,
+    vpsId: tableEntry.vpsId,
+    tableName: tableEntry.table,
+  };
+};
+
 export class RemoveTournamentScoreCommand extends Command {
   constructor(context, options) {
     super(context, {
@@ -77,55 +123,23 @@ export class RemoveTournamentScoreCommand extends Command {
     const username = interaction.options.getString("username");
 
     try {
-      const tournament = await findActiveTournament(channel.name);
-      if (!tournament) {
+      const result = await removeTournamentScore(
+        channel.name,
+        tableIndex,
+        username,
+      );
+
+      if (!result) {
         return interaction.reply({
-          content: "No active tournament found for this channel.",
+          content: `No score found for ${username} on ${channel.name}.`,
           flags: 64,
         });
       }
-
-      const tableEntry = (tournament.tables ?? []).find(
-        (t) => String(t.tableIndex) === String(tableIndex),
-      );
-      if (!tableEntry) {
-        return interaction.reply({
-          content: "That table was not found in this tournament.",
-          flags: 64,
-        });
-      }
-
-      const scores = tableEntry.scores ?? [];
-      const scoreToRemove = scores.find(
-        (s) => s.username?.toLowerCase() === username.toLowerCase(),
-      );
-
-      if (!scoreToRemove) {
-        return interaction.reply({
-          content: `No score found for ${username} on ${tableEntry.table}.`,
-          flags: 64,
-        });
-      }
-
-      // Remove the score, then re-sort and reassign tournament points so
-      // ranks and points stay correct for the remaining scores.
-      const updatedScores = scores.filter(
-        (s) => s.username?.toLowerCase() !== username.toLowerCase(),
-      );
-      updatedScores.sort((a, b) => b.score - a.score);
-      assignPoints(updatedScores, TOURNAMENT_POINTS_BY_RANK);
-
-      await updateOne(
-        { channelName: channel.name, status: "active" },
-        { $set: { "tables.$[t].scores": updatedScores } },
-        { arrayFilters: [{ "t.tableIndex": tableEntry.tableIndex }] },
-        "tournaments",
-      );
 
       return interaction.reply({
         content:
-          `Score removed. ${scoreToRemove.username}'s score of ` +
-          `${formatNumber(scoreToRemove.score)} on ${tableEntry.table} has been removed.`,
+          `Score removed. ${result.score.username}'s score of ` +
+          `${formatNumber(result.score.score)} on ${result.tableName} has been removed.`,
         flags: 64,
       });
     } catch (e) {
