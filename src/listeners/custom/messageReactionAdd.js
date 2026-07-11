@@ -7,7 +7,7 @@ import {
   findOneAndUpdate,
 } from "../../services/database.js";
 
-const threshold = 1;
+const threshold = 5;
 
 export class MessageReactionAddListener extends Listener {
   constructor(context, options) {
