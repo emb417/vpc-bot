@@ -125,7 +125,6 @@ Show the tournament rules and how points are scored.
 
 #### `/generate-random-number`
 
-
 Generate a random number between 1 and a specified maximum.
 
 ```bash
@@ -235,7 +234,6 @@ End the active tournament and announce the winner.
 ```
 
 #### Season Management
-
 
 ##### `/create-season`
 
