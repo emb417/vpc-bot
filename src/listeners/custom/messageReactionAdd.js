@@ -5,7 +5,7 @@ import {
   findCurrentWeek,
   updateOne,
   findOneAndUpdate,
-  findActiveTournament,
+  findCurrentlyActiveTournament,
 } from "../../services/database.js";
 import { removeTournamentScore } from "../../commands/tournaments/remove-tournament-score.js";
 import { removeHighScore } from "../../commands/highscores/remove-high-score.js";
@@ -41,7 +41,7 @@ export class MessageReactionAddListener extends Listener {
       message.channel.id === process.env.COMPETITION_CHANNEL_ID;
     const tournament = isCompetitionChannel
       ? null
-      : await findActiveTournament(message.channel.name);
+      : await findCurrentlyActiveTournament(message.channel.name);
 
     if (!isCompetitionChannel && !tournament) return;
 

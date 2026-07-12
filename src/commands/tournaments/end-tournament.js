@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { Command } from "@sapphire/framework";
 import logger from "../../utils/logger.js";
-import { findActiveTournament } from "../../services/database.js";
+import { findCurrentlyActiveTournament } from "../../services/database.js";
 import { endTournament } from "../../lib/tournaments/endTournament.js";
 
 export class EndTournamentCommand extends Command {
@@ -32,7 +32,7 @@ export class EndTournamentCommand extends Command {
     const channel = interaction.channel;
 
     try {
-      const tournament = await findActiveTournament(channel.name);
+      const tournament = await findCurrentlyActiveTournament(channel.name);
       if (!tournament) {
         return interaction.reply({
           content: "No active tournament found for this channel.",

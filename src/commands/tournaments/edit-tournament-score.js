@@ -4,14 +4,18 @@ import logger from "../../utils/logger.js";
 import { formatNumber } from "../../utils/formatting.js";
 import { processScore } from "../../lib/scores/scoring.js";
 import { TOURNAMENT_POINTS_BY_RANK } from "../../lib/scores/points.js";
-import { findActiveTournament, updateOne } from "../../services/database.js";
+import {
+  findCurrentlyActiveTournament,
+  updateOne,
+} from "../../services/database.js";
 
 export class EditTournamentScoreCommand extends Command {
   constructor(context, options) {
     super(context, {
       ...options,
       name: "edit-tournament-score",
-      description: "Edit a player's score for a table in the active tournament.",
+      description:
+        "Edit a player's score for a table in the active tournament.",
       preconditions: ["TournamentChannel", "CompetitionAdminRole"],
     });
   }
@@ -55,7 +59,7 @@ export class EditTournamentScoreCommand extends Command {
   async autocompleteRun(interaction) {
     const channelName = interaction.channel?.name;
     const tournament = channelName
-      ? await findActiveTournament(channelName)
+      ? await findCurrentlyActiveTournament(channelName)
       : null;
 
     if (!tournament) {
@@ -81,7 +85,7 @@ export class EditTournamentScoreCommand extends Command {
     const score = interaction.options.getString("score");
 
     try {
-      const tournament = await findActiveTournament(channel.name);
+      const tournament = await findCurrentlyActiveTournament(channel.name);
       if (!tournament) {
         return interaction.reply({
           content: "No active tournament found for this channel.",
@@ -99,7 +103,6 @@ export class EditTournamentScoreCommand extends Command {
         });
       }
 
-      // Find the user or create a mock user object
       const user = this.container.client.users.cache.find(
         (u) => u.username === username,
       ) || {
@@ -108,14 +111,12 @@ export class EditTournamentScoreCommand extends Command {
         displayAvatarURL: () => "",
       };
 
-      // Process the score with F1-style tournament points
       const result = processScore(user, score, tableEntry, {
         pointsTable: TOURNAMENT_POINTS_BY_RANK,
       });
 
-      // Persist the updated scores for this table only
       await updateOne(
-        { channelName: channel.name, status: "active" },
+        { _id: tournament._id },
         { $set: { "tables.$[t].scores": result.scores } },
         { arrayFilters: [{ "t.tableIndex": tableEntry.tableIndex }] },
         "tournaments",

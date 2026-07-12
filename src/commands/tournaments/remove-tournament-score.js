@@ -6,14 +6,14 @@ import {
   TOURNAMENT_POINTS_BY_RANK,
   assignPoints,
 } from "../../lib/scores/points.js";
-import { findActiveTournament, updateOne } from "../../services/database.js";
+import { findCurrentlyActiveTournament, updateOne } from "../../services/database.js";
 
 export const removeTournamentScore = async (
   channelName,
   tableIndex,
   username,
 ) => {
-  const tournament = await findActiveTournament(channelName);
+  const tournament = await findCurrentlyActiveTournament(channelName);
   if (!tournament) {
     throw new Error("No active tournament found for this channel.");
   }
@@ -41,7 +41,7 @@ export const removeTournamentScore = async (
   assignPoints(updatedScores, TOURNAMENT_POINTS_BY_RANK);
 
   await updateOne(
-    { channelName: channelName, status: "active" },
+    { _id: tournament._id },
     { $set: { "tables.$[t].scores": updatedScores } },
     { arrayFilters: [{ "t.tableIndex": tableEntry.tableIndex }] },
     "tournaments",
@@ -98,7 +98,7 @@ export class RemoveTournamentScoreCommand extends Command {
   async autocompleteRun(interaction) {
     const channelName = interaction.channel?.name;
     const tournament = channelName
-      ? await findActiveTournament(channelName)
+      ? await findCurrentlyActiveTournament(channelName)
       : null;
 
     if (!tournament) {

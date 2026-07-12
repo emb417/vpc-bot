@@ -3,6 +3,27 @@ import { EmbedBuilder } from "discord.js";
 import { formatLongDate } from "../../utils/formatting.js";
 
 /**
+ * Calculate duration between two YYYY-MM-DD dates.
+ * Returns a string like "1 Day", "5 Days", "2 Weeks", etc.
+ * This calculation is inclusive of both start and end dates.
+ */
+const calculateDuration = (startDate, endDate) => {
+  const start = new Date(`${startDate}T00:00:00`);
+  const end = new Date(`${endDate}T00:00:00`);
+  const diffTime = Math.abs(end - start);
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  
+  // Add 1 to make the range inclusive
+  const days = diffDays + 1;
+
+  if (days >= 7 && days % 7 === 0) {
+    const weeks = days / 7;
+    return `${weeks} ${weeks === 1 ? "Week" : "Weeks"}`;
+  }
+  return `${days} ${days === 1 ? "Day" : "Days"}`;
+};
+
+/**
  * Build a condensed one-line summary for a tournament table with
  * table / ROM / B2S links (only the ones that exist).
  */
@@ -19,8 +40,11 @@ const formatTableLine = (t) => {
  * Pack the table lines into one or more embed fields, each kept under
  * Discord's 1024-character field-value limit. Continuation fields use a
  * zero-width name so only the first shows the "Tables (N)" header.
+ *
+ * @param {Array} tables
+ * @param {string} duration - e.g., "2 Days" or "3 Weeks"
  */
-const buildTableFields = (tables) => {
+const buildTableFields = (tables, duration) => {
   const lines = tables.map(formatTableLine);
   const fields = [];
   let current = [];
@@ -38,7 +62,7 @@ const buildTableFields = (tables) => {
   if (current.length) fields.push(current.join("\n"));
 
   return fields.map((value, index) => ({
-    name: index === 0 ? `Tables (${tables.length})` : "​",
+    name: index === 0 ? `${tables.length} Tables - ${duration}` : "​",
     value,
     inline: false,
   }));
@@ -54,6 +78,7 @@ const buildTableFields = (tables) => {
  * @param {string} [opts.title] - embed title override
  */
 export const buildTournamentEmbed = (tournament, { title } = {}) => {
+  const duration = calculateDuration(tournament.startDate, tournament.endDate);
   const embed = new EmbedBuilder()
     .setColor("Green")
     .setTitle(title ?? `🏆 ${tournament.name}`)
@@ -68,7 +93,7 @@ export const buildTournamentEmbed = (tournament, { title } = {}) => {
         value: formatLongDate(tournament.endDate),
         inline: true,
       },
-      ...buildTableFields(tournament.tables ?? []),
+      ...buildTableFields(tournament.tables ?? [], duration),
       ...(tournament.notes
         ? [
             {

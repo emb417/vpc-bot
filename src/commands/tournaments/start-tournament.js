@@ -5,7 +5,10 @@ import logger from "../../utils/logger.js";
 import { formatDateTime } from "../../utils/formatting.js";
 import { getVpsGameById } from "../../lib/data/vps.js";
 import { buildTournamentEmbed } from "../../lib/tournaments/embed.js";
-import { findActiveTournament, insertOne } from "../../services/database.js";
+import {
+  findOverlappingTournament,
+  insertOne,
+} from "../../services/database.js";
 
 /**
  * Resolve a single VPS id into a tournament table entry.
@@ -87,7 +90,9 @@ export class StartTournamentCommand extends Command {
           .addStringOption((option) =>
             option
               .setName("vpsids")
-              .setDescription("VPS IDs for the tables (comma or space separated)")
+              .setDescription(
+                "VPS IDs for the tables (comma or space separated)",
+              )
               .setRequired(true),
           )
           .addStringOption((option) =>
@@ -118,15 +123,18 @@ export class StartTournamentCommand extends Command {
     const endDate = interaction.options.getString("enddate");
 
     try {
-      // Only one active tournament per channel
-      const existing = await findActiveTournament(channel.name);
+      const existing = await findOverlappingTournament(
+        channel.name,
+        startDate,
+        endDate,
+      );
       if (existing) {
         return interaction.editReply({
           embeds: [
             new EmbedBuilder()
               .setColor("Red")
               .setDescription(
-                `❌ An active tournament ("${existing.name}") already exists in this channel.`,
+                `❌ This tournament overlaps with an existing tournament: "${existing.name}" (${existing.startDate} to ${existing.endDate}).`,
               ),
           ],
         });

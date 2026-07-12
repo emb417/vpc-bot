@@ -2,7 +2,7 @@ import "dotenv/config";
 import { Command } from "@sapphire/framework";
 import { EmbedBuilder } from "discord.js";
 import logger from "../../utils/logger.js";
-import { findActiveTournament, updateOne } from "../../services/database.js";
+import { findCurrentlyActiveTournament, updateOne } from "../../services/database.js";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -86,7 +86,7 @@ export class EditTournamentCommand extends Command {
   async autocompleteRun(interaction) {
     const channelName = interaction.channel?.name;
     const tournament = channelName
-      ? await findActiveTournament(channelName)
+      ? await findCurrentlyActiveTournament(channelName)
       : null;
 
     if (!tournament) {
@@ -131,7 +131,7 @@ export class EditTournamentCommand extends Command {
         });
       }
 
-      const tournament = await findActiveTournament(channel.name);
+      const tournament = await findCurrentlyActiveTournament(channel.name);
       if (!tournament) {
         return interaction.reply({
           content: "No active tournament found for this channel.",
@@ -228,7 +228,7 @@ export class EditTournamentCommand extends Command {
         : null;
 
       await updateOne(
-        { channelName: channel.name, status: "active" },
+        { _id: tournament._id },
         { $set: setDoc },
         options,
         "tournaments",

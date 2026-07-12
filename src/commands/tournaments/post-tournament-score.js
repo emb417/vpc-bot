@@ -17,7 +17,7 @@ import {
   calculateSeasonPoints,
 } from "../../lib/scores/points.js";
 import {
-  findActiveTournament,
+  findCurrentlyActiveTournament,
   findOne,
   updateOne,
   updateMany,
@@ -72,7 +72,7 @@ export class PostTournamentScoreCommand extends Command {
   async autocompleteRun(interaction) {
     const channelName = interaction.channel?.name;
     const tournament = channelName
-      ? await findActiveTournament(channelName)
+      ? await findCurrentlyActiveTournament(channelName)
       : null;
 
     if (!tournament) {
@@ -164,7 +164,7 @@ export class PostTournamentScoreCommand extends Command {
         return;
       }
 
-      const tournament = await findActiveTournament(channel.name);
+      const tournament = await findCurrentlyActiveTournament(channel.name);
       if (!tournament) {
         return message.reply({
           content: "No active tournament found for this channel.",

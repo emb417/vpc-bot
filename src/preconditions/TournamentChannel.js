@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { Precondition } from "@sapphire/framework";
-import { findActiveTournament } from "../services/database.js";
+import { findCurrentlyActiveTournament } from "../services/database.js";
 
 export class TournamentChannelPrecondition extends Precondition {
   chatInputRun(interaction) {
@@ -13,7 +13,7 @@ export class TournamentChannelPrecondition extends Precondition {
 
   async checkChannel(channelName) {
     if (channelName) {
-      const tournament = await findActiveTournament(channelName);
+      const tournament = await findCurrentlyActiveTournament(channelName);
       if (tournament) {
         return this.ok();
       }

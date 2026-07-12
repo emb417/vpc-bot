@@ -91,7 +91,40 @@ Show the current playoff bracket and standings.
 /show-playoffs
 ```
 
+#### `/show-tournament`
+
+Show the active tournament for the current channel and its associated tables.
+
+```bash
+/show-tournament
+```
+
+#### `/post-tournament-score`
+
+Post a score for a specific table in the active tournament. **Requires an attached screenshot and table selection.**
+
+```bash
+/post-tournament-score score:1234567 table:Medieval Madness
+```
+
+#### `/show-tournament-leaderboard`
+
+Display the overall standings for the active tournament.
+
+```bash
+/show-tournament-leaderboard
+```
+
+#### `/show-tournament-rules`
+
+Show the tournament rules and how points are scored.
+
+```bash
+/show-tournament-rules
+```
+
 #### `/generate-random-number`
+
 
 Generate a random number between 1 and a specified maximum.
 
@@ -150,7 +183,59 @@ Remove a score by rank from the current competition.
 /remove-score rank:3
 ```
 
+#### Tournament Management
+
+##### `/start-tournament`
+
+Start a new tournament in the current channel.
+
+```bash
+/start-tournament name:"Spring Classic" vpsids:"vps1,vps2" startdate:2024-04-01 enddate:2024-04-15
+```
+
+##### `/edit-tournament`
+
+Edit the active tournament's ROM info, dates, or notes.
+
+```bash
+/edit-tournament table:Medieval Madness romname:"v1.2" notes:"Updated rules"
+/edit-tournament startdate:2024-04-05 enddate:2024-04-20
+```
+
+##### `/edit-tournament-score`
+
+Edit a player's score for a specific table in the active tournament.
+
+```bash
+/edit-tournament-score table:Medieval Madness username:PlayerName score:6000000
+```
+
+##### `/remove-tournament-score`
+
+Remove a player's score from a table in the active tournament.
+
+```bash
+/remove-tournament-score table:Medieval Madness username:PlayerName
+```
+
+##### `/remove-tournament`
+
+Remove a scheduled tournament that is not currently ongoing.
+
+```bash
+/remove-tournament
+```
+
+##### `/end-tournament`
+
+End the active tournament and announce the winner.
+
+```bash
+/end-tournament
+```
+
 #### Season Management
+
 
 ##### `/create-season`
 

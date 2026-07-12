@@ -132,6 +132,31 @@ export const findActiveTournament = async (channelName) => {
   });
 };
 
+export const findOverlappingTournament = async (
+  channelName,
+  startDate,
+  endDate,
+) => {
+  const collection = await getCollection("tournaments");
+  return collection.findOne({
+    channelName: channelName,
+    status: "active",
+    startDate: { $lte: endDate },
+    endDate: { $gte: startDate },
+  });
+};
+
+export const findCurrentlyActiveTournament = async (channelName) => {
+  const today = new Date().toISOString().split("T")[0];
+  const collection = await getCollection("tournaments");
+  return collection.findOne({
+    channelName: channelName,
+    status: "active",
+    startDate: { $lte: today },
+    endDate: { $gte: today },
+  });
+};
+
 /**
  * Find the current playoff for a channel.
  */
@@ -160,6 +185,14 @@ export const findCurrentPlayoffRound = async (channelName) => {
 export const updateOne = async (filter, update, options, collectionName) => {
   const collection = await getCollection(collectionName);
   return collection.updateOne(filter, update, options);
+};
+
+/**
+ * Delete a single document.
+ */
+export const deleteOne = async (filter, collectionName) => {
+  const collection = await getCollection(collectionName);
+  return collection.deleteOne(filter);
 };
 
 /**
@@ -203,7 +236,10 @@ export default {
   findActiveTournament,
   findCurrentPlayoff,
   findCurrentPlayoffRound,
+  findOverlappingTournament,
+  findCurrentlyActiveTournament,
   updateOne,
+  deleteOne,
   updateMany,
   aggregate,
   closeDatabase,

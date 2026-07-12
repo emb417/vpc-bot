@@ -3,14 +3,15 @@ import { Command } from "@sapphire/framework";
 import { EmbedBuilder } from "discord.js";
 import logger from "../../utils/logger.js";
 import { buildTournamentEmbed } from "../../lib/tournaments/embed.js";
-import { findActiveTournament } from "../../services/database.js";
+import { findCurrentlyActiveTournament } from "../../services/database.js";
 
 export class ShowTournamentCommand extends Command {
   constructor(context, options) {
     super(context, {
       ...options,
       name: "show-tournament",
-      description: "Show the active tournament for this channel and its tables.",
+      description:
+        "Show the active tournament for this channel and its tables.",
     });
   }
 
@@ -23,17 +24,21 @@ export class ShowTournamentCommand extends Command {
   }
 
   async chatInputRun(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: 64 });
 
     try {
-      const tournament = await findActiveTournament(interaction.channel.name);
+      const tournament = await findCurrentlyActiveTournament(
+        interaction.channel.name,
+      );
 
       if (!tournament) {
         return interaction.editReply({
           embeds: [
             new EmbedBuilder()
               .setColor("Red")
-              .setDescription("❌ No active tournament found for this channel."),
+              .setDescription(
+                "❌ No active tournament found for this channel.",
+              ),
           ],
         });
       }

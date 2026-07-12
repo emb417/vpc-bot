@@ -3,7 +3,7 @@ import { Command } from "@sapphire/framework";
 import { EmbedBuilder } from "discord.js";
 import logger from "../../utils/logger.js";
 import { printTournamentLeaderboard } from "../../lib/output/leaderboard.js";
-import { findActiveTournament } from "../../services/database.js";
+import { findCurrentlyActiveTournament } from "../../services/database.js";
 
 export class ShowTournamentLeaderboardCommand extends Command {
   constructor(context, options) {
@@ -24,7 +24,7 @@ export class ShowTournamentLeaderboardCommand extends Command {
   }
 
   async chatInputRun(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: 64 });
     const channel =
       interaction.channel ??
       (await interaction.client.channels.fetch(interaction.channelId));
@@ -35,7 +35,7 @@ export class ShowTournamentLeaderboardCommand extends Command {
 // Export for use by the button listener and the command above.
 export const getTournamentLeaderboard = async (interaction, channel) => {
   try {
-    const tournament = await findActiveTournament(channel.name);
+    const tournament = await findCurrentlyActiveTournament(channel.name);
 
     if (!tournament) {
       return interaction.editReply({

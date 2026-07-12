@@ -83,6 +83,7 @@ export const showTournamentRules = async (interaction) => {
 
   return interaction.reply({
     embeds: [rulesEmbed, pointsEmbed],
-    ephemeral: true,
+    flags: 64,
   });
-};
+  }
+;
