@@ -5,6 +5,7 @@ import logger from "../../utils/logger.js";
 import { formatDateTime } from "../../utils/formatting.js";
 import { getVpsGameById } from "../../lib/data/vps.js";
 import { buildTournamentEmbed } from "../../lib/tournaments/embed.js";
+import { findTable } from "../../lib/data/tables.js";
 import {
   findOverlappingTournament,
   insertOne,
@@ -157,7 +158,9 @@ export class CreateTournamentCommand extends Command {
 
       const tables = [];
       for (let i = 0; i < vpsIds.length; i++) {
-        tables.push(await resolveTournamentTable(vpsIds[i], i + 1));
+        const tableEntry = await resolveTournamentTable(vpsIds[i], i + 1);
+        await findTable({ vpsId: vpsIds[i] });
+        tables.push(tableEntry);
       }
 
       const tournament = {

@@ -1,8 +1,9 @@
 import "dotenv/config";
 import { Command } from "@sapphire/framework";
-import { EmbedBuilder } from "discord.js";
+import { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } from "discord.js";
 import logger from "../../utils/logger.js";
-import { findCurrentlyActiveTournament, updateOne } from "../../services/database.js";
+import { findTable } from "../../lib/data/tables.js";
+import { find, findCurrentlyActiveTournament, updateOne } from "../../services/database.js";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -106,152 +107,48 @@ export class EditTournamentCommand extends Command {
   }
 
   async chatInputRun(interaction) {
-    const channel = interaction.channel;
-    const tableIndex = interaction.options.getString("table");
-    const romName = interaction.options.getString("romname");
-    const romUrl = interaction.options.getString("romurl");
-    const mode = interaction.options.getString("mode");
-    const startDate = interaction.options.getString("startdate");
-    const endDate = interaction.options.getString("enddate");
-    const notes = interaction.options.getString("notes");
+    const channelName = interaction.channel?.name;
 
     try {
-      if (
-        romName == null &&
-        romUrl == null &&
-        mode == null &&
-        startDate == null &&
-        endDate == null &&
-        notes == null
-      ) {
+      if (!channelName) {
         return interaction.reply({
-          content:
-            "Nothing to update. Provide at least one of: romname, romurl, mode, startdate, enddate, notes.",
+          content: "Could not determine the channel name.",
           flags: 64,
         });
       }
 
-      const tournament = await findCurrentlyActiveTournament(channel.name);
-      if (!tournament) {
-        return interaction.reply({
-          content: "No active tournament found for this channel.",
-          flags: 64,
-        });
-      }
-
-      // ROM/mode edits are per-table and need a target table.
-      let tableEntry = null;
-      if (romName != null || romUrl != null || mode != null) {
-        if (!tableIndex) {
-          return interaction.reply({
-            content:
-              "Please choose a `table` to apply the ROM/mode change to.",
-            flags: 64,
-          });
-        }
-        tableEntry = (tournament.tables ?? []).find(
-          (t) => String(t.tableIndex) === String(tableIndex),
-        );
-        if (!tableEntry) {
-          return interaction.reply({
-            content: "That table was not found in this tournament.",
-            flags: 64,
-          });
-        }
-      }
-
-      // Validate dates and the resulting start <= end ordering.
-      if (startDate != null && !isValidDate(startDate)) {
-        return interaction.reply({
-          content: "Invalid start date. Use YYYY-MM-DD.",
-          flags: 64,
-        });
-      }
-      if (endDate != null && !isValidDate(endDate)) {
-        return interaction.reply({
-          content: "Invalid end date. Use YYYY-MM-DD.",
-          flags: 64,
-        });
-      }
-      const effectiveStart = startDate ?? tournament.startDate;
-      const effectiveEnd = endDate ?? tournament.endDate;
-      if (effectiveStart && effectiveEnd && effectiveStart > effectiveEnd) {
-        return interaction.reply({
-          content: `End date (${effectiveEnd}) cannot be before start date (${effectiveStart}).`,
-          flags: 64,
-        });
-      }
-
-      // Build the update document and a human-readable change list.
-      const setDoc = {};
-      const changes = [];
-
-      if (startDate != null) {
-        setDoc.startDate = startDate;
-        changes.push(`**Start Date:** ${tournament.startDate} → ${startDate}`);
-      }
-      if (endDate != null) {
-        setDoc.endDate = endDate;
-        changes.push(`**End Date:** ${tournament.endDate} → ${endDate}`);
-      }
-      if (notes != null) {
-        setDoc.notes = notes;
-        changes.push(
-          tournament.notes
-            ? `**Notes:** updated`
-            : `**Notes:** added`,
-        );
-      }
-      if (tableEntry) {
-        if (romName != null) {
-          setDoc["tables.$[t].romName"] = romName;
-          changes.push(
-            `**ROM Name** (${tableEntry.table}): ${tableEntry.romName} → ${romName}`,
-          );
-        }
-        if (romUrl != null) {
-          setDoc["tables.$[t].romUrl"] = romUrl;
-          changes.push(
-            `**ROM URL** (${tableEntry.table}): ${tableEntry.romUrl} → ${romUrl}`,
-          );
-        }
-        if (mode != null) {
-          setDoc["tables.$[t].mode"] = mode;
-          changes.push(
-            `**Mode** (${tableEntry.table}): ${tableEntry.mode} → ${mode}`,
-          );
-        }
-      }
-
-      const options = tableEntry
-        ? { arrayFilters: [{ "t.tableIndex": tableEntry.tableIndex }] }
-        : null;
-
-      await updateOne(
-        { _id: tournament._id },
-        { $set: setDoc },
-        options,
+      const tournaments = await find(
+        { channelName: channelName, status: "active" },
         "tournaments",
       );
 
-      // Announce the changes in the tournament channel.
-      const embed = new EmbedBuilder()
-        .setTitle(`✏️ Updated Tournament: ${tournament.name}`)
-        .setDescription(changes.join("\n"))
-        .setColor("Blue");
-
-      if (notes != null) {
-        embed.addFields({ name: "Notes", value: notes.slice(0, 1024) });
+      if (!tournaments || tournaments.length === 0) {
+        return interaction.reply({
+          content: "No active tournaments found for this channel.",
+          flags: 64,
+        });
       }
 
-      await channel.send({ embeds: [embed] });
+      const selectMenu = new StringSelectMenuBuilder()
+        .setCustomId("edit_tournament_select")
+        .setPlaceholder("Select a tournament to edit")
+        .addOptions(
+          tournaments.slice(0, 25).map((t) => ({
+            label: t.name.slice(0, 100),
+            description: `${t.startDate} to ${t.endDate}`,
+            value: String(t._id),
+          })),
+        );
+
+      const row = new ActionRowBuilder().addComponents(selectMenu);
 
       return interaction.reply({
-        content: "✅ Tournament updated.",
+        content: "Please select the tournament you wish to edit:",
+        components: [row],
         flags: 64,
       });
     } catch (e) {
-      logger.error({ err: e }, "Failed to edit tournament:");
+      logger.error({ err: e }, "Failed to execute edit-tournament command:");
       return interaction.reply({
         content: e.message,
         flags: 64,

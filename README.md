@@ -201,16 +201,39 @@ Create a new tournament in the current channel.
 /create-tournament name:"Spring Classic" vpsids:"vps1,vps2" startdate:2024-04-01 enddate:2024-04-15
 ```
 
+| Parameter | Description                                       |
+| --------- | ------------------------------------------------- |
+| name      | Tournament name                                   |
+| vpsids    | VPS IDs for the tables (comma or space separated) |
+| startdate | Start date (YYYY-MM-DD)                           |
+| enddate   | End date (YYYY-MM-DD)                             |
+
 ##### `/edit-tournament`
 
-Edit the active tournament's ROM info, dates, or notes.
+Edit a tournament's ROM info, dates, or notes. After running the command, you will be prompted to select the target tournament from a list of active tournaments in the channel.
 
 ```bash
 /edit-tournament table:Medieval Madness romname:"v1.2" notes:"Updated rules"
 /edit-tournament startdate:2024-04-05 enddate:2024-04-20
 ```
 
-##### `/edit-tournament-score`
+##### `/add-tournament-table`
+
+Add a table to a tournament. After providing the VPS ID, you must select the target tournament from a dropdown menu.
+
+```bash
+/add-tournament-table vpsid:xyz123
+```
+
+##### `/remove-tournament-table`
+
+Remove a table from a tournament. After providing the VPS ID, you must select the target tournament from a dropdown menu.
+
+```bash
+/remove-tournament-table vpsid:xyz123
+```
+
+##### /edit-tournament-score
 
 Edit a player's score for a specific table in the active tournament.
 
