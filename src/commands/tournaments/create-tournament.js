@@ -60,12 +60,12 @@ const resolveTournamentTable = async (vpsid, tableIndex) => {
   };
 };
 
-export class StartTournamentCommand extends Command {
+export class CreateTournamentCommand extends Command {
   constructor(context, options) {
     super(context, {
       ...options,
-      name: "start-tournament",
-      description: "Start a new tournament in this channel.",
+      name: "create-tournament",
+      description: "Create a new tournament in this channel.",
       preconditions: ["CompetitionAdminRole"],
     });
   }
@@ -179,7 +179,7 @@ export class StartTournamentCommand extends Command {
 
       return interaction.editReply({ embeds: [embed] });
     } catch (e) {
-      logger.error({ err: e }, "Failed to start tournament:");
+      logger.error({ err: e }, "Failed to create tournament:");
       return interaction.editReply({
         embeds: [
           new EmbedBuilder().setColor("Red").setDescription(`❌ ${e.message}`),

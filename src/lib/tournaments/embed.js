@@ -69,7 +69,7 @@ const buildTableFields = (tables, duration) => {
 };
 
 /**
- * Build the standard tournament embed (used by /start-tournament and
+ * Build the standard tournament embed (used by /create-tournament and
  * /show-tournament so both render identically). Pass a `title` to override
  * the default heading.
  *

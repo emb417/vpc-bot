@@ -4,6 +4,7 @@ import { runRaffleAndCreateNextWeek } from "../lib/raffle/raffleWinner.js";
 import { tournamentWindowStatus } from "../utils/formatting.js";
 import { find } from "../services/database.js";
 import { endTournament } from "../lib/tournaments/endTournament.js";
+import { buildTournamentEmbed } from "../lib/tournaments/embed.js";
 
 const COMPETITION_CHANNEL_ID = process.env.COMPETITION_CHANNEL_ID;
 const GUILD_ID = process.env.GUILD_ID;
@@ -45,21 +46,21 @@ export const initScheduledJobs = (client) => {
     },
   );
 
-  // Auto-end any active tournament that has passed its end date. Runs daily at
-  // 12:05 AM Pacific Time, just after the competition rollover.
+  // Auto-end any active tournament that has passed its end date, and
+  // announce any tournament that is starting today.
+  // Runs daily at 12:05 AM Pacific Time.
   cron.schedule(
-    process.env.TOURNAMENT_END_CRON_SCHEDULE || "5 0 * * *",
+    process.env.TOURNAMENT_CRON_SCHEDULE || "5 0 * * *",
     async () => {
-      logger.info("Checking for expired tournaments to finalize...");
+      logger.info("Running daily tournament maintenance...");
       try {
+        const today = new Date().toISOString().split("T")[0];
         const activeTournaments = await find({ status: "active" }, "tournaments");
+
+        // 1. End expired tournaments
         const expired = activeTournaments.filter(
           (t) => tournamentWindowStatus(t.startDate, t.endDate) === "ended",
         );
-
-        if (expired.length === 0) {
-          return;
-        }
 
         for (const tournament of expired) {
           try {
@@ -77,10 +78,35 @@ export const initScheduledJobs = (client) => {
             );
           }
         }
+
+        // 2. Announce tournaments starting today
+        const startingToday = activeTournaments.filter(
+          (t) => t.startDate === today,
+        );
+
+        for (const tournament of startingToday) {
+          try {
+            const guild = await client.guilds.fetch(GUILD_ID);
+            const channel = await guild.channels.fetch(tournament.channelId);
+
+            if (channel && channel.isTextBased()) {
+              const embed = buildTournamentEmbed(tournament, {
+                title: `🏆 Tournament Starting Today: ${tournament.name}`,
+              });
+              await channel.send({ embeds: [embed] });
+              logger.info(`Announced tournament "${tournament.name}"`);
+            }
+          } catch (error) {
+            logger.error(
+              { err: error },
+              `Failed to announce tournament "${tournament.name}":`,
+            );
+          }
+        }
       } catch (error) {
         logger.error(
           { err: error },
-          "Error during scheduled tournament auto-end:",
+          "Error during daily tournament maintenance:",
         );
       }
     },

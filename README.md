@@ -34,6 +34,15 @@ Discord bot for the Virtual Pinball Chat league - manages weekly competitions, h
    npm start
    ```
 
+## Automated Tasks
+
+The bot performs several maintenance tasks automatically based on a schedule:
+
+- **Weekly Raffle & Competition Rollover:** Every Monday at 12:00 AM PT, the bot runs the weekly raffle, selects winners, and prepares the next competition week.
+- **Tournament Maintenance:** Every day at 12:05 AM PT, the bot:
+  - Ends any active tournaments that have reached their end date.
+  - Announces any new tournaments that are starting that day by posting the tournament details card.
+
 ## Commands
 
 ### User Commands
@@ -184,12 +193,12 @@ Remove a score by rank from the current competition.
 
 #### Tournament Management
 
-##### `/start-tournament`
+##### `/create-tournament`
 
-Start a new tournament in the current channel.
+Create a new tournament in the current channel.
 
 ```bash
-/start-tournament name:"Spring Classic" vpsids:"vps1,vps2" startdate:2024-04-01 enddate:2024-04-15
+/create-tournament name:"Spring Classic" vpsids:"vps1,vps2" startdate:2024-04-01 enddate:2024-04-15
 ```
 
 ##### `/edit-tournament`
