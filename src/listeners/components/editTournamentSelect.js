@@ -39,7 +39,7 @@ export default class EditTournamentSelectListener extends Listener {
       }
 
       return interaction.editReply({
-        content: `✅ Tournament **${tournament.name}** selected and tables synchronized. Now you can proceed with editing.`,
+        content: `✅ Tournament **${tournament.name}** tables synchronized.`,
         components: [],
         flags: 64,
       });

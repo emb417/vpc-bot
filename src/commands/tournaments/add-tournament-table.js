@@ -57,7 +57,7 @@ export class AddTournamentTableCommand extends Command {
       ...options,
       name: "add-tournament-table",
       description: "Add a table to an active tournament.",
-      preconditions: ["TournamentChannel", "CompetitionAdminRole"],
+      preconditions: ["ActiveTournamentChannel", "CompetitionAdminRole"],
     });
   }
 

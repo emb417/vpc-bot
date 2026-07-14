@@ -210,12 +210,24 @@ Create a new tournament in the current channel.
 
 ##### `/edit-tournament`
 
-Edit a tournament's ROM info, dates, or notes. After running the command, you will be prompted to select the target tournament from a list of active tournaments in the channel.
+Edit a tournament's ROM info, dates, or notes. You can explicitly select a tournament via the `tournament` option, or leave it blank to select one from a list of active tournaments in the channel. Running this command also synchronizes the tournament's tables with the bot's table collection.
 
 ```bash
-/edit-tournament table:Medieval Madness romname:"v1.2" notes:"Updated rules"
-/edit-tournament startdate:2024-04-05 enddate:2024-04-20
+/edit-tournament tournament:"One Off" table:Medieval Madness romname:"v1.2" notes:"Updated rules"
+/edit-tournament tournament:"EMs" startdate:2024-04-05 enddate:2024-04-20
+/edit-tournament # Select from list and synchronize tables
 ```
+
+| Parameter | Description                                                                 |
+| --------- | ---------------------------------------------------------------------------- |
+| tournament | The target active tournament to edit (autocomplete supported)                |
+| table      | Table to edit ROM info for                                                    |
+| romname    | New ROM name/version                                                          |
+| romurl     | New ROM download URL                                                           |
+| mode       | New game mode                                                                 |
+| startdate  | New start date (YYYY-MM-DD)                                                   |
+| enddate    | New end date (YYYY-MM-DD)                                                     |
+| notes      | Optional notes                                                                 |
 
 ##### `/add-tournament-table`
 

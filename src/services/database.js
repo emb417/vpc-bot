@@ -136,14 +136,21 @@ export const findOverlappingTournament = async (
   channelName,
   startDate,
   endDate,
+  excludeId = null,
 ) => {
   const collection = await getCollection("tournaments");
-  return collection.findOne({
+  const filter = {
     channelName: channelName,
     status: "active",
     startDate: { $lte: endDate },
     endDate: { $gte: startDate },
-  });
+  };
+
+  if (excludeId) {
+    filter._id = { $ne: excludeId };
+  }
+
+  return collection.findOne(filter);
 };
 
 export const findCurrentlyActiveTournament = async (channelName) => {

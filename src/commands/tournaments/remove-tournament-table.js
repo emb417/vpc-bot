@@ -9,7 +9,7 @@ export class RemoveTournamentTableCommand extends Command {
       ...options,
       name: "remove-tournament-table",
       description: "Remove a table from an active tournament.",
-      preconditions: ["TournamentChannel", "CompetitionAdminRole"],
+      preconditions: ["ActiveTournamentChannel", "CompetitionAdminRole"],
     });
   }
 
