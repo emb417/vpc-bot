@@ -7,6 +7,7 @@ import {
   EmbedBuilder,
 } from "discord.js";
 import logger from "../../utils/logger.js";
+import { processImage } from "../../utils/image-processor.js";
 import { formatNumber } from "../../utils/formatting.js";
 import {
   isEntryQualified,
@@ -119,8 +120,12 @@ export class PostScoreCommand extends Command {
         throw new Error("Failed to process image. Please try again.");
       }
 
+      // Process image (standardize to PNG, optimize size, dynamic filename)
+      const { buffer: processedBuffer, filename: processedFilename } = await processImage(attachmentBuffer);
+
       // Get current week
       const currentWeek = await findCurrentWeek(channel.name);
+
       if (!currentWeek) {
         throw new Error("No active week found for this channel.");
       }
@@ -195,7 +200,7 @@ export class PostScoreCommand extends Command {
           value: `${result.currentRank} (${result.rankChange >= 0 ? "+" + result.rankChange : result.rankChange})`,
           inline: true,
         })
-        .setImage("attachment://score.png")
+        .setImage(`attachment://${processedFilename}`)
         .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 128 }))
         .setColor("Green");
 
@@ -227,7 +232,7 @@ export class PostScoreCommand extends Command {
       // Reply with score embed
       await interaction.channel.send({
         embeds: [embed],
-        files: [{ attachment: attachmentBuffer, name: "score.png" }],
+        files: [{ attachment: processedBuffer, name: processedFilename }],
         components: [row],
       });
 
@@ -239,8 +244,8 @@ export class PostScoreCommand extends Command {
       this.container.client.emit("crossPostHighScore", {
         user,
         score: validation.value,
-        attachmentBuffer,
-        attachmentName,
+        attachmentBuffer: processedBuffer,
+        attachmentName: processedFilename,
         currentWeek,
         channelId: process.env.HIGH_SCORES_CHANNEL_ID,
         postSubscript: `🔗 <#${channel.id}>`,

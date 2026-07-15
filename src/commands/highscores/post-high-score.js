@@ -15,6 +15,7 @@ import {
   findOneAndUpdate,
   generateObjectId,
 } from "../../services/database.js";
+import { processImage } from "../../utils/image-processor.js";
 import { findTable, findTablesByName } from "../../lib/data/tables.js";
 import {
   fetchHighScoresImage,
@@ -272,11 +273,15 @@ export const postHighScoreEmbed = async ({
       if (!response.ok)
         throw new Error(`Failed to fetch: ${response.statusText}`);
       const buffer = Buffer.from(await response.arrayBuffer());
-      embed.setImage("attachment://score.png");
+      
+      // Process image (standardize to PNG, optimize size, dynamic filename)
+      const { buffer: processedBuffer, filename: processedFilename } = await processImage(buffer);
+      
+      embed.setImage(`attachment://${processedFilename}`);
       await channel.send({
         embeds: [embed],
         components: [row],
-        files: [{ attachment: buffer, name: "score.png" }],
+        files: [{ attachment: processedBuffer, name: processedFilename }],
       });
     } catch (e) {
       logger.error(

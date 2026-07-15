@@ -22,6 +22,7 @@ import {
   updateOne,
   updateMany,
 } from "../../services/database.js";
+import { processImage } from "../../utils/image-processor.js";
 
 export class PostTournamentScoreCommand extends Command {
   constructor(context, options) {
@@ -164,6 +165,9 @@ export class PostTournamentScoreCommand extends Command {
         return;
       }
 
+      // Process image (standardize to PNG, optimize size, dynamic filename)
+      const { buffer: processedBuffer, filename: processedFilename } = await processImage(attachmentBuffer);
+
       const tournament = await findCurrentlyActiveTournament(channel.name);
       if (!tournament) {
         return message.reply({
@@ -263,7 +267,7 @@ export class PostTournamentScoreCommand extends Command {
             inline: true,
           },
         )
-        .setImage("attachment://score.png")
+        .setImage(`attachment://${processedFilename}`)
         .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 128 }))
         .setColor("Green");
 
@@ -280,7 +284,7 @@ export class PostTournamentScoreCommand extends Command {
 
       await channel.send({
         embeds: [embed],
-        files: [{ attachment: attachmentBuffer, name: "score.png" }],
+        files: [{ attachment: processedBuffer, name: processedFilename }],
         components: [row],
       });
 
@@ -290,10 +294,11 @@ export class PostTournamentScoreCommand extends Command {
       this.container.client.emit("crossPostHighScore", {
         user,
         score: validation.value,
-        attachmentBuffer,
+        attachmentBuffer: processedBuffer,
         currentWeek: tableEntry,
         channelId: process.env.HIGH_SCORES_CHANNEL_ID,
         postSubscript: `🔗 <#${channel.id}>`,
+        attachmentName: processedFilename,
       });
 
       await message.delete().catch(() => {});
