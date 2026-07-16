@@ -53,7 +53,15 @@ export const showTournamentRules = async (interaction) => {
         value:
           "• Post a pic/screenshot of your score (including backglass and full table) for entry.\n" +
           "• Scores must be posted during the Match Sequence or Credit Award. High score roster photos (Grand Champion, etc.) are **not allowed** as we cannot verify when they were taken.\n" +
+          "• To post a score you **MUST** use `/post-tournament-score`.\n" +
           "• Rollovers require proof (photo or video) prior to the rollover.",
+      },
+      {
+        name: "🤖 How to Use Score Bot",
+        value:
+          "Post a score: `/post-tournament-score`\n" +
+          "View the current tournament: `/show-tournament`\n" +
+          "View the tournament rules: `/show-tournament-rules`",
       },
     )
     .setColor("Blue");
