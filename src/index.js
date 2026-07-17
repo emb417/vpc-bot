@@ -24,7 +24,6 @@ const client = new SapphireClient({
   ],
   partials: [Partials.Channel, Partials.Message, Partials.Reaction],
   loadMessageCommandListeners: true,
-  defaultPrefix: "!",
   baseUserDirectory: import.meta.dirname,
   logger: { instance: new SapphirePinoLogger(LogLevel.Info) },
 });
