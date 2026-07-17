@@ -4,6 +4,7 @@ import logger from "../../utils/logger.js";
 import { getVpsGameById } from "../../lib/data/vps.js";
 import { findCurrentlyActiveTournament, find, findOne, updateOne } from "../../services/database.js";
 import { ObjectId } from "mongodb";
+import { findTable, resolveTableMetadata } from "../../lib/data/tables.js";
 
 const resolveTournamentTable = async (vpsid, tableIndex) => {
   const vpsGame = await getVpsGameById(vpsid);
@@ -13,42 +14,7 @@ const resolveTournamentTable = async (vpsid, tableIndex) => {
     throw new Error(`No VPS Tables were found for ID: ${vpsid}`);
   }
 
-  const table = `${vpsGame?.name} (${vpsGame?.manufacturer} ${vpsGame?.year})`;
-  const authorName = tableFile?.authors?.join(", ") ?? "";
-  const versionNumber = tableFile?.version ?? "";
-  const tableUrl = tableFile?.urls?.[0]?.url ?? "";
-
-  let romUrl = "N/A";
-  let romName = "N/A";
-  let b2sUrl = "N/A";
-  let b2sName = "N/A";
-
-  const b2sFile = vpsGame?.b2sFiles?.[0];
-  if (b2sFile?.urls?.[0]?.url) {
-    b2sUrl = b2sFile.urls[0].url;
-    b2sName = b2sFile.version ?? "N/A";
-  }
-
-  const romFile = vpsGame?.romFiles?.[0];
-  if (romFile?.urls?.[0]?.url) {
-    romUrl = romFile.urls[0].url;
-    romName = romFile.version ?? "N/A";
-  }
-
-  return {
-    tableIndex,
-    vpsId: vpsid,
-    table,
-    authorName,
-    versionNumber,
-    tableUrl,
-    romUrl,
-    romName,
-    b2sUrl,
-    b2sName,
-    mode: "default",
-    scores: [],
-  };
+  return resolveTableMetadata(vpsGame, tableFile, tableIndex);
 };
 
 export class AddTournamentTableCommand extends Command {

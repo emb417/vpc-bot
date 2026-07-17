@@ -6,6 +6,45 @@ import {
 } from "../../services/database.js";
 import logger from "../../utils/logger.js";
 
+export const resolveTableMetadata = (vpsGame, tableFile, tableIndex = 0) => {
+  const table = `${vpsGame?.name} (${vpsGame?.manufacturer} ${vpsGame?.year})`;
+  const authorName = tableFile?.authors?.join(", ") ?? "";
+  const versionNumber = tableFile?.version ?? "";
+  const tableUrl = tableFile?.urls?.[0]?.url ?? "";
+
+  let romUrl = "N/A";
+  let romName = "N/A";
+  let b2sUrl = "N/A";
+  let b2sName = "N/A";
+
+  const b2sFile = vpsGame?.b2sFiles?.[0];
+  if (b2sFile?.urls?.[0]?.url) {
+    b2sUrl = b2sFile.urls[0].url;
+    b2sName = b2sFile.version ?? "N/A";
+  }
+
+  const romFile = vpsGame?.romFiles?.[0];
+  if (romFile?.urls?.[0]?.url) {
+    romUrl = romFile.urls[0].url;
+    romName = romFile.version ?? "N/A";
+  }
+
+  return {
+    tableIndex,
+    vpsId: tableFile.id,
+    table,
+    authorName,
+    versionNumber,
+    tableUrl,
+    romUrl,
+    romName,
+    b2sUrl,
+    b2sName,
+    mode: "default",
+    scores: [],
+  };
+};
+
 const buildTableRecord = (vpsGame, tableFile, vpsId) => ({
   _id: generateObjectId(),
   tableName: `${vpsGame.name} (${vpsGame.manufacturer} ${vpsGame.year})`,

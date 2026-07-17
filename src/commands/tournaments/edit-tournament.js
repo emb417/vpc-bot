@@ -179,12 +179,34 @@ export class EditTournamentCommand extends Command {
         }
 
         // Synchronize all tables for this tournament
-        for (const table of tournament.tables ?? []) {
-          await findTable({ vpsId: table.vpsId });
-        }
-
         const updates = {};
         const changeLog = [];
+
+        for (const table of tournament.tables ?? []) {
+          const { table: syncedTable, error } = await findTable({ vpsId: table.vpsId });
+          
+          if (!error && syncedTable) {
+            const currentVersion = table.versionNumber;
+            const newVersion = syncedTable.metadata.versionNumber;
+            
+            if (newVersion !== currentVersion) {
+              logger.info(`Version mismatch for ${table.table}: ${currentVersion} -> ${newVersion}. Resetting scores.`);
+              
+              // Update table metadata
+              table.versionNumber = newVersion;
+              table.authorName = syncedTable.metadata.authorName;
+              table.tableUrl = syncedTable.url;
+              table.romName = syncedTable.romName || table.romName; // Keep existing if not found
+              table.romUrl = syncedTable.romUrl || table.romUrl;
+              
+              // Reset scores
+              table.scores = [];
+              
+              changeLog.push(`Table ${table.table}: Updated to v${newVersion} and scores reset.`);
+              updates.tables = tournament.tables;
+            }
+          }
+        }
 
         const startdate = interaction.options.getString("startdate");
         const enddate = interaction.options.getString("enddate");
