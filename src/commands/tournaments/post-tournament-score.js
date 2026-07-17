@@ -214,7 +214,7 @@ export class PostTournamentScoreCommand extends Command {
 
       // Persist the updated scores for this table only
       await updateOne(
-        { channelName: channel.name, status: "active" },
+        { _id: tournament._id },
         { $set: { "tables.$[t].scores": result.scores } },
         { arrayFilters: [{ "t.tableIndex": tableEntry.tableIndex }] },
         "tournaments",
