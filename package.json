@@ -1,6 +1,6 @@
 {
   "name": "vpc-bot",
-  "version": "3.7.3",
+  "version": "3.7.4",
   "type": "module",
   "description": "Allows posting of scores to Discord",
   "main": "src/index.js",
