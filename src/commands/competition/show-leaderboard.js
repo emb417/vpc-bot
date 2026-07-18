@@ -30,30 +30,30 @@ const showLeaderboard = async (currentWeek, interaction) => {
   }
 
   const contentType = response.headers.get("content-type");
-  const paginatedMessage = new PaginatedMessage({
-    actions: [
-      {
-        customId: "@sapphire/paginated-messages.previousPage",
-        style: ButtonStyle.Secondary,
-        emoji: "◀️",
-        label: "Previous Page",
-        type: ComponentType.Button,
-        run: ({ handler }) => {
-          if (handler.index > 0) handler.index--;
-        },
+  const paginatedMessage = new PaginatedMessage();
+
+  paginatedMessage.setActions([
+    {
+      customId: "@sapphire/paginated-messages.previousPage",
+      style: ButtonStyle.Secondary,
+      emoji: "◀️",
+      label: "Previous Page",
+      type: ComponentType.Button,
+      run: ({ handler }) => {
+        if (handler.index > 0) handler.index--;
       },
-      {
-        customId: "@sapphire/paginated-messages.nextPage",
-        style: ButtonStyle.Secondary,
-        emoji: "▶️",
-        label: "Next Page",
-        type: ComponentType.Button,
-        run: ({ handler }) => {
-          if (handler.index < handler.pages.length - 1) handler.index++;
-        },
+    },
+    {
+      customId: "@sapphire/paginated-messages.nextPage",
+      style: ButtonStyle.Secondary,
+      emoji: "▶️",
+      label: "Next Page",
+      type: ComponentType.Button,
+      run: ({ handler }) => {
+        if (handler.index < handler.pages.length - 1) handler.index++;
       },
-    ],
-  });
+    },
+  ]);
 
   if (contentType?.includes("application/json")) {
     const { images } = await response.json();
