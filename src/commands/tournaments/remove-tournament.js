@@ -3,6 +3,7 @@ import { Command } from "@sapphire/framework";
 import { ActionRowBuilder, StringSelectMenuBuilder } from "discord.js";
 import logger from "../../utils/logger.js";
 import { find } from "../../services/database.js";
+import { getTodayPacific } from "../../utils/formatting.js";
 
 export class RemoveTournamentCommand extends Command {
   constructor(context, options) {
@@ -10,7 +11,7 @@ export class RemoveTournamentCommand extends Command {
       ...options,
       name: "remove-tournament",
       description:
-        "Remove a scheduled tournament that is not currently ongoing.",
+        "Remove a scheduled tournament that has not yet started.",
       preconditions: ["TournamentChannel", "CompetitionAdminRole"],
     });
   }
@@ -52,16 +53,16 @@ export class RemoveTournamentCommand extends Command {
         });
       }
 
-      const today = new Date().toISOString().split("T")[0];
+      const today = getTodayPacific();
 
       const removableTournaments = tournaments.filter(
-        (t) => today < t.startDate || today > t.endDate,
+        (t) => today < t.startDate,
       );
 
       if (removableTournaments.length === 0) {
         return interaction.reply({
           content:
-            "No removable tournaments found. All active tournaments are currently ongoing.",
+            "No future tournaments found.",
           flags: 64,
         });
       }

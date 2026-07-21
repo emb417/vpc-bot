@@ -34,6 +34,24 @@ export const formatDate = (date = new Date()) => {
 };
 
 /**
+ * Format a date as YYYY-MM-DD in America/Los_Angeles timezone.
+ */
+export const getTodayPacific = () => {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Los_Angeles',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(new Date());
+  
+  const y = parts.find(p => p.type === 'year').value;
+  const m = parts.find(p => p.type === 'month').value;
+  const d = parts.find(p => p.type === 'day').value;
+  
+  return `${y}-${m}-${d}`;
+};
+
+/**
  * Format a date as YYYY-MM-DD.
  */
 export const formatDateISO = (date = new Date()) => {
@@ -74,7 +92,7 @@ export const formatLongDate = (dateStr) => {
  * Returns "pending" (before start), "ended" (after end), or "open".
  */
 export const tournamentWindowStatus = (startDate, endDate) => {
-  const today = formatDateISO(new Date());
+  const today = getTodayPacific();
   if (startDate && today < startDate) return "pending";
   if (endDate && today > endDate) return "ended";
   return "open";
@@ -115,6 +133,7 @@ export default {
   formatDateTime,
   formatDate,
   formatDateISO,
+  getTodayPacific,
   parseDate,
   formatLongDate,
   tournamentWindowStatus,

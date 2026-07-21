@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { Precondition } from "@sapphire/framework";
-import { findCurrentlyActiveTournament } from "../services/database.js";
+import { findActiveTournament } from "../services/database.js";
 
 const COMPETITION_CHANNEL_ID = process.env.COMPETITION_CHANNEL_ID;
 
@@ -19,7 +19,7 @@ export class CompetitionOrTournamentChannelPrecondition extends Precondition {
     }
 
     if (channelName) {
-      const tournament = await findCurrentlyActiveTournament(channelName);
+      const tournament = await findActiveTournament(channelName);
       if (tournament) {
         return this.ok();
       }

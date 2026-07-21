@@ -1,7 +1,7 @@
 import cron from "node-cron";
 import logger from "../utils/logger.js";
 import { runRaffleAndCreateNextWeek } from "../lib/raffle/raffleWinner.js";
-import { tournamentWindowStatus } from "../utils/formatting.js";
+import { getTodayPacific, tournamentWindowStatus } from "../utils/formatting.js";
 import { find } from "../services/database.js";
 import { endTournament } from "../lib/tournaments/endTournament.js";
 import { buildTournamentEmbed } from "../lib/tournaments/embed.js";
@@ -54,7 +54,7 @@ export const initScheduledJobs = (client) => {
     async () => {
       logger.info("Running daily tournament maintenance...");
       try {
-        const today = new Date().toISOString().split("T")[0];
+        const today = getTodayPacific();
         const activeTournaments = await find({ status: "active" }, "tournaments");
 
         // 1. End expired tournaments

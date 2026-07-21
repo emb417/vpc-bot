@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { MongoClient, ObjectId } from "mongodb";
+import { getTodayPacific } from "../utils/formatting.js";
 
 const DB_NAME = process.env.DB_NAME;
 const DB_USER = process.env.DB_USER;
@@ -154,7 +155,7 @@ export const findOverlappingTournament = async (
 };
 
 export const findCurrentlyActiveTournament = async (channelName) => {
-  const today = new Date().toISOString().split("T")[0];
+  const today = getTodayPacific();
   const collection = await getCollection("tournaments");
   return collection.findOne({
     channelName: channelName,
