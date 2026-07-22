@@ -4,7 +4,7 @@ import { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } from "discord
 import { ObjectId } from "mongodb";
 import logger from "../../utils/logger.js";
 import { findTable } from "../../lib/data/tables.js";
-import { find, findOne, findCurrentlyActiveTournament, updateOne } from "../../services/database.js";
+import { find, findOne, findCurrentlyActiveTournament, findOverlappingTournament, updateOne } from "../../services/database.js";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
