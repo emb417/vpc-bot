@@ -1,10 +1,9 @@
 import "dotenv/config";
-import { formatDateISO } from "../../utils/formatting.js";
 import { calculateSeasonPoints } from "../scores/points.js";
 import { updateOne } from "../../services/database.js";
 
 /**
- * Finalize a tournament: mark it ended, record the actual end date, compute the
+ * Finalize a tournament: mark it ended, compute the
  * final standings/winner, and emit `postTournamentResults` so the winner is
  * announced in the tournament channel and the bragging-rights channel.
  *
@@ -12,13 +11,12 @@ import { updateOne } from "../../services/database.js";
  *
  * @param {Client} client - Discord client (used to emit the announcement event)
  * @param {Object} tournament - the active tournament document
- * @returns {{ endedAt: string, winner: Object|null, topFinishers: Array }}
+ * @returns {{ winner: Object|null, topFinishers: Array }}
  */
 export const endTournament = async (client, tournament) => {
-  const endedAt = formatDateISO();
   await updateOne(
-    { channelName: tournament.channelName, status: "active" },
-    { $set: { status: "ended", endedAt } },
+    { _id: tournament._id },
+    { $set: { status: "ended" } },
     null,
     "tournaments",
   );
@@ -54,7 +52,6 @@ export const endTournament = async (client, tournament) => {
     client.emit("postTournamentResults", {
       client,
       tournament,
-      endedDate: endedAt,
       winner,
       topFinishers,
       channelIds: [
@@ -64,7 +61,7 @@ export const endTournament = async (client, tournament) => {
     });
   }
 
-  return { endedAt, winner, topFinishers };
+  return { winner, topFinishers };
 };
 
 export default { endTournament };

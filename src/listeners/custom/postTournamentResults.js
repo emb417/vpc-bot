@@ -13,7 +13,7 @@ export class PostTournamentResultsListener extends Listener {
   }
 
   async run(data) {
-    const { client, tournament, endedDate, winner, topFinishers, channelIds } =
+    const { client, tournament, winner, topFinishers, channelIds } =
       data;
 
     // Skip if there's no winner to celebrate
@@ -25,7 +25,7 @@ export class PostTournamentResultsListener extends Listener {
       const user = await client.users.fetch(winner.userId);
 
       let description =
-        `**End Date:** ${endedDate ?? tournament.endDate}\n` +
+        `**End Date:** ${tournament.endDate}\n` +
         `**Champion:** ${user.username}\n` +
         `**Points:** ${winner.points}\n`;
 

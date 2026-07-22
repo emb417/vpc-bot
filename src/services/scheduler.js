@@ -1,7 +1,7 @@
 import cron from "node-cron";
 import logger from "../utils/logger.js";
 import { runRaffleAndCreateNextWeek } from "../lib/raffle/raffleWinner.js";
-import { getTodayPacific, tournamentWindowStatus } from "../utils/formatting.js";
+import { getTodayPacific } from "../utils/formatting.js";
 import { find } from "../services/database.js";
 import { endTournament } from "../lib/tournaments/endTournament.js";
 import { buildTournamentEmbed } from "../lib/tournaments/embed.js";
@@ -55,22 +55,26 @@ export const initScheduledJobs = (client) => {
       logger.info("Running daily tournament maintenance...");
       try {
         const today = getTodayPacific();
-        const activeTournaments = await find({ status: "active" }, "tournaments");
 
-        // 1. End expired tournaments
-        const expired = activeTournaments.filter(
-          (t) => tournamentWindowStatus(t.startDate, t.endDate) === "ended",
+        // 1. End expired tournaments: fetch only those where endDate < today
+        const expired = await find(
+          { status: "active", endDate: { $lt: today } },
+          "tournaments",
         );
 
         for (const tournament of expired) {
           try {
             const { winner } = await endTournament(client, tournament);
-            logger.info(
-              `Auto-ended tournament "${tournament.name}" (#${tournament.channelName})` +
-                (winner
-                  ? ` — winner: ${winner.username} (${winner.points} pts)`
-                  : " (no scores)"),
-            );
+            if (winner) {
+              logger.info(
+                `Auto-ended tournament "${tournament.name}" (#${tournament.channelName})` +
+                  ` — winner: ${winner.username} (${winner.points} pts)`,
+              );
+            } else {
+              logger.info(
+                `Auto-ended tournament "${tournament.name}" (#${tournament.channelName}) (no scores)`,
+              );
+            }
           } catch (error) {
             logger.error(
               { err: error },
@@ -80,8 +84,9 @@ export const initScheduledJobs = (client) => {
         }
 
         // 2. Announce tournaments starting today
-        const startingToday = activeTournaments.filter(
-          (t) => t.startDate === today,
+        const startingToday = await find(
+          { status: "active", startDate: today },
+          "tournaments",
         );
 
         for (const tournament of startingToday) {
