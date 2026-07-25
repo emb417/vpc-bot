@@ -100,12 +100,12 @@ Show the current playoff bracket and standings.
 /show-playoffs
 ```
 
-#### `/show-tournament`
+#### `/show-active-tournaments`
 
 Show the active tournament for the current channel and its associated tables.
 
 ```bash
-/show-tournament
+/show-active-tournaments
 ```
 
 #### `/post-tournament-score`
@@ -218,16 +218,16 @@ Edit a tournament's ROM info, dates, or notes. You can explicitly select a tourn
 /edit-tournament # Select from list and synchronize tables
 ```
 
-| Parameter | Description                                                                 |
-| --------- | ---------------------------------------------------------------------------- |
-| tournament | The target active tournament to edit (autocomplete supported)                |
-| table      | Table to edit ROM info for                                                    |
-| romname    | New ROM name/version                                                          |
-| romurl     | New ROM download URL                                                           |
-| mode       | New game mode                                                                 |
-| startdate  | New start date (YYYY-MM-DD)                                                   |
-| enddate    | New end date (YYYY-MM-DD)                                                     |
-| notes      | Optional notes                                                                 |
+| Parameter  | Description                                                   |
+| ---------- | ------------------------------------------------------------- |
+| tournament | The target active tournament to edit (autocomplete supported) |
+| table      | Table to edit ROM info for                                    |
+| romname    | New ROM name/version                                          |
+| romurl     | New ROM download URL                                          |
+| mode       | New game mode                                                 |
+| startdate  | New start date (YYYY-MM-DD)                                   |
+| enddate    | New end date (YYYY-MM-DD)                                     |
+| notes      | Optional notes                                                |
 
 ##### `/add-tournament-table`
 

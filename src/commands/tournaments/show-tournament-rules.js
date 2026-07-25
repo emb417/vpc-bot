@@ -60,7 +60,8 @@ export const showTournamentRules = async (interaction) => {
         name: "🤖 How to Use Score Bot",
         value:
           "Post a score: `/post-tournament-score`\n" +
-          "View the current tournament: `/show-tournament`\n" +
+          "View the current tournaments: `/show-active-tournaments`\n" +
+          "View the upcoming tournaments: `/show-upcoming-tournaments`\n" +
           "View the tournament rules: `/show-tournament-rules`",
       },
     )
@@ -93,5 +94,4 @@ export const showTournamentRules = async (interaction) => {
     embeds: [rulesEmbed, pointsEmbed],
     flags: 64,
   });
-  }
-;
+};
