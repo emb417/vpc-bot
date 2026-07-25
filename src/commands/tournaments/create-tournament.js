@@ -4,7 +4,7 @@ import { EmbedBuilder } from "discord.js";
 import logger from "../../utils/logger.js";
 import { formatDateTime } from "../../utils/formatting.js";
 import { getVpsGameById } from "../../lib/data/vps.js";
-import { buildTournamentEmbed } from "../../lib/tournaments/embed.js";
+import { buildTournamentListEmbed } from "../../lib/tournaments/embed.js";
 import { findTable, resolveTableMetadata } from "../../lib/data/tables.js";
 import {
   findOverlappingTournament,
@@ -141,9 +141,10 @@ export class CreateTournamentCommand extends Command {
 
       await insertOne(tournament, "tournaments");
 
-      const embed = buildTournamentEmbed(tournament, {
-        title: `🏆 New Tournament: ${name}`,
-      });
+      const embed = buildTournamentListEmbed(
+        [tournament],
+        `🏆 Tournament Scheduled`,
+      );
 
       return interaction.editReply({ embeds: [embed] });
     } catch (e) {

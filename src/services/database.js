@@ -133,6 +133,22 @@ export const findActiveTournament = async (channelName) => {
   });
 };
 
+/**
+ * Find all tournaments that are currently active.
+ */
+export const findActiveTournaments = async () => {
+  const today = getTodayPacific();
+  const collection = await getCollection("tournaments");
+  return collection
+    .find({
+      status: "active",
+      startDate: { $lte: today },
+      endDate: { $gte: today },
+    })
+    .sort({ startDate: 1 })
+    .toArray();
+};
+
 export const findOverlappingTournament = async (
   channelName,
   startDate,
@@ -242,6 +258,7 @@ export default {
   findCurrentWeek,
   findCurrentSeason,
   findActiveTournament,
+  findActiveTournaments,
   findCurrentPlayoff,
   findCurrentPlayoffRound,
   findOverlappingTournament,

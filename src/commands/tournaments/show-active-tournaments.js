@@ -1,17 +1,15 @@
-import "dotenv/config";
 import { Command } from "@sapphire/framework";
 import { EmbedBuilder } from "discord.js";
 import logger from "../../utils/logger.js";
-import { buildTournamentEmbed } from "../../lib/tournaments/embed.js";
-import { findCurrentlyActiveTournament } from "../../services/database.js";
+import { buildTournamentListEmbed } from "../../lib/tournaments/embed.js";
+import { findActiveTournaments } from "../../services/database.js";
 
-export class ShowTournamentCommand extends Command {
+export class ShowActiveCommand extends Command {
   constructor(context, options) {
     super(context, {
       ...options,
-      name: "show-tournament",
-      description:
-        "Show the active tournament for this channel and its tables.",
+      name: "show-active-tournaments",
+      description: "Show a list of all live tournaments.",
     });
   }
 
@@ -27,29 +25,24 @@ export class ShowTournamentCommand extends Command {
     await interaction.deferReply({ flags: 64 });
 
     try {
-      const tournament = await findCurrentlyActiveTournament(
-        interaction.channel.name,
-      );
+      // List all live tournaments
+      const allLive = await findActiveTournaments();
 
-      if (!tournament) {
+      if (!allLive || allLive.length === 0) {
         return interaction.editReply({
           embeds: [
             new EmbedBuilder()
-              .setColor("Red")
-              .setDescription(
-                "❌ No active tournament found for this channel.",
-              ),
+              .setColor("Blue")
+              .setDescription("ℹ️ No active tournaments found."),
           ],
         });
       }
 
-      const embed = buildTournamentEmbed(tournament, {
-        title: `🏆 ${tournament.name}`,
-      });
+      const embed = buildTournamentListEmbed(allLive, "🏆 Active Tournaments");
 
       return interaction.editReply({ embeds: [embed] });
     } catch (e) {
-      logger.error({ err: e }, "Failed to show tournament:");
+      logger.error({ err: e }, "Failed to show tournaments:");
       return interaction.editReply({
         embeds: [
           new EmbedBuilder().setColor("Red").setDescription(`❌ ${e.message}`),

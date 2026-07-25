@@ -4,7 +4,7 @@ import { runRaffleAndCreateNextWeek } from "../lib/raffle/raffleWinner.js";
 import { getTodayPacific } from "../utils/formatting.js";
 import { find } from "../services/database.js";
 import { endTournament } from "../lib/tournaments/endTournament.js";
-import { buildTournamentEmbed } from "../lib/tournaments/embed.js";
+import { buildTournamentListEmbed } from "../lib/tournaments/embed.js";
 
 const COMPETITION_CHANNEL_ID = process.env.COMPETITION_CHANNEL_ID;
 const GUILD_ID = process.env.GUILD_ID;
@@ -95,9 +95,10 @@ export const initScheduledJobs = (client) => {
             const channel = await guild.channels.fetch(tournament.channelId);
 
             if (channel && channel.isTextBased()) {
-              const embed = buildTournamentEmbed(tournament, {
-                title: `🏆 Tournament Starting Today: ${tournament.name}`,
-              });
+              const embed = buildTournamentListEmbed(
+                [tournament],
+                `🏆 Tournament Starting`,
+              );
               await channel.send({ embeds: [embed] });
               logger.info(`Announced tournament "${tournament.name}"`);
             }
