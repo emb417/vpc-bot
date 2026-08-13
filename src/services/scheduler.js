@@ -9,6 +9,50 @@ import { buildTournamentListEmbed } from "../lib/tournaments/embed.js";
 const COMPETITION_CHANNEL_ID = process.env.COMPETITION_CHANNEL_ID;
 const GUILD_ID = process.env.GUILD_ID;
 
+async function pinNewTournament(channel, newTournamentMessage, client) {
+  const pinsResult = await channel.messages.fetchPins().catch((err) => {
+    logger.error({ err }, "Failed to fetch pins:");
+    return null;
+  });
+
+  if (!pinsResult) return false;
+
+  const pins = pinsResult.items; // Collection of { pinnedAt, message }
+
+  const oldPin = pins.find((item) => {
+    const m = item.message;
+    return (
+      m &&
+      m.author.id === client.user.id &&
+      m.embeds.length > 0 &&
+      m.embeds[0].title === "🏆 Tournament Starting"
+    );
+  });
+
+  if (oldPin) {
+    await oldPin.message.unpin().catch((err) => {
+      logger.error({ err }, "Failed to unpin old tournament message:");
+    });
+  }
+
+  const pinResult = await newTournamentMessage.pin().then(
+    () => true,
+    (err) => {
+      logger.error(
+        { err, channelId: channel.id },
+        'Failed to pin new tournament message. Check for a channel-specific permission overwrite denying "Pin Messages".',
+      );
+      return false;
+    },
+  );
+
+  const recentMessages = await channel.messages.fetch({ limit: 5 });
+  const systemPin = recentMessages.find((m) => m.type === 6);
+  if (systemPin) await systemPin.delete().catch(() => {});
+
+  return pinResult;
+}
+
 /**
  * Initializes and starts all scheduled tasks.
  * @param {Client} client - The Discord client.
@@ -99,8 +143,17 @@ export const initScheduledJobs = (client) => {
                 [tournament],
                 `🏆 Tournament Starting`,
               );
-              await channel.send({ embeds: [embed] });
-              logger.info(`Announced tournament "${tournament.name}"`);
+              const message = await channel.send({ embeds: [embed] });
+              const pinned = await pinNewTournament(channel, message, client);
+              if (pinned) {
+                logger.info(
+                  `Announced and pinned tournament "${tournament.name}"`,
+                );
+              } else {
+                logger.warn(
+                  `Announced tournament "${tournament.name}" but pin failed — check channel permission overwrite`,
+                );
+              }
             }
           } catch (error) {
             logger.error(
