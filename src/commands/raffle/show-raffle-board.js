@@ -56,9 +56,8 @@ export class ShowRaffleBoardCommand extends Command {
 
 export const showRaffleBoard = async (interaction) => {
   try {
-    if (interaction.isButton()) {
-      await interaction.deferReply({ flags: 64 });
-    }
+    await interaction.deferReply({ flags: 64 });
+
     const allWeeks = await find(
       { channelName: process.env.COMPETITION_CHANNEL_NAME },
       "weeks",
@@ -67,9 +66,8 @@ export const showRaffleBoard = async (interaction) => {
 
     if (!currentWeek) {
       const msg = "No active competition week found.";
-      return interaction.replied || interaction.deferred
-        ? interaction.followUp({ content: msg, flags: 64 })
-        : interaction.reply({ content: msg, flags: 64 });
+      await interaction.editReply({ content: msg });
+      return;
     }
 
     const weekId = currentWeek._id.toString();
@@ -77,9 +75,8 @@ export const showRaffleBoard = async (interaction) => {
 
     if (!entries || entries.length === 0) {
       const msg = "No raffle entries yet this week. Use `/enter-raffle`.";
-      return interaction.replied || interaction.deferred
-        ? interaction.followUp({ content: msg, flags: 64 })
-        : interaction.reply({ content: msg, flags: 64 });
+      await interaction.editReply({ content: msg });
+      return;
     }
 
     const approvedTables = await loadApprovedTables();
@@ -99,6 +96,7 @@ export const showRaffleBoard = async (interaction) => {
     }, {});
 
     const topTables = Object.values(tableStats)
+      .filter((t) => t.probability > 0)
       .sort((a, b) => b.probability - a.probability)
       .slice(0, 3)
       .map(
@@ -135,25 +133,17 @@ export const showRaffleBoard = async (interaction) => {
         text: "Post a score to win a ticket,\nthen use /enter-raffle.",
       });
 
-    const responseOptions = {
+    await interaction.editReply({
       embeds: [embed],
       components: [selectRaffleEntryButton],
-    };
-
-    if (interaction.isButton()) {
-      await interaction.editReply(responseOptions);
-    } else if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({ ...responseOptions, flags: 64 });
-    } else {
-      await interaction.reply({ ...responseOptions, flags: 64 });
-    }
+    });
   } catch (e) {
     logger.error({ err: e }, "Failed to show raffle board:");
     const msg = "An error occurred while fetching the raffle board.";
-    if (!interaction.replied && !interaction.deferred) {
-      await interaction.reply({ content: msg, flags: 64 });
+    if (interaction.deferred || interaction.replied) {
+      await interaction.editReply({ content: msg });
     } else {
-      await interaction.followUp({ content: msg, flags: 64 });
+      await interaction.reply({ content: msg, flags: 64 });
     }
   }
 };

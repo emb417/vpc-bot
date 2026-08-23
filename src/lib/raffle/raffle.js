@@ -172,12 +172,32 @@ export const calculateRaffleDataWithStatus = (
     .reduce((sum, user) => sum + user.tickets, 0);
 
   return userEntries
-    .map((user) => ({
-      ...user,
-      probability: totalTickets > 0 ? (user.tickets / totalTickets) * 100 : 0,
-      tableStatus: getTableStatus(user.table.vpsId),
-    }))
+    .map((user) => {
+      const tableStatus = getTableStatus(user.table.vpsId);
+      // Ensure only qualified tables contribute to probability,
+      // and unqualified ones have 0% probability.
+      const probability =
+        tableStatus.qualified && totalTickets > 0
+          ? (user.tickets / totalTickets) * 100
+          : 0;
+
+      return {
+        ...user,
+        probability,
+        tableStatus,
+      };
+    })
     .sort((a, b) => {
+      // Sort primarily by qualification (qualified first)
+      if (
+        (getTableStatus(b.table.vpsId).qualified ? 1 : 0) !==
+        (getTableStatus(a.table.vpsId).qualified ? 1 : 0)
+      ) {
+        return (
+          (getTableStatus(b.table.vpsId).qualified ? 1 : 0) -
+          (getTableStatus(a.table.vpsId).qualified ? 1 : 0)
+        );
+      }
       if (b.tickets !== a.tickets) return b.tickets - a.tickets;
       return b.score - a.score;
     });
