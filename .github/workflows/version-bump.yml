@@ -37,3 +37,15 @@ jobs:
           git config user.email "vault-agent@users.noreply.github.com"
           npm version ${{ steps.level.outputs.level }} -m "v%s [skip ci]"
           git push origin main --follow-tags
+
+      - name: Read new version
+        id: newver
+        run: echo "version=$(jq -r .version package.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Notify Docker CI
+        run: |
+          curl -s -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ github.repository }}/dispatches \
+            -d "{\"event_type\":\"version-bumped\",\"client_payload\":{\"version\":\"${{ steps.newver.outputs.version }}\"}}"

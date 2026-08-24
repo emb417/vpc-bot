@@ -1,20 +1,16 @@
 name: Docker CI for main branch
-run-name: ${{ github.event.workflow_run.head_commit.message }}
+run-name: v${{ github.event.client_payload.version }}
 
 on:
-  workflow_run:
-    workflows: ["version-bump"]
-    types: [completed]
+  repository_dispatch:
+    types: [version-bumped]
 
 jobs:
   build-and-push-next-image:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Read version
         id: pkg
@@ -40,6 +36,6 @@ jobs:
           push: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/vpc-bot:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/vpc-bot:${{ github.event.workflow_run.head_sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/vpc-bot:${{ github.sha }}
             ${{ secrets.DOCKERHUB_USERNAME }}/vpc-bot:${{ steps.pkg.outputs.version }}
           platforms: linux/amd64,linux/arm64
