@@ -35,5 +35,5 @@ jobs:
         run: |
           git config user.name "vault-agent"
           git config user.email "vault-agent@users.noreply.github.com"
-          npm version ${{ steps.level.outputs.level }} -m "chore: bump version to %s [skip ci]"
+          npm version ${{ steps.level.outputs.level }} -m "v%s [skip ci]"
           git push origin main --follow-tags
