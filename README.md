@@ -453,3 +453,4 @@ The project follows a modular structure within the `src/` directory:
 - Slash commands use `/` prefix (e.g., `/show-leaderboard`)
 - Error messages auto-delete after 10 seconds
 - Screenshots are required when posting scores
+
