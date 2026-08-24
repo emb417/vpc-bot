@@ -1,0 +1,39 @@
+name: version-bump
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Determine bump level
+        id: level
+        run: |
+          LABELS='${{ toJson(github.event.pull_request.labels.*.name) }}'
+          if echo "$LABELS" | grep -qi '"major"'; then
+            echo "level=major" >> "$GITHUB_OUTPUT"
+          elif echo "$LABELS" | grep -qi '"minor"'; then
+            echo "level=minor" >> "$GITHUB_OUTPUT"
+          else
+            echo "level=patch" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Bump version, commit, tag
+        run: |
+          git config user.name "vault-agent"
+          git config user.email "vault-agent@users.noreply.github.com"
+          npm version ${{ steps.level.outputs.level }} -m "chore: bump version to %s [skip ci]"
+          git push origin main --follow-tags
