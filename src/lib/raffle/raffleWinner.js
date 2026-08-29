@@ -48,12 +48,32 @@ export const runRaffleAndCreateNextWeek = async (client, channel) => {
         replied: false,
         deferred: false,
         isButton: () => false,
+        deferReply: async () => {
+          mockInteraction.deferred = true;
+        },
         reply: async (options) => {
-          await channel.send(options.content || { embeds: options.embeds });
+          await channel.send({
+            content: options.content,
+            embeds: options.embeds,
+            components: options.components,
+          });
+          mockInteraction.replied = true;
           return { editReply: async () => {} };
         },
+        editReply: async (options) => {
+          await channel.send({
+            content: options.content,
+            embeds: options.embeds,
+            components: options.components,
+          });
+          mockInteraction.replied = true;
+        },
         followUp: async (options) => {
-          await channel.send(options.content || { embeds: options.embeds });
+          await channel.send({
+            content: options.content,
+            embeds: options.embeds,
+            components: options.components,
+          });
           return { editReply: async () => {} };
         },
       };
