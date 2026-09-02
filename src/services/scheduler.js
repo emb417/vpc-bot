@@ -114,7 +114,7 @@ export const initScheduledJobs = (client) => {
 
         const embed = buildTournamentListEmbed(
           activeTournaments,
-          "🏆 Currently Active Tournaments",
+          "🏆 Weekly Tournament",
         );
         await channel.send({ embeds: [embed] });
         logger.info(`Announced ${activeTournaments.length} active tournaments.`);
