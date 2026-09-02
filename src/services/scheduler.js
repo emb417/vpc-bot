@@ -2,7 +2,7 @@ import cron from "node-cron";
 import logger from "../utils/logger.js";
 import { runRaffleAndCreateNextWeek } from "../lib/raffle/raffleWinner.js";
 import { getTodayPacific } from "../utils/formatting.js";
-import { find } from "../services/database.js";
+import { find, findActiveTournaments } from "../services/database.js";
 import { endTournament } from "../lib/tournaments/endTournament.js";
 import { buildTournamentListEmbed } from "../lib/tournaments/embed.js";
 
@@ -81,6 +81,47 @@ export const initScheduledJobs = (client) => {
         logger.error(
           { err: error },
           "Error during scheduled raffle and week creation:",
+        );
+      }
+    },
+    {
+      scheduled: true,
+      timezone: "America/Los_Angeles",
+    },
+  );
+
+  // Announce active tournaments every Tuesday at 12:00 AM Pacific Time (PT)
+  cron.schedule(
+    "0 0 * * 2",
+    async () => {
+      logger.info("Running scheduled tournament announcement...");
+      try {
+        const activeTournaments = await findActiveTournaments();
+        if (!activeTournaments || activeTournaments.length === 0) {
+          logger.info("No active tournaments to announce.");
+          return;
+        }
+
+        const guild = await client.guilds.fetch(GUILD_ID);
+        const channel = await guild.channels.fetch(COMPETITION_CHANNEL_ID);
+
+        if (!channel || !channel.isTextBased()) {
+          logger.error(
+            "Competition channel not found or is not a text channel.",
+          );
+          return;
+        }
+
+        const embed = buildTournamentListEmbed(
+          activeTournaments,
+          "🏆 Currently Active Tournaments",
+        );
+        await channel.send({ embeds: [embed] });
+        logger.info(`Announced ${activeTournaments.length} active tournaments.`);
+      } catch (error) {
+        logger.error(
+          { err: error },
+          "Error during scheduled tournament announcement:",
         );
       }
     },
