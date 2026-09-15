@@ -6,6 +6,8 @@ import { formatDateISO, parseDate, addDays } from "../../utils/formatting.js";
 import {
   editWeeklyCompetitionCornerMessage,
   editSeasonCompetitionCornerMessage,
+  pinNewWeeklyCompetition,
+  generateWeeklyBoilerPlateText,
 } from "../../lib/output/messages.js";
 import { getVpsGameById } from "../../lib/data/vps.js";
 import { getCurrentWeek } from "../../lib/data/vpc.js";
@@ -273,12 +275,26 @@ export const createWeek = async (client, channel, vpsid, options = {}) => {
 
     // Update pinned messages for competition channel
     if (channel.name === process.env.COMPETITION_CHANNEL_NAME) {
-      await editWeeklyCompetitionCornerMessage(
+      const messageContent = generateWeeklyBoilerPlateText(
         newWeek.scores,
-        client,
-        newWeek,
         newWeek.teams,
+        newWeek.weekNumber,
+        newWeek.periodStart,
+        newWeek.periodEnd,
+        newWeek.vpsId,
+        newWeek.table,
+        newWeek.authorName,
+        newWeek.versionNumber,
+        newWeek.tableUrl,
+        newWeek.romUrl,
+        newWeek.romName,
+        newWeek.notes,
+        newWeek.currentSeasonWeekNumber,
+        newWeek.b2sUrl,
+        newWeek.mode,
       );
+      const newMessage = await channel.send(messageContent);
+      await pinNewWeeklyCompetition(channel, newMessage, client);
 
       if (currentSeason) {
         const weeksInSeason = await find(

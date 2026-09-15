@@ -97,13 +97,13 @@ export const editWeeklyCompetitionCornerMessage = async (
   client,
   week,
   teams,
+  targetMessage = null,
 ) => {
   const channel = await client.channels.fetch(
     process.env.COMPETITION_CHANNEL_ID,
   );
-  const message = await channel.messages.fetch(
-    process.env.COMPETITION_WEEKLY_POST_ID,
-  );
+  
+  const message = targetMessage ?? await findPinnedWeeklyCompetitionMessage(channel, client) ?? await channel.messages.fetch(process.env.COMPETITION_WEEKLY_POST_ID);
 
   const leaderboardEmbeds = printCombinedLeaderboard(
     scores,
@@ -113,49 +113,34 @@ export const editWeeklyCompetitionCornerMessage = async (
     false,
   );
 
+  const content = generateWeeklyBoilerPlateText(
+    scores,
+    teams,
+    week.weekNumber,
+    week.periodStart,
+    week.periodEnd,
+    week.vpsId,
+    week.table,
+    week.authorName,
+    week.versionNumber,
+    week.tableUrl,
+    week.romUrl,
+    week.romName,
+    week.notes,
+    week.currentSeasonWeekNumber,
+    week.b2sUrl,
+    week.mode,
+  );
+
   if (leaderboardEmbeds.length > 0) {
     const embed = leaderboardEmbeds[0];
     await message.edit({
-      content: generateWeeklyBoilerPlateText(
-        scores,
-        teams,
-        week.weekNumber,
-        week.periodStart,
-        week.periodEnd,
-        week.vpsId,
-        week.table,
-        week.authorName,
-        week.versionNumber,
-        week.tableUrl,
-        week.romUrl,
-        week.romName,
-        week.notes,
-        week.currentSeasonWeekNumber,
-        week.b2sUrl,
-        week.mode,
-      ),
+      content: content,
       embeds: [embed],
     });
   } else {
     await message.edit({
-      content: generateWeeklyBoilerPlateText(
-        scores,
-        teams,
-        week.weekNumber,
-        week.periodStart,
-        week.periodEnd,
-        week.vpsId,
-        week.table,
-        week.authorName,
-        week.versionNumber,
-        week.tableUrl,
-        week.romUrl,
-        week.romName,
-        week.notes,
-        week.currentSeasonWeekNumber,
-        week.b2sUrl,
-        week.mode,
-      ),
+      content: content,
     });
   }
 
@@ -194,9 +179,44 @@ export const editSeasonCompetitionCornerMessage = async (
   await message.suppressEmbeds(true);
 };
 
+/**
+ * Find the currently pinned weekly competition message.
+ */
+export const findPinnedWeeklyCompetitionMessage = async (channel, client) => {
+  const pinsResult = await channel.messages.fetchPinned().catch((err) => {
+    return null;
+  });
+
+  if (!pinsResult) return null;
+
+  return pinsResult.find((m) =>
+    m.author.id === client.user.id && m.content.includes("TABLE OF THE WEEK")
+  );
+};
+
+/**
+ * Pin a new weekly competition message and unpin the old one.
+ */
+export const pinNewWeeklyCompetition = async (channel, newMessage, client) => {
+  const oldPin = await findPinnedWeeklyCompetitionMessage(channel, client);
+
+  if (oldPin) {
+    await oldPin.unpin().catch((err) => {
+      // Log error but continue
+    });
+  }
+
+  return await newMessage.pin().then(
+    () => true,
+    () => false,
+  );
+};
+
 export default {
   generateWeeklyBoilerPlateText,
   generateSeasonBoilerPlateText,
   editWeeklyCompetitionCornerMessage,
   editSeasonCompetitionCornerMessage,
+  findPinnedWeeklyCompetitionMessage,
+  pinNewWeeklyCompetition,
 };
