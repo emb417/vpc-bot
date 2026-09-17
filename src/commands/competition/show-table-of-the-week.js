@@ -3,6 +3,7 @@ import { Command } from "@sapphire/framework";
 import { EmbedBuilder } from "discord.js";
 import logger from "../../utils/logger.js";
 import { getCurrentWeek } from "../../lib/data/vpc.js";
+import { createCompetitionWeekEmbed } from "../../lib/output/messages.js";
 
 export class ShowTableOfTheWeekCommand extends Command {
   constructor(context, options) {
@@ -38,64 +39,7 @@ export class ShowTableOfTheWeekCommand extends Command {
       }
 
       return interaction.editReply({
-        embeds: [
-          new EmbedBuilder()
-            .setColor("Blue")
-            .setTitle(`🎰 Week ${week.weekNumber} – Table of the Week`)
-            .setURL(
-              `https://discord.com/channels/${process.env.GUILD_ID}/${interaction.channel.id}/${process.env.COMPETITION_WEEKLY_POST_ID}`,
-            )
-            .addFields(
-              {
-                name: "Table",
-                value: week.tableUrl
-                  ? `[🔗 ${week.table}](${week.tableUrl})`
-                  : week.table,
-                inline: false,
-              },
-              { name: "Author", value: week.authorName || "N/A", inline: true },
-              {
-                name: "Version",
-                value: week.versionNumber || "N/A",
-                inline: true,
-              },
-              {
-                name: "Period",
-                value: `${week.periodStart} – ${week.periodEnd}`,
-                inline: false,
-              },
-              {
-                name: "ROM",
-                value: (() => {
-                  const label =
-                    week.romName && week.romName !== "N/A"
-                      ? `${week.romName} - Required`
-                      : "Required";
-                  const hasUrl = week.romUrl && week.romUrl !== "N/A";
-                  const hasRom =
-                    hasUrl || (week.romName && week.romName !== "N/A");
-                  return hasRom
-                    ? hasUrl
-                      ? `[🔗 ${label}](${week.romUrl})`
-                      : label
-                    : "N/A";
-                })(),
-                inline: true,
-              },
-              {
-                name: "B2S",
-                value:
-                  week.b2sUrl !== "N/A"
-                    ? `[🔗 Available](${week.b2sUrl})`
-                    : "N/A",
-                inline: true,
-              },
-              ...(week.notes
-                ? [{ name: "Notes", value: week.notes, inline: false }]
-                : []),
-            )
-            .setFooter({ text: "Good luck everyone!" }),
-        ],
+        embeds: [createCompetitionWeekEmbed(week)],
       });
     } catch (e) {
       logger.error({ err: e }, "Failed to show table of the week:");

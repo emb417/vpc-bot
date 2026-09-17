@@ -4,10 +4,9 @@ import { EmbedBuilder } from "discord.js";
 import logger from "../../utils/logger.js";
 import { formatDateISO, parseDate, addDays } from "../../utils/formatting.js";
 import {
-  editWeeklyCompetitionCornerMessage,
   editSeasonCompetitionCornerMessage,
   pinNewWeeklyCompetition,
-  generateWeeklyBoilerPlateText,
+  createCompetitionWeekEmbed,
 } from "../../lib/output/messages.js";
 import { getVpsGameById } from "../../lib/data/vps.js";
 import { getCurrentWeek } from "../../lib/data/vpc.js";
@@ -98,70 +97,10 @@ export class CreateWeekCommand extends Command {
         vpsid,
         options,
       );
-      const embed = new EmbedBuilder()
-        .setColor("Green")
-        .setTitle(`✅ Week ${result.week.weekNumber} Created`)
-        .setURL(
-          `https://discord.com/channels/${process.env.GUILD_ID}/${interaction.channel.id}/${process.env.COMPETITION_WEEKLY_POST_ID}`,
-        )
-        .addFields(
-          {
-            name: "Table",
-            value: result.week.tableUrl
-              ? `[🔗 ${result.week.table}](${result.week.tableUrl})`
-              : result.week.table,
-            inline: false,
-          },
-          { name: "Author", value: result.week.authorName, inline: true },
-          {
-            name: "Version",
-            value: result.week.versionNumber,
-            inline: true,
-          },
-          {
-            name: "Period",
-            value: `${result.week.periodStart} – ${result.week.periodEnd}`,
-            inline: false,
-          },
-          {
-            name: "ROM",
-            value: (() => {
-              const label =
-                result.week.romName && result.week.romName !== "N/A"
-                  ? `${result.week.romName} - Required`
-                  : "Required";
-              const hasUrl = result.week.romUrl && result.week.romUrl !== "N/A";
-              const hasRom =
-                hasUrl ||
-                (result.week.romName && result.week.romName !== "N/A");
-              return hasRom
-                ? hasUrl
-                  ? `[🔗 ${label}](${result.week.romUrl})`
-                  : label
-                : "N/A";
-            })(),
-            inline: true,
-          },
-          {
-            name: "B2S",
-            value:
-              result.week.b2sUrl !== "N/A"
-                ? `[🔗 Available](${result.week.b2sUrl})`
-                : "N/A",
-            inline: true,
-          },
-        );
-
-      if (result.week.notes) {
-        embed.addFields({
-          name: "📝 Notes",
-          value: result.week.notes,
-          inline: false,
-        });
-      }
 
       return interaction.editReply({
-        embeds: [embed.setFooter({ text: "Good luck everyone!" })],
+        content: `✅ Week ${result.week.weekNumber} has been created and pinned.`,
+        flags: 64,
       });
     } catch (e) {
       logger.error({ err: e }, "Failed to create week:");
@@ -275,25 +214,9 @@ export const createWeek = async (client, channel, vpsid, options = {}) => {
 
     // Update pinned messages for competition channel
     if (channel.name === process.env.COMPETITION_CHANNEL_NAME) {
-      const messageContent = generateWeeklyBoilerPlateText(
-        newWeek.scores,
-        newWeek.teams,
-        newWeek.weekNumber,
-        newWeek.periodStart,
-        newWeek.periodEnd,
-        newWeek.vpsId,
-        newWeek.table,
-        newWeek.authorName,
-        newWeek.versionNumber,
-        newWeek.tableUrl,
-        newWeek.romUrl,
-        newWeek.romName,
-        newWeek.notes,
-        newWeek.currentSeasonWeekNumber,
-        newWeek.b2sUrl,
-        newWeek.mode,
-      );
-      const newMessage = await channel.send(messageContent);
+      const newMessage = await channel.send({
+        embeds: [createCompetitionWeekEmbed(newWeek)],
+      });
       await pinNewWeeklyCompetition(channel, newMessage, client);
 
       if (currentSeason) {
