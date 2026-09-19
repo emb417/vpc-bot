@@ -90,46 +90,6 @@ export const initScheduledJobs = (client) => {
     },
   );
 
-  // Announce active tournaments every Tuesday at 12:00 AM Pacific Time (PT)
-  cron.schedule(
-    "0 0 * * 2",
-    async () => {
-      logger.info("Running scheduled tournament announcement...");
-      try {
-        const activeTournaments = await findActiveTournaments();
-        if (!activeTournaments || activeTournaments.length === 0) {
-          logger.info("No active tournaments to announce.");
-          return;
-        }
-
-        const guild = await client.guilds.fetch(GUILD_ID);
-        const channel = await guild.channels.fetch(COMPETITION_CHANNEL_ID);
-
-        if (!channel || !channel.isTextBased()) {
-          logger.error(
-            "Competition channel not found or is not a text channel.",
-          );
-          return;
-        }
-
-        const embed = buildTournamentListEmbed(
-          activeTournaments,
-          "🏆 Weekly Tournament",
-        );
-        await channel.send({ embeds: [embed] });
-        logger.info(`Announced ${activeTournaments.length} active tournaments.`);
-      } catch (error) {
-        logger.error(
-          { err: error },
-          "Error during scheduled tournament announcement:",
-        );
-      }
-    },
-    {
-      scheduled: true,
-      timezone: "America/Los_Angeles",
-    },
-  );
 
   // Auto-end any active tournament that has passed its end date, and
   // announce any tournament that is starting today.
@@ -174,33 +134,49 @@ export const initScheduledJobs = (client) => {
           "tournaments",
         );
 
-        for (const tournament of startingToday) {
+        if (startingToday.length > 0) {
           try {
             const guild = await client.guilds.fetch(GUILD_ID);
-            const channel = await guild.channels.fetch(tournament.channelId);
 
-            if (channel && channel.isTextBased()) {
+            // Announce in the main competition channel
+            const compChannel = await guild.channels.fetch(COMPETITION_CHANNEL_ID);
+            if (compChannel?.isTextBased()) {
               const embed = buildTournamentListEmbed(
-                [tournament],
-                `🏆 Tournament Starting`,
+                startingToday,
+                "🏆 Tournaments Starting Today",
               );
-              const message = await channel.send({ embeds: [embed] });
-              const pinned = await pinNewTournament(channel, message, client);
-              if (pinned) {
-                logger.info(
-                  `Announced and pinned tournament "${tournament.name}"`,
-                );
-              } else {
-                logger.warn(
-                  `Announced tournament "${tournament.name}" but pin failed — check channel permission overwrite`,
+              await compChannel.send({ embeds: [embed] });
+              logger.info(`Announced ${startingToday.length} tournaments starting today in competition channel.`);
+            }
+
+            // Announce and pin in each individual tournament's channel
+            for (const tournament of startingToday) {
+              try {
+                const channel = await guild.channels.fetch(tournament.channelId);
+                if (channel?.isTextBased()) {
+                  const embed = buildTournamentListEmbed(
+                    [tournament],
+                    "🏆 Tournament Starting",
+                  );
+                  const message = await channel.send({ embeds: [embed] });
+                  const pinned = await pinNewTournament(channel, message, client);
+                  if (pinned) {
+                    logger.info(`Announced and pinned tournament "${tournament.name}"`);
+                  } else {
+                    logger.warn(
+                      `Announced tournament "${tournament.name}" but pin failed — check channel permission overwrite`,
+                    );
+                  }
+                }
+              } catch (error) {
+                logger.error(
+                  { err: error },
+                  `Failed to announce tournament "${tournament.name}" in channel ${tournament.channelId}:`,
                 );
               }
             }
           } catch (error) {
-            logger.error(
-              { err: error },
-              `Failed to announce tournament "${tournament.name}":`,
-            );
+            logger.error({ err: error }, "Error during tournament announcements starting today:");
           }
         }
       } catch (error) {
