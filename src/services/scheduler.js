@@ -90,46 +90,6 @@ export const initScheduledJobs = (client) => {
     },
   );
 
-  // Announce active tournaments every Tuesday at 12:00 AM Pacific Time (PT)
-  cron.schedule(
-    "0 0 * * 2",
-    async () => {
-      logger.info("Running scheduled tournament announcement...");
-      try {
-        const activeTournaments = await findActiveTournaments();
-        if (!activeTournaments || activeTournaments.length === 0) {
-          logger.info("No active tournaments to announce.");
-          return;
-        }
-
-        const guild = await client.guilds.fetch(GUILD_ID);
-        const channel = await guild.channels.fetch(COMPETITION_CHANNEL_ID);
-
-        if (!channel || !channel.isTextBased()) {
-          logger.error(
-            "Competition channel not found or is not a text channel.",
-          );
-          return;
-        }
-
-        const embed = buildTournamentListEmbed(
-          activeTournaments,
-          "🏆 Weekly Tournament",
-        );
-        await channel.send({ embeds: [embed] });
-        logger.info(`Announced ${activeTournaments.length} active tournaments.`);
-      } catch (error) {
-        logger.error(
-          { err: error },
-          "Error during scheduled tournament announcement:",
-        );
-      }
-    },
-    {
-      scheduled: true,
-      timezone: "America/Los_Angeles",
-    },
-  );
 
   // Auto-end any active tournament that has passed its end date, and
   // announce any tournament that is starting today.
@@ -173,6 +133,23 @@ export const initScheduledJobs = (client) => {
           { status: "active", startDate: today },
           "tournaments",
         );
+
+        if (startingToday.length > 0) {
+          try {
+            const guild = await client.guilds.fetch(GUILD_ID);
+            const channel = await guild.channels.fetch(COMPETITION_CHANNEL_ID);
+            if (channel && channel.isTextBased()) {
+              const embed = buildTournamentListEmbed(
+                startingToday,
+                "🏆 Tournaments Starting Today",
+              );
+              await channel.send({ embeds: [embed] });
+              logger.info(`Announced ${startingToday.length} tournaments starting today in competition channel.`);
+            }
+          } catch (error) {
+            logger.error({ err: error }, "Failed to announce tournaments starting today in competition channel:");
+          }
+        }
 
         for (const tournament of startingToday) {
           try {
