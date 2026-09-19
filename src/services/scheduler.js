@@ -137,47 +137,46 @@ export const initScheduledJobs = (client) => {
         if (startingToday.length > 0) {
           try {
             const guild = await client.guilds.fetch(GUILD_ID);
-            const channel = await guild.channels.fetch(COMPETITION_CHANNEL_ID);
-            if (channel && channel.isTextBased()) {
+
+            // Announce in the main competition channel
+            const compChannel = await guild.channels.fetch(COMPETITION_CHANNEL_ID);
+            if (compChannel?.isTextBased()) {
               const embed = buildTournamentListEmbed(
                 startingToday,
                 "🏆 Tournaments Starting Today",
               );
-              await channel.send({ embeds: [embed] });
+              await compChannel.send({ embeds: [embed] });
               logger.info(`Announced ${startingToday.length} tournaments starting today in competition channel.`);
             }
-          } catch (error) {
-            logger.error({ err: error }, "Failed to announce tournaments starting today in competition channel:");
-          }
-        }
 
-        for (const tournament of startingToday) {
-          try {
-            const guild = await client.guilds.fetch(GUILD_ID);
-            const channel = await guild.channels.fetch(tournament.channelId);
-
-            if (channel && channel.isTextBased()) {
-              const embed = buildTournamentListEmbed(
-                [tournament],
-                `🏆 Tournament Starting`,
-              );
-              const message = await channel.send({ embeds: [embed] });
-              const pinned = await pinNewTournament(channel, message, client);
-              if (pinned) {
-                logger.info(
-                  `Announced and pinned tournament "${tournament.name}"`,
-                );
-              } else {
-                logger.warn(
-                  `Announced tournament "${tournament.name}" but pin failed — check channel permission overwrite`,
+            // Announce and pin in each individual tournament's channel
+            for (const tournament of startingToday) {
+              try {
+                const channel = await guild.channels.fetch(tournament.channelId);
+                if (channel?.isTextBased()) {
+                  const embed = buildTournamentListEmbed(
+                    [tournament],
+                    "🏆 Tournament Starting",
+                  );
+                  const message = await channel.send({ embeds: [embed] });
+                  const pinned = await pinNewTournament(channel, message, client);
+                  if (pinned) {
+                    logger.info(`Announced and pinned tournament "${tournament.name}"`);
+                  } else {
+                    logger.warn(
+                      `Announced tournament "${tournament.name}" but pin failed — check channel permission overwrite`,
+                    );
+                  }
+                }
+              } catch (error) {
+                logger.error(
+                  { err: error },
+                  `Failed to announce tournament "${tournament.name}" in channel ${tournament.channelId}:`,
                 );
               }
             }
           } catch (error) {
-            logger.error(
-              { err: error },
-              `Failed to announce tournament "${tournament.name}":`,
-            );
+            logger.error({ err: error }, "Error during tournament announcements starting today:");
           }
         }
       } catch (error) {
