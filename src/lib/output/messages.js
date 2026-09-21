@@ -243,7 +243,7 @@ export const editSeasonCompetitionCornerMessage = async (
  * Find the currently pinned weekly competition message.
  */
 export const findPinnedWeeklyCompetitionMessage = async (channel, client) => {
-  const pinsResult = await channel.messages.fetchPinned().catch((err) => {
+  const pinsResult = await channel.messages.fetchPins().catch((err) => {
     return null;
   });
 
