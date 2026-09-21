@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { EmbedBuilder } from "discord.js";
+import logger from "../utils/logger.js";
 import {
   printCombinedLeaderboard,
   printSeasonLeaderboard,
@@ -12,9 +13,6 @@ export const createCompetitionWeekEmbed = (week) => {
   return new EmbedBuilder()
     .setColor("Blue")
     .setTitle(`🎰 Week ${week.weekNumber} – Table of the Week`)
-    .setURL(
-      `https://discord.com/channels/${process.env.GUILD_ID}/${process.env.COMPETITION_CHANNEL_ID}/${process.env.COMPETITION_WEEKLY_POST_ID}`,
-    )
     .addFields(
       {
         name: "Table",
@@ -268,13 +266,22 @@ export const pinNewWeeklyCompetition = async (channel, newMessage, client) => {
   if (oldPin) {
     await oldPin.unpin().catch((err) => {
       // Log error but continue
+      logger.error({ err }, "Failed to unpin old weekly competition message:");
     });
   }
 
-  return await newMessage.pin().then(
+  const pinResult = await newMessage.pin().then(
     () => true,
     () => false,
   );
+
+  if (pinResult) {
+    const recentMessages = await channel.messages.fetch({ limit: 5 });
+    const systemPin = recentMessages.find((m) => m.type === 6);
+    if (systemPin) await systemPin.delete().catch(() => {});
+  }
+
+  return pinResult;
 };
 
 export default {

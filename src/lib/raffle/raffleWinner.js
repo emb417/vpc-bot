@@ -137,8 +137,6 @@ export const runRaffleAndCreateNextWeek = async (client, channel) => {
 
         if (createWeekResult.success) {
           logger.info("New competition week created successfully.");
-          const week = createWeekResult.week;
-          await channel.send({ embeds: [createCompetitionWeekEmbed(week)] });
         } else {
           logger.error(
             `Failed to create new competition week: ${createWeekResult.message}`,
