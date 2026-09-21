@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { EmbedBuilder } from "discord.js";
-import logger from "../utils/logger.js";
+import logger from "../../utils/logger.js";
 import {
   printCombinedLeaderboard,
   printSeasonLeaderboard,
