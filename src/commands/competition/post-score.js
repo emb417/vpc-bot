@@ -15,7 +15,6 @@ import {
   notifyQualificationChange,
 } from "../../lib/raffle/raffle.js";
 import { processScore, validateScore } from "../../lib/scores/scoring.js";
-import { editWeeklyCompetitionCornerMessage } from "../../lib/output/messages.js";
 import {
   find,
   findCurrentWeek,
@@ -77,12 +76,7 @@ export class PostScoreCommand extends Command {
     });
 
     try {
-      await this.handleScore(
-        interaction,
-        score,
-        postToHighScore,
-        attachment,
-      );
+      await this.handleScore(interaction, score, postToHighScore, attachment);
 
       return interaction.editReply({
         content: "✅ Score posted successfully.",
@@ -121,7 +115,8 @@ export class PostScoreCommand extends Command {
       }
 
       // Process image (standardize to PNG, optimize size, dynamic filename)
-      const { buffer: processedBuffer, filename: processedFilename } = await processImage(attachmentBuffer);
+      const { buffer: processedBuffer, filename: processedFilename } =
+        await processImage(attachmentBuffer);
 
       // Get current week
       const currentWeek = await findCurrentWeek(channel.name);
@@ -166,16 +161,6 @@ export class PostScoreCommand extends Command {
         null,
         "weeks",
       );
-
-      // Update pinned message if in competition channel
-      if (channel.name === process.env.COMPETITION_CHANNEL_NAME) {
-        await editWeeklyCompetitionCornerMessage(
-          result.scores,
-          this.container.client,
-          currentWeek,
-          currentWeek.teams,
-        );
-      }
 
       logger.info(
         `${user.username} posted weekly score: ${result.scoreAsInt} for ${currentWeek.table} ranked ${result.currentRank}`,
