@@ -247,9 +247,11 @@ export const findPinnedWeeklyCompetitionMessage = async (channel, client) => {
     return null;
   });
 
-  if (!pinsResult) return null;
+  if (!pinsResult || !pinsResult.items) return null;
 
-  return pinsResult.find(
+  const pins = pinsResult.items;
+
+  return pins.find(
     (m) =>
       m.author.id === client.user.id &&
       m.embeds.length > 0 &&

@@ -3,7 +3,6 @@ import { Command } from "@sapphire/framework";
 import logger from "../../utils/logger.js";
 import { formatNumber } from "../../utils/formatting.js";
 import { processScore } from "../../lib/scores/scoring.js";
-import { editWeeklyCompetitionCornerMessage } from "../../lib/output/messages.js";
 import { findCurrentWeek, updateOne } from "../../services/database.js";
 import { editHighScore } from "../highscores/edit-high-score.js";
 
@@ -80,16 +79,6 @@ export class EditScoreCommand extends Command {
         null,
         "weeks",
       );
-
-      // Update pinned message if in competition channel
-      if (channel.name === process.env.COMPETITION_CHANNEL_NAME) {
-        await editWeeklyCompetitionCornerMessage(
-          result.scores,
-          this.container.client,
-          currentWeek,
-          currentWeek.teams,
-        );
-      }
 
       let highScoreNote = null;
       if (
