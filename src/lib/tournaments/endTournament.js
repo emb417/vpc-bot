@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { calculateSeasonPoints } from "../scores/points.js";
+import { calculateSeasonPoints, calculateSingleTableStandings } from "../scores/points.js";
 import { updateOne } from "../../services/database.js";
 
 /**
@@ -21,7 +21,11 @@ export const endTournament = async (client, tournament) => {
     "tournaments",
   );
 
-  const standings = calculateSeasonPoints(tournament.tables ?? []);
+  const tables = tournament.tables ?? [];
+  const standings =
+    tables.length === 1
+      ? calculateSingleTableStandings(tables)
+      : calculateSeasonPoints(tables);
   const playerInfo = new Map();
   for (const table of tournament.tables ?? []) {
     for (const s of table.scores ?? []) {

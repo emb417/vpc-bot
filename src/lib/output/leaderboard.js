@@ -1,6 +1,9 @@
 import { EmbedBuilder } from "discord.js";
 import { truncate, formatNumber } from "../../utils/formatting.js";
-import { calculateSeasonPoints } from "../scores/points.js";
+import {
+  calculateSeasonPoints,
+  calculateSingleTableStandings,
+} from "../scores/points.js";
 import { renderTable, AlignmentEnum } from "./tableRenderer.js";
 
 /**
@@ -295,7 +298,11 @@ export const printSeasonLeaderboard = (
  * Print Tournament Standings (overall points summed across every table).
  */
 export const printTournamentLeaderboard = (tournament, numOfScoresToShow) => {
-  const standings = calculateSeasonPoints(tournament?.tables ?? []);
+  const tables = tournament?.tables ?? [];
+  const standings =
+    tables.length === 1
+      ? calculateSingleTableStandings(tables)
+      : calculateSeasonPoints(tables);
 
   if (standings.length === 0) {
     return [

@@ -15,6 +15,7 @@ import { processScore, validateScore } from "../../lib/scores/scoring.js";
 import {
   TOURNAMENT_POINTS_BY_RANK,
   calculateSeasonPoints,
+  calculateSingleTableStandings,
 } from "../../lib/scores/points.js";
 import {
   findCurrentlyActiveTournament,
@@ -224,13 +225,15 @@ export class PostTournamentScoreCommand extends Command {
         logger.error({ err: e }, "Error updating historical avatars:"),
       );
 
-      const standings = calculateSeasonPoints(
-        (tournament.tables ?? []).map((t) =>
-          t.tableIndex === tableEntry.tableIndex
-            ? { scores: result.scores }
-            : { scores: t.scores ?? [] },
-        ),
+      const mappedTables = (tournament.tables ?? []).map((t) =>
+        t.tableIndex === tableEntry.tableIndex
+          ? { scores: result.scores }
+          : { scores: t.scores ?? [] },
       );
+      const standings =
+        mappedTables.length === 1
+          ? calculateSingleTableStandings(mappedTables)
+          : calculateSeasonPoints(mappedTables);
       const standingKey = result.username.toLowerCase();
       const standingIndex = standings.findIndex(
         (s) => s.username === standingKey,

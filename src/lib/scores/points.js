@@ -27,9 +27,9 @@ export const assignPoints = (scores, pointsTable = POINTS_BY_RANK) => {
 };
 
 /**
- * Calculate total points for a player across multiple weeks.
- * @param {Array} weeks - Array of week objects with scores
- * @returns {Array} Leaderboard array sorted by points (descending)
+ * Calculate total points for a player across multiple weeks/tables.
+ * @param {Array} weeks - Array of week/table objects with scores
+ * @returns {Array} Leaderboard array sorted by points (descending), then score (descending)
  */
 export const calculateSeasonPoints = (weeks) => {
   const playerMap = new Map();
@@ -63,9 +63,38 @@ export const calculateSeasonPoints = (weeks) => {
   });
 };
 
+/**
+ * Calculate standings for a single-table tournament.
+ * Uses raw scores directly instead of multi-table accumulated points.
+ * @param {Array} tables - Array of tournament tables (expects 1 table)
+ * @returns {Array} Standings array sorted by score (descending)
+ */
+export const calculateSingleTableStandings = (tables) => {
+  const playerMap = new Map();
+  const table = tables[0];
+  if (!table || !table.scores) return [];
+
+  table.scores.forEach((score) => {
+    const username = score.username.toLowerCase();
+    const parsedScore = parseInt(score.score) || 0;
+    const existing = playerMap.get(username);
+
+    if (!existing || parsedScore > existing.score) {
+      playerMap.set(username, {
+        username: username,
+        score: parsedScore,
+        points: parsedScore,
+      });
+    }
+  });
+
+  return Array.from(playerMap.values()).sort((a, b) => b.score - a.score);
+};
+
 export default {
   POINTS_BY_RANK,
   TOURNAMENT_POINTS_BY_RANK,
   assignPoints,
   calculateSeasonPoints,
+  calculateSingleTableStandings,
 };
