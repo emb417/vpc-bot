@@ -244,37 +244,48 @@ export const editSeasonCompetitionCornerMessage = async (
  */
 export const findPinnedWeeklyCompetitionMessage = async (channel, client) => {
   const pinsResult = await channel.messages.fetchPins().catch((err) => {
+    logger.error({ err }, "Failed to fetch pins:");
     return null;
   });
 
-  if (!pinsResult || !pinsResult.items) return null;
+  if (!pinsResult) return null;
 
   const pins = pinsResult.items;
 
-  return pins.find(
-    (m) =>
+  const oldPin = pins.find((item) => {
+    const m = item.message;
+    return (
+      m &&
       m.author.id === client.user.id &&
       m.embeds.length > 0 &&
-      m.embeds[0].title?.includes("Table of the Week"),
-  );
+      m.embeds[0].title?.includes("Table of the Week")
+    );
+  });
+
+  return oldPin ? oldPin.message : null;
 };
 
 /**
  * Pin a new weekly competition message and unpin the old one.
  */
 export const pinNewWeeklyCompetition = async (channel, newMessage, client) => {
-  const oldPin = await findPinnedWeeklyCompetitionMessage(channel, client);
+  const oldPinMessage = await findPinnedWeeklyCompetitionMessage(channel, client);
 
-  if (oldPin) {
-    await oldPin.unpin().catch((err) => {
-      // Log error but continue
+  if (oldPinMessage) {
+    await oldPinMessage.unpin().catch((err) => {
       logger.error({ err }, "Failed to unpin old weekly competition message:");
     });
   }
 
   const pinResult = await newMessage.pin().then(
     () => true,
-    () => false,
+    (err) => {
+      logger.error(
+        { err, channelId: channel.id },
+        'Failed to pin new weekly competition message. Check for a channel-specific permission overwrite denying "Pin Messages".',
+      );
+      return false;
+    },
   );
 
   if (pinResult) {
